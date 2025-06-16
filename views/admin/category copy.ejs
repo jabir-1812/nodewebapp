@@ -1,0 +1,202 @@
+<%-include ('../../views/partials/admin/header')%>
+
+    <section style="margin-left: 10rem;">
+        <div>
+            <div>
+                <h2>Category</h2>
+            </div>
+        </div>
+
+        <header>
+            <form action="/admin/category/" method="get" class="d-inline">
+                <div>
+                    <input type="text" placeholder="Search categories"
+                        name="search" />
+                    <button class="btn" type="submit">Search</button>
+                </div>
+            </form>
+        </header>
+
+        <div>
+            <div>
+                <div>
+                    <div>
+                        <form method="post" action="/admin/addCategory" onsubmit="return handleFormSubmit(event)">
+                            <div>
+                                <label for="product_name" class="form-label">Name</label>
+                                <input type="text" name="name" placeholder="Type here"
+                                    id="product_name" required />
+                                <div id="name-error" class="error-message"></div>
+                            </div>
+                            <div>
+                                <label>Description</label>
+                                <textarea placeholder="Type here" name="description"
+                                    id="descriptionId" required></textarea>
+                                <div id="description-error" class="error-message"></div>
+                            </div>
+                            <div>
+                                <button type="submit">
+                                    Create category
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div>
+                        <div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Offer Price</th>
+                                        <th>Offer</th>
+                                        <th>Status</th>
+                                        <th>List/Unlist</th>
+                                        <th>Edit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <%cat.reverse().forEach((category,index)=>{%>
+                                        <tr>
+                                            <td></td>
+                                            <td>
+                                                <%= category.name %>
+                                            </td>
+                                            <td>
+                                                <%= category.description %>
+                                            </td>
+                                            <td>
+                                            </td>
+                                            <td>
+                                                <button>
+                                                    <a href="#">Add Offer</a>
+                                                </button>
+                                                <button>
+                                                    <a href="#">Remove</a>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <span>Listed</span>
+                                                <span>Unlisted</span>
+                                            </td>
+                                            <td>
+                                                <button>
+                                                    <a href="#">Unlist</a>
+                                                </button>
+                                                <button>
+                                                    <a href="">List</a>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <a href="">Edit</a>
+                                            </td>
+                                        </tr>
+                                        <%})%>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="pagination-container">
+            <% if(currentPage>1){ %>
+                <a href="?page= <%= currentPage -1 %>">&laquo; Previous</a>
+                <% } %>
+                    <% for(let i=1;i<=totalPages;i++){ %>
+                        <% if(i===currentPage){ %>
+                            <span class="current-page">
+                                <%= i %>
+                            </span>
+                            <% } else { %>
+                                <a href="?page=<%= i %>"></a>
+                                <% } %>
+                                    <% } %>
+                                        <% if(currentPage<totalPages){ %>
+                                            <a href="?page=<%= currentPage +1 %>">Next &raquo;</a>
+                                            <% } %>
+        </div>
+    </section>
+    <script>
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            if (!validateForm()) {
+                return
+            }
+            const name = document.getElementsByName('name')[0].value;
+            const description = document.getElementById('descriptionId').value;
+
+            fetch('/admin/add-category', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({ name, description })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error);
+                        })
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    location.reload();
+                })
+                .catch(error => {
+                    if (error.message === "Category already exists") {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops',
+                            text: 'Category already exists'
+                        })
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "oops",
+                            text: 'An error occured while adding the category',
+                        })
+                    }
+                })
+        }
+
+        function validateForm() {
+            clearErrorMessage();
+            const name = document.getElementsByName('name')[0].value.trim();
+            const description = document.getElementById('descriptionId').value.trim();
+            isValid = true;
+
+
+            if (name === "") {
+                displayErrorMessage('name-error', 'Please Enter a name');
+                isValid = false
+            } else if (!/[a-zA-Z\s]+$/.test(name)) {
+                displayErrorMessage('name-error', 'Category name should contain only alphabetic characters')
+                isValid = false;
+            }
+
+            if (description === '') {
+                displayErrorMessage('description-error', 'Please enter a description')
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function displayErrorMessage(elementId, message) {
+            var errorElement = document.getElementById(elementId);
+            errorElement.innerHTML = message;
+            errorElement.style.display = 'block';
+        }
+
+        function clearErrorMessage() {
+            const errorElements = document.getElementsByClassName('error-message');
+            Array.from(errorElements).forEach((element) => {
+                element.innerText = "";
+                element.style.display = 'none';
+            });
+        }
+    </script>
+    <%-include ('../../views/partials/admin/footer')%>

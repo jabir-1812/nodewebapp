@@ -1,0 +1,33 @@
+<form action="/login" method="post">
+    <h1>Log in</h1>
+    <% if (message && message.length> 0) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <% } %>
+            <label for="">Email Address</label>
+            <input name="email" type="email" placeholder="Enter email">
+
+            <label for="">Password</label>
+            <input name="password" type="password" placeholder="Enter password">
+
+             <% if (passwordMsg && passwordMsg.length> 0) { %>
+        <div class="alert alert-danger text-center fade show" role="alert">
+            <%= passwordMsg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <% } %>
+            <div>
+                <button type="submit">Login</button>
+                or log in with
+                <button>Google</button>
+            </div>
+
+            <div>
+                not registered?
+                <a href="/signup">Sign Up</a>
+            </div>
+
+
+</form>

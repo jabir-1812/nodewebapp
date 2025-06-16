@@ -1,0 +1,131 @@
+<link rel="stylesheet" href="/user/otp-verification.css">
+
+
+
+<div class="otp-container">
+    <div class="otp-icon">🔒</div>
+    <h1>OTP Verification</h1>
+    <p class="subtitle">We've sent a 6-digit code to your email</p>
+    <form action="/verify-otp" method="post" onsubmit="return validateOTPForm()">
+        <div class="otp-form">
+            <div class="otp-input-container">
+                <label for="otp">Enter OTP</label>
+                <input type="number" id="otp" placeholder="Enter 6-digit OTP" maxlength="6">
+            </div>
+
+            <button type="submit" class="verify-btn">Verify Email</button>
+    </form>
+
+
+    <div class="timer" id="timer">01:00</div>
+
+    <button class="resend-btn" id="resendBtn" disabled>Resend OTP</button>
+</div>
+
+<p class="login-text">Already verified? <a href="#" class="login-link">Login</a></p>
+</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+    // Timer functionality
+    let timeLeft = 60;
+    const timer = document.getElementById('timer');
+    const resendBtn = document.getElementById('resendBtn');
+
+    const countdown = setInterval(() => {
+        timeLeft--;
+
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+
+        timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            resendBtn.disabled = false;
+            timer.textContent = "OTP expired";
+        }
+    }, 1000);
+
+    resendBtn.addEventListener('click', () => {
+        timeLeft = 60;
+        resendBtn.disabled = true;
+        timer.textContent = "01:00";
+
+        const newCountdown = setInterval(() => {
+            timeLeft--;
+
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+
+            timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(newCountdown);
+                resendBtn.disabled = false;
+                timer.textContent = "OTP expired";
+            }
+        }, 1000);
+
+        // Here you would typically trigger your OTP resend logic
+        $.ajax({
+            type:"POST",
+            url:"/resend-otp",
+            success:function(response){
+                if(response.success){
+                    Swal.fire({
+                        icon:"success",
+                        title:"OTP Resend Successfully",
+                        showConfirmButton:false,
+                        timer:1500
+                    })
+                }else{
+                    Swal.fire({
+                        icon:"error",
+                        title:"Error",
+                        text:"An error occured while resending OTP. Please try again"
+                    })
+                }
+            }
+        })
+        // return false;
+        // console.log("OTP resent!");
+    });
+
+    function validateOTPForm(){
+        const otpInput=document.getElementById('otp').value;
+        console.log(otpInput);
+
+        $.ajax({
+            type:"POST",
+            url:"/verify-otp",
+            data:{otp:otpInput},
+            success:function(response){
+                if(response.success){
+                    Swal.fire({
+                        icon:'success',
+                        title:'OTP Verified Successfully',
+                        showConfirmButton:false,
+                        timer:1500
+                    }).then(()=>{
+                        window.location.href=response.redirectUrl;
+                    })
+                }else{
+                    Swal.fire({
+                        icon:"error",
+                        title:"Error",
+                        text:response.message,
+                    })
+                }
+            },
+            error:function(){
+                Swal.fire({
+                    icon:"error",
+                    title:"Invalid OTP",
+                    text:"Please try again"
+                })
+            }
+        })
+        return false;
+    }
+</script>
