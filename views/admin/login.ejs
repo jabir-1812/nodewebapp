@@ -1,0 +1,44 @@
+
+<link rel="stylesheet" href="/admin/login.css">
+
+<div class="admin-login">
+  <h1>Admin Login</h1>
+   <% if (message && message.length> 0) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <% } %>
+  
+  <form action="/admin/login" method="post">
+    <div>
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="admin@example.com" name="email" required>
+    </div>
+    
+    <div class="password-container">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••" name="password" >
+      <button type="button" class="password-toggle" onclick="togglePassword()">
+        👁️
+      </button>
+    </div>
+    
+    <input type="submit" class="btn btn-primary" value="Log in">
+  </form>
+</div>
+
+<script>
+  function togglePassword() {
+    const passwordField = document.getElementById('password');
+    const toggleBtn = document.querySelector('.password-toggle');
+    
+    if (passwordField.type === 'password') {
+      passwordField.type = 'text';
+      toggleBtn.textContent = '👁️';
+    } else {
+      passwordField.type = 'password';
+      toggleBtn.textContent = '👁️';
+    }
+  }
+</script>

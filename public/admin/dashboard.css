@@ -1,0 +1,15 @@
+/* Main Content Styles */
+  .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 70px);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+
+    .main-content {
+      margin-left: 70px;
+    }
+  }

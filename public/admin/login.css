@@ -1,0 +1,106 @@
+/* Base Styles */
+.admin-login {
+    max-width: 450px;
+    margin: 3rem auto;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.admin-login h1 {
+    text-align: center;
+    color: #1a1a1a;
+    margin-bottom: 2rem;
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.5px;
+}
+
+/* Form Styles */
+.admin-login form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.admin-login label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.admin-login input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+}
+
+.admin-login input:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+    background-color: #ffffff;
+    outline: none;
+}
+
+.admin-login input::placeholder {
+    color: #a0aec0;
+}
+
+/* Button Styles */
+.admin-login .btn {
+    padding: 14px;
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+}
+
+.admin-login .btn:hover {
+    background-color: #2c5282;
+    transform: translateY(-1px);
+}
+
+.admin-login .btn:active {
+    transform: translateY(0);
+}
+
+/* Password Toggle (Optional) */
+.password-container {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 42px;
+    cursor: pointer;
+    color: #718096;
+    background: none;
+    border: none;
+    padding: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+    .admin-login {
+        padding: 1.5rem;
+        margin: 1.5rem;
+    }
+
+    .admin-login h1 {
+        font-size: 1.7rem;
+    }
+}

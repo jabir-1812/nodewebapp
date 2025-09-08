@@ -1,0 +1,520 @@
+<style>
+  /* Main Layout */
+  .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  /* Form Header */
+  .main-content h2 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    font-weight: 600;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  /* Form Elements */
+  .form-group {
+    margin-bottom: 1.75rem;
+    max-width: 600px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.95rem;
+  }
+
+  .form-group input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+  }
+
+  .form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #4e73df;
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15);
+  }
+
+  /* File Input Styling */
+  .file-input-container {
+    position: relative;
+    margin-top: 0.5rem;
+  }
+
+  .file-input-container input[type="file"] {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+  }
+
+  .file-input-label {
+    display: inline-block;
+    padding: 0.65rem 1.25rem;
+    background-color: #4e73df;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .file-input-label:hover {
+    background-color: #3a5bca;
+  }
+
+  /* Image Preview Area */
+  .image-preview-container {
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .image-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .image-preview img {
+    max-width: 150px;
+    max-height: 150px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  /* Cropper Container */
+  .cropper-container {
+    width: 100%;
+    height: 300px;
+    margin: 1rem 0;
+    border: 2px dashed #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Error Handling */
+  .error-container {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.75rem;
+    border: 1px solid #f5c6cb;
+  }
+
+  .error-container p {
+    margin: 0;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .error-container p:last-child {
+    margin-bottom: 0;
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  /* Form Actions */
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+  }
+
+  .btn-dark {
+    background-color: #4e73df;
+    color: white;
+  }
+
+  .btn-dark:hover {
+    background-color: #3a5bca;
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-dark {
+    background-color: transparent;
+    color: #495057;
+    border: 1px solid #ced4da;
+  }
+
+  .btn-outline-dark:hover {
+    background-color: #f8f9fa;
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #c82333;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #218838;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0;
+      padding: 1.5rem;
+    }
+    
+    .form-actions {
+      flex-direction: column;
+    }
+    
+    .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<%-include ('../../../views/partials/admin/header')%>
+
+<main class="main-content">
+    <h2>Edit Brand</h2>
+    
+    <% if (error) { %>
+        <div class="error-container">
+            <% error.forEach(err => { %>
+                <p><i class="fas fa-exclamation-circle"></i> <%= err.msg %></p>
+            <% }) %>
+        </div>
+    <% } %>
+
+    <form id="editBrandForm" enctype="multipart/form-data">
+        <!-- Brand Name -->
+        <div class="form-group">
+            <label for="brandName">Brand Name</label>
+            <input type="text" id="brandName" name="name" value="<%= brand.brandName %>" 
+                   placeholder="Enter brand name" required>
+            <div id="brandName-error" class="error-message"></div>
+        </div>
+
+        <!-- Existing Image -->
+        <div class="form-group" id="existingImageContainer" style="<%= brand.brandImage ? '' : 'display:none;' %>">
+            <label>Current Brand Logo</label>
+            <div class="image-preview">
+                <img src="/uploads/resized-images/<%= brand.brandImage %>" alt="Current brand logo">
+                <button type="button" id="removeExistingImage" class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash-alt"></i> Remove Logo
+                </button>
+            </div>
+        </div>
+
+        <!-- Upload New Image -->
+        <div class="form-group" id="newImageContainer" style="<%= brand.brandImage ? 'display:none;' : '' %>">
+            <label>Upload New Logo</label>
+            <div class="file-input-container">
+                <label for="imageInputField" class="file-input-label">
+                    <i class="fas fa-upload"></i> Choose Image
+                </label>
+                <input type="file" name="image" id="imageInputField" accept="image/*">
+            </div>
+            <div id="imageCropPreview" class="cropper-container" style="display: none;"></div>
+            <div id="croppedPreview" class="image-preview-container" style="display: none;"></div>
+        </div>
+
+        <!-- Hidden flag for removed image -->
+        <input type="hidden" name="removeExisting" id="removeExisting" value="false">
+
+        <!-- Submit -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-dark">
+                <i class="fas fa-save"></i> Update Brand
+            </button>
+            <a href="/admin/brands" class="btn btn-outline-dark">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</main>
+
+<%-include ('../../../views/partials/admin/footer')%>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+let cropper;
+const imageInput = document.getElementById('imageInputField');
+const previewContainer = document.getElementById('imageCropPreview');
+const croppedPreviewContainer = document.getElementById('croppedPreview');
+const form = document.getElementById('editBrandForm');
+const removeExisting = document.getElementById('removeExisting');
+const existingImageContainer = document.getElementById('existingImageContainer');
+const newImageContainer = document.getElementById('newImageContainer');
+
+let croppedFile = null;
+
+// Remove existing image
+document.getElementById('removeExistingImage')?.addEventListener('click', () => {
+    existingImageContainer.style.display = 'none';
+    newImageContainer.style.display = 'block';
+    removeExisting.value = 'true';
+});
+
+imageInput?.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    // Reset previous selections
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    croppedPreviewContainer.style.display = 'none';
+    croppedPreviewContainer.innerHTML = '';
+    
+    // Show cropper container
+    previewContainer.style.display = 'block';
+    previewContainer.innerHTML = '';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.maxWidth = '100%';
+        previewContainer.appendChild(img);
+
+        cropper = new Cropper(img, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 1,
+            responsive: true,
+            guides: false
+        });
+
+        // Create controls container
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'form-actions';
+        controlsDiv.style.marginTop = '1rem';
+        
+        // Save Crop Button
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Save Crop';
+        saveBtn.className = 'btn btn-success';
+        saveBtn.onclick = saveCroppedImage;
+        
+        // Cancel Button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+        cancelBtn.className = 'btn btn-outline-dark';
+        cancelBtn.onclick = () => {
+            previewContainer.style.display = 'none';
+            previewContainer.innerHTML = '';
+            imageInput.value = '';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        };
+
+        controlsDiv.appendChild(saveBtn);
+        controlsDiv.appendChild(cancelBtn);
+        previewContainer.parentNode.insertBefore(controlsDiv, previewContainer.nextSibling);
+    };
+
+    reader.readAsDataURL(file);
+});
+
+function saveCroppedImage() {
+    const canvas = cropper.getCroppedCanvas({ 
+        width: 500, 
+        height: 500,
+        minWidth: 256,
+        minHeight: 256,
+        maxWidth: 2000,
+        maxHeight: 2000,
+        fillColor: '#fff',
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+    });
+    
+    canvas.toBlob((blob) => {
+        // Create cropped file
+        croppedFile = new File([blob], 'brand-logo.png', { type: 'image/png' });
+        
+        // Hide cropper and show preview
+        previewContainer.style.display = 'none';
+        previewContainer.innerHTML = '';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        
+        // Remove any existing controls
+        const controls = previewContainer.nextElementSibling;
+        if (controls && controls.className.includes('form-actions')) {
+            controls.remove();
+        }
+        
+        // Show cropped preview
+        croppedPreviewContainer.style.display = 'flex';
+        croppedPreviewContainer.innerHTML = '';
+        
+        const previewImg = document.createElement('img');
+        previewImg.src = URL.createObjectURL(blob);
+        previewImg.style.maxWidth = '150px';
+        previewImg.style.maxHeight = '150px';
+        
+        const previewActions = document.createElement('div');
+        previewActions.style.display = 'flex';
+        previewActions.style.gap = '0.5rem';
+        
+        const changeBtn = document.createElement('button');
+        changeBtn.type = 'button';
+        changeBtn.innerHTML = '<i class="fas fa-edit"></i> Change';
+        changeBtn.className = 'btn btn-sm btn-outline-dark';
+        changeBtn.onclick = () => {
+            imageInput.value = '';
+            croppedPreviewContainer.style.display = 'none';
+            croppedPreviewContainer.innerHTML = '';
+            croppedFile = null;
+        };
+        
+        previewActions.appendChild(changeBtn);
+        
+        croppedPreviewContainer.appendChild(previewImg);
+        croppedPreviewContainer.appendChild(previewActions);
+        
+    }, 'image/png', 0.9);
+}
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    const brandName = document.getElementById('brandName').value.trim();
+    if (!brandName) {
+        Swal.fire({
+            title: 'Validation Error',
+            text: 'Please enter a brand name',
+            icon: 'error'
+        });
+        return;
+    }
+
+        // Require at least one brand image (existing or new)
+    const isExistingImageVisible = existingImageContainer.style.display !== 'none';
+    if (!croppedFile && !isExistingImageVisible) {
+        Swal.fire({
+            title: 'Image Required',
+            text: 'Please upload and crop a brand logo.',
+            icon: 'warning'
+        });
+        return;
+    }
+
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('name', brandName);
+    formData.append('removeExisting', removeExisting.value);
+
+    if (croppedFile) {
+        formData.append('image', croppedFile);
+    }
+
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+    try {
+        const brandId = "<%= brand._id %>";
+        const response = await fetch(`/admin/edit-brand/${brandId}`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Brand updated successfully',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            window.location.href = '/admin/brands';
+        } else {
+            throw new Error(result.message || 'Failed to update brand');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: error.message || 'Something went wrong',
+            icon: 'error'
+        });
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+});
+</script>

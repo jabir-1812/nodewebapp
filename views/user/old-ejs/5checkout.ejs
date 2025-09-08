@@ -1,0 +1,584 @@
+<style>
+    .error-message{
+        color: red;
+        font-size: smaller;
+    }
+</style>
+
+<%-include ('../../views/partials/user/header') %>
+
+    <h1 style="text-align: center;">Checkout</h1>
+
+    <section class="mt-50 mb-50">
+        <div class="container">
+
+            <!-- addresses -->
+
+            <div class="row">
+                <div id="addressesContainer">
+                   <%-include ('../user/checkout/partials/address-forms') %>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="col-9">
+                        <h3>Order Summary</h3>
+                        <div class="table-responsive">
+                            <table class="table shopping-summery text-center clean">
+                                <thead>
+                                    <tr class="main-heading">
+                                        <th scope="col">Image</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Price</th>
+                                        <th scope="col">Quantity</th>
+                                        <th scope="col">Remove</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <% if (userCart && userCart.items.length> 0) { %>
+                                        <% var x=0 %>
+                                            <% for (let i=0; i < userCart.items.length;i++) { %>
+
+                                                <tr>
+
+                                                    <td class="image product-thumbnail">
+                                                        <img style="width: 40%;"
+                                                            src="/uploads/resized-images/<%= userCart.items[i].productDetails.productImage[0] %>"
+                                                            alt="#" />
+
+
+                                                    </td>
+                                                    <td class="product-des product-name">
+                                                        <h5 class="product-name">
+
+                                                            <%= userCart.items[i].productDetails.productName %>
+
+                                                        </h5>
+                                                        <p class="font-xs">
+                                                            <%= userCart.items[i].productDetails.category?.name %><br />
+                                                                <%= userCart.items[i].productDetails.brand?.brandName %>
+                                                        </p>
+                                                    </td>
+                                                    <td class="price" data-title="Price">₹
+                                                        <text id="subTotal<%= userCart.items[i].productDetails._id %>">
+                                                            <%= userCart.items[i].productDetails.salePrice * userCart.items[i].quantity %>
+                                                                <!-- <strike><%= userCart.items[i].productDetails.regularPrice * userCart.items[i].quantity %></strike> -->
+                                                        </text><br>
+
+                                                        <small class="text-muted text-nowrap">
+                                                            ₹<span id="price">
+                                                                <%= userCart.items[i].productDetails.salePrice %>
+                                                                    ₹<strike>
+                                                                        <%= userCart.items[i].productDetails.regularPrice %>
+                                                                    </strike>
+                                                            </span>/ per item
+                                                        </small>
+                                                    </td>
+
+                                                    <td class="text-center" data-title="Stock">
+                                                        <div class="detail-qty border radius m-auto">
+                                                            <div class="quantity-control">
+
+
+                                                                <% if(userCart.items[i].productDetails.quantity !==0 ){ %>
+                                                                    <button class="btn btn-sm increment-button" onclick="changeQuantity(
+                                                                                    '<%= userCart.items[i].productDetails._id %>',
+                                                                                    1,
+                                                                                    '<%= userCart.items[i].productDetails.salePrice %>',
+                                                                                    '<%= grandTotal %>'
+                                                                                )">+</button>
+
+
+                                                                    <input class="quantity-input"
+                                                                        id="cartProductQuantity<%= userCart.items[i].productDetails._id %>"
+                                                                        value="<%=userCart.items[i].quantity %>" style="width: 45px;"
+                                                                        type="text" readonly>
+
+
+                                                                    <button class="btn btn-sm decrement-button" onclick="changeQuantity(
+                                                                                    '<%= userCart.items[i].productDetails._id %>',
+                                                                                    -1,
+                                                                                    '<%= userCart.items[i].productDetails.salePrice %>',
+                                                                                    '<%= grandTotal %>'
+                                                                                )">-</button>
+                                                                    
+                                                                    <% }else{ %>
+                                                                        <h5 class="text-danger">Out Of Stock</h5>
+                                                                        <% } %>
+
+                                                                        <div>
+                                                                            <strong id="outOfStockMessage<%= userCart.items[i].productDetails._id %>" class="text-danger"></strong>
+                                                                        </div>
+
+                                                            </div>
+                                                            
+                                                        </div>
+                                                    </td>
+
+                                                    <td class="action" data-title="Remove">
+                                                        <a class="btn btn-sm" href="#"
+                                                            onclick="removeItem('<%= userCart.items[i].productDetails._id %>')">
+                                                            <i class="fi-rs-trash"></i>🗑️Remove
+                                                        </a>
+                                                    </td>
+
+                                                    <% } %>
+
+                                                        <% } else { %>
+                                                <tr>
+
+                                                    <td colspan="2" class="text-center">
+                                                        <p class="lead mb-4">No item found in Cart</p>
+                                                    </td>
+                                                </tr>
+                                                <% } %>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                    <h2>Choose Payment Method</h2>
+                    <div>
+                        <input type="radio" name="paymentMethod" id="COD" value="COD" required checked>
+                        <strong><label for="COD"> Cash On Delivery </label></strong>
+                    </div>
+                    
+                    <div>
+                        <input type="radio" name="paymentMethod" id="UPI" value="UPI">
+                        <strong><label for="UPI"> UPI </label></strong>
+                    </div>
+            </div>
+
+            <div class="row">
+                <div class="col-9">
+                    <div class="border p-md-4 p-30 border-radius cart-totals">
+                        <div class="heading_s1 mb-3">
+                            <h4>PRICE DETAILS</h4>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <td class="cart_total_label">Shipping</td>
+                                        <td class="cart_total_amount">
+                                            <i class="ti-gift mr-5"></i>
+                                            Free Shipping
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="cart_total_label">Total</td>
+                                        <td class="cart_total_amount">
+                                            <span class="font-lg fw-900 text-brand">₹
+                                                <text id="grandTotal" data-grand-total="<%= grandTotal %>"
+                                                    ><h2>
+                                                        <%= grandTotal %>/-
+                                                    </h2>
+                                                </text>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <form action="/place-order" method="post" id="checkoutForm">
+                            <input type="hidden" name="addressId">
+                            <input type="hidden" id="cartId" name="cartId" value="<%= userCart ? userCart._id : '' %>">
+                            <input type="hidden" name="paymentMethod">
+                            <button type="button" id="placeOrderBtn">Place Order</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+<script>
+    // Show/hide the "add new address" form
+    function showAddAddressForm() {
+        document.getElementById("addNewAddressFormContainer").style.display = "block";
+    }
+
+    function hideAddAddressForm() {
+        document.getElementById("addNewAddressFormContainer").style.display = "none";
+        // optionally clear form fields
+        const form = document.getElementById("addAddressForm");
+        if (form) form.reset();
+    }
+
+    // Event delegation for ALL forms inside addressesContainer
+    document.getElementById("addressesContainer").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+
+        const form = e.target;
+
+        // --- Add New Address Form ---
+        if (form.id === "addAddressForm") {
+            clearErrorMessages();
+            const formData = Object.fromEntries(new FormData(form));
+            const { addressType, name, city, landMark, state, pincode, phone, altPhone } = formData;
+
+
+            let isValid = true;
+            const namePattern = /^[A-Za-z\s]+$/;
+            const pincodePattern = /^\d{6}$/;
+            const phonePattern = /^\d{10}$/;
+
+            if (!namePattern.test(addressType)) {
+                document.getElementById('addressType-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(name)) {
+                document.getElementById('addressName-error').innerHTML = "Name should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(city)) {
+                document.getElementById('addressCity-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(landMark)) {
+                document.getElementById('addressLandmark-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(state)) {
+                document.getElementById('addressState-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!pincodePattern.test(pincode)) {
+                document.getElementById('addressPincode-error').innerHTML = "Pincode should be a 6-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(phone)) {
+                document.getElementById('addressPhone-error').innerHTML = "Phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(altPhone)) {
+                document.getElementById('addressAltPhone-error').innerHTML = "Alternate phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (phone === altPhone) {
+                document.getElementById('addressAltPhone-error').innerHTML = "Phone number and alternate phone number should be different.";
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            const response = await fetch('/add-address-in-checkout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                let html = await response.text();
+                document.getElementById('addressesContainer').innerHTML = html;
+                // no need to rebind, delegation still works
+            }
+        }
+
+        // --- Edit Address Form ---
+        if (form.id.startsWith("editAddressForm")) {
+            const index = form.id.replace("editAddressForm", "");
+            clearErrorMessages();
+
+            const formData = Object.fromEntries(new FormData(form));
+            const { addressType, name, city, landMark, state, pincode, phone, altPhone } = formData;
+
+            let isValid = true;
+            const namePattern = /^[A-Za-z\s]+$/;
+            const pincodePattern = /^\d{6}$/;
+            const phonePattern = /^\d{10}$/;
+
+            if (!namePattern.test(addressType)) {
+                document.getElementById('addressType-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(name)) {
+                document.getElementById('addressName-error' + index).innerHTML = "Name should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(city)) {
+                document.getElementById('addressCity-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(landMark)) {
+                document.getElementById('addressLandmark-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(state)) {
+                document.getElementById('addressState-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!pincodePattern.test(pincode)) {
+                document.getElementById('addressPincode-error' + index).innerHTML = "Pincode should be a 6-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(phone)) {
+                document.getElementById('addressPhone-error' + index).innerHTML = "Phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(altPhone)) {
+                document.getElementById('addressAltPhone-error' + index).innerHTML = "Alternate phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (phone === altPhone) {
+                document.getElementById('addressAltPhone-error' + index).innerHTML = "Phone number and alternate phone number should be different.";
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            const response = await fetch('/edit-address-in-checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                let html = await response.text();
+                document.getElementById('addressesContainer').innerHTML = html;
+                // still works because delegation catches new forms
+            }
+        }
+    });
+
+    function clearErrorMessages() {
+        const errorElements = document.getElementsByClassName('error-message');
+        Array.from(errorElements).forEach(el => el.innerHTML = "");
+    }
+
+    // Keep show/hide logic for Edit button
+    function showEditAddressForm(index) {
+        const container = document.getElementById(`editAddressFormContainer${index}`);
+        const btn = document.getElementById(`editFormBtn${index}`);
+
+        if (container.style.display === 'block') {
+            container.style.display = 'none';
+            btn.innerText = "Edit Address";
+        } else {
+            container.style.display = 'block';
+            btn.innerText = "Cancel Edit Address";
+        }
+    }
+</script>
+
+
+
+
+             <script>
+                async function changeQuantity(productId,count,saleprice,grandTotal){
+                    // console.log('changeQuantity() started');
+                    document.getElementById(`outOfStockMessage${productId}`).innerHTML="";
+
+                    console.log('salePrice======>',saleprice);
+                    const currentQtyElement=document.getElementById(`cartProductQuantity${productId}`);
+                    let currentQty=currentQtyElement.value;
+                    const subtotalElement=document.getElementById(`subTotal${productId}`);
+                    const grandTotalElement=document.getElementById('grandTotal');
+                    // console.log('current Qty====>',currentQty);
+                    if(parseInt(currentQty)+count > 3){
+                        return Swal.fire({
+                            title:"Maximum limit is 3",
+                            icon:'warning',
+                            timer:5000
+                        })
+                    }
+                    if(parseInt(currentQty)+count <1 || parseInt(currentQty)+count <0){
+                        console.log("minimum limit is 1")
+                        return;
+                    }
+
+
+                    const response=await fetch('/change-cart-quantity',{
+                        method:'post',
+                        headers:{
+                            'Content-Type':'application/json',
+                        },
+                        body:JSON.stringify({
+                            productId:productId,
+                            count:count
+                        })
+                    })
+
+                    if(response.ok){
+                        const result= await response.json()
+                        // console.log("response ok")
+                        // console.log(result.message);
+                        if(result.status){
+                            // console.log('cart qty increased')
+                            // console.log(typeof currentQty)
+                            let newQty=parseInt(currentQty)+count;
+                            currentQtyElement.value=newQty;
+                            // currentQtyElement.placeholder=newQty;
+                            subtotalElement.innerHTML=parseFloat(saleprice) * newQty;
+                            
+
+
+                        }else{
+                            // console.log("cart qty defaulted")
+                            // console.log("cartProductQty=====>",result.cartProductQty)
+                            let newQty=parseInt(result.updatedCartProductQty);
+                            console.log("cartProductQty=====>",result.updatedCartProductQty)
+                            if(newQty===0){
+                            document.getElementById(`outOfStockMessage${productId}`).innerHTML="Out of Stock";
+                            }
+                            
+                            currentQtyElement.value=newQty;
+                            // currentQtyElement.placeholder=newQty;
+                            subtotalElement.innerHTML=parseFloat(saleprice) * newQty;
+                            Swal.fire({
+                                title:"Sorry, Only limited stock available",
+                                icon:"warning"
+                            })
+                        }
+                        // Update grand total from backend
+                        grandTotalElement.innerHTML =`<h2> ${result.grandTotal}/- </h2>`;
+                        grandTotalElement.dataset.grandTotal=result.grandTotal;
+                        
+                    }
+
+                }     
+
+                async function removeItem(productId) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, remove it!'
+                }).then((result) => {
+                if (result.isConfirmed) {
+                        fetch(`/delete-cart-item/${productId}`, {
+                            method: 'DELETE'
+                        })
+                        .then(res => {
+                            if (res.ok) {
+                            window.location.reload();
+                            }
+                        });
+                        }
+
+                })
+                }
+
+                document.addEventListener('DOMContentLoaded',()=>{
+                const checkouPageLinkElement=document.getElementById('checkoutPageLink');
+                console.log("checkoutLinkElem=======>",checkouPageLinkElement)
+                checkouPageLinkElement.addEventListener('click',(e)=>{
+                    const grandTotalElement=document.getElementById('grandTotal');
+                    const grandTotal=parseFloat (grandTotalElement.dataset.grandTotal);
+                    console.log("grandTotal======>",grandTotal);
+                    if(grandTotal===0){
+                    e.preventDefault();
+                    Swal.fire({
+                        title:"Add products in the cart",
+                        icon:"warning"
+                    })
+                    }
+                })
+                })
+
+            </script>
+
+
+<script>
+    document.getElementById("placeOrderBtn").addEventListener("click",async () => {
+        const grandTotalElement=document.getElementById('grandTotal');
+        const grandTotal=parseFloat (grandTotalElement.dataset.grandTotal);
+
+        if(grandTotal===0){
+          Swal.fire({
+            title:"No products selected",
+            icon:"warning"
+          })
+          return;
+        }
+        const selectedAddress = document.querySelector("input[name='addressId']:checked");
+        const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+        const cartId = document.getElementById("cartId").value;
+
+        if (!selectedAddress) {
+            Swal.fire({
+                title:"Please add a delivery address",
+                icon:'warning'
+            })
+            return;
+        }
+
+        if (!selectedPayment) {
+            Swal.fire({
+                title:"Please select a payment method",
+                icon:'warning'
+            })
+            return;
+        }
+
+        // Fill hidden checkout form inputs
+        // document.querySelector("#checkoutForm input[name='addressId']").value = selectedAddress.value;
+        // document.querySelector("#checkoutForm input[name='cartId']").value = cartId;
+        // document.querySelector("#checkoutForm input[name='paymentMethod']").value = selectedPayment.value;
+
+        // Submit final form
+        const formData={
+            cartId:cartId,
+            addressId:selectedAddress.value,
+            paymentMethod:selectedPayment.value
+        }
+
+        try {
+            const response=await fetch('/place-order',{
+                method:'post',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify(formData)
+            })
+            const res= await response.json();
+
+            if(res.success){
+                Swal.fire({
+                    title:"Order Placed",
+                    icon:"success",
+                    timer:2000
+                })
+
+                window.location.href=`/order-success/${res.orderId}`
+            }else{
+                Swal.fire({
+                    title: "Order Failed",
+                    text: res.message,
+                    icon: "error",
+                    // confirmButtonText: "OK"
+                }).then(() => {
+                    console.log("Reload triggered");
+                    location.reload();
+                });
+
+            }
+        } catch (error) {
+            console.log("something went wrong:",error)
+        }
+        
+        });
+</script>
+  
+
+        </div>
+
+    </section>
+
+   
+
+
+
+    <%-include ('../../views/partials/user/footer') %>
+
+    
+
+    

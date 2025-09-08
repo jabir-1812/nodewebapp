@@ -1,0 +1,135 @@
+<%-include ('../../../../views/partials/user/header')%>
+
+<%-include ('../../../../views/user/profile/profile-partials/sidebar')%>
+
+<style>
+    .main-content {
+        margin-left: 220px; /* sidebar width */
+        padding: 90px 30px 30px;
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+    .orders-page {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    }
+
+    .order-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .order-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #555;
+    }
+
+    .item {
+    display: flex;
+    gap: 15px;
+    margin: 10px 0;
+    }
+
+    .item img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    }
+
+    .item-info h4 {
+    margin: 0;
+    font-size: 16px;
+    }
+
+
+
+</style>
+<div class="main-content">
+    <div class="orders-page">
+        <h2>My Orders</h2>
+
+        <!-- Search Bar -->
+        <form method="GET" action="/user-profile/orders" class="search-bar" style="margin-bottom:20px;">
+            <input type="text" name="search" placeholder="Search by Order ID, Product, or Status"
+                   value="<%= searchQuery %>" style="padding:8px; width:70%;">
+            <button type="submit" class="btn">Search</button>
+        </form>
+
+        <% if (orderItems.length === 0) { %>
+            <p>You have no orders yet.</p>
+        <% } else { %>
+            <% orderItems.forEach(order => { %>
+                <div class="order-card">
+                    <div class="order-header">
+                        <span>Order ID: <%= order.orderId %></span>
+                        <span><%= new Date(order.createdAt).toDateString() %></span>
+                    </div>
+
+                    <div class="item">
+                        <img src="/uploads/product-images/<%= order.item.productImage %>" alt="<%= order.item.productName %>">
+                        <div class="item-info">
+                            <h4><%= order.item.productName %></h4>
+                            <p>₹<%= order.item.price %> | Qty: <%= order.item.quantity %></p>
+                            <p>
+                                <strong>Status:</strong> 
+                                <span class="<%= 
+                                    order.item.itemStatus === 'Cancelled' ? 'text-danger' : 
+                                    order.item.itemStatus === 'Delivered' ? 'text-success' : 
+                                    order.item.itemStatus === 'Shipped' ? 'text-primary' : 
+                                    order.item.itemStatus === 'Pending' ? 'text-warning' : 
+                                    '' 
+                                %>">
+                                    <%= order.item.itemStatus %>
+                                </span>
+                                <% if(order.item.itemStatus==="Delivered"){ %>
+                                    On <%= new Date(order.item.deliveredAt).toDateString().slice(4) %>
+                                <%}%>
+                            </p>
+
+                            <% if (order.item.returnStatus && order.item.returnStatus !== 'None') { %>
+                            <p>
+                                <strong>Return:</strong> 
+                                <span class="<%= 
+                                    order.item.returnStatus === 'Requested' ? 'text-warning' : 
+                                    order.item.returnStatus === 'Approved' ? 'text-success' : 
+                                    order.item.returnStatus === 'Rejected' ? 'text-danger' : '' 
+                                %>">
+                                    <%= order.item.returnStatus %>
+                                </span>
+                            </p>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <div class="order-footer">
+                        <a href="/user-profile/orders/order-details/<%= order.orderId %>" class="btn">View Order Details</a>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="pagination" style="margin-top:20px; text-align:center;">
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="?page=<%= i %>&search=<%= searchQuery %>" 
+                       class="btn <%= i === currentPage ? 'btn-primary' : '' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+
+<%-include ('../../../../views/partials/user/footer')%>

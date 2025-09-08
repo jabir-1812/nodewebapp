@@ -1,0 +1,522 @@
+<%- include("../../views/partials/admin/header") %>
+
+<!-- <style>
+  .pagination-container {
+    text-align: center;
+  }
+  .pagination {
+    display: inline-block;
+  }
+
+  .pagination a,
+  .pagination .current-page {
+    display: inline-block;
+    padding: 5px 10px;
+    margin: 0 2px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+  }
+
+  .pagination a:hover {
+    background-color: #f5f5f5;
+  }
+  .error-message {
+    color: red;
+  }
+
+  section{
+    margin-left: 10rem;
+  }
+</style>
+<section class="content-main">
+  <div class="content-header">
+    <div>
+      <h2 class="content-title card-title">Brands</h2>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <form method="post" action="/admin/add-brand" enctype="multipart/form-data">
+            <div class="mb-4">
+              <label for="product_name" class="form-label">Brand Name</label>
+              <input
+                type="text"
+                name="name"
+                placeholder="Type here"
+                class="form-control"
+              />
+            </div>
+            <label for="product_name" class="form-label">Brand Image</label>
+            <div class="input-upload">
+              <img src="" alt=""/>
+              <input class="form-control border" name="image" type="file" />
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary mt-20" type="submit">
+                Add Brand
+              </button>
+            </div>
+          </form>
+        </div>
+        <div class="col-md-7 ml-105">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Brand</th>
+                  <th>Logo</th>
+                  <th>Status</th>
+                  <th>Block/Unblock/Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% data.reverse().forEach((brand,index)=>{ %>
+                <tr>
+                  <td class="text-start"><%= brand.brandName %></td>
+                  <td class="text-start">
+                    <div
+                      class="d-flex align-items-center justify-content-center"
+                      style="
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        overflow: hidden;
+                      "
+                    >
+                      <img
+                        src="/uplaods/re-image/<%= brand.brandImage[0] %>"
+                        alt="<%= brand.brandName %>"
+                        class="img-fluid rounded-circle"
+                        style="width: 100%; height: auto"
+                      />
+                    </div>
+                  </td>
+                  <td class="text-start">
+                    <% if(brand.isBlocked===true){ %>
+                    <span
+                      class="badge rounded-pill alert-danger"
+                      style="width: 60px"
+                      >Blocked</span
+                    >
+                    <% }else{ %>
+
+                    <span
+                      class="badge rounded-pill alert-success"
+                      style="width: 60px"
+                      >Active</span
+                    >
+                    <% } %>
+                  </td>
+                  <td class="text-start">
+                    <% if(brand.isBlocked===false){ %>
+                    <button class="btn btn-danger" style="width: 90px">
+                      <a href="/admin/block-brand?id=<%= brand._id %>" class="text-white">Block</a>
+                    </button>
+                    <% }else{ %>
+                    <button class="btn btn-success" style="width: 90px">
+                      <a href="/admin/unblock-brand?id=<%= brand._id %>" class="text-white">Unblock</a>
+                    </button>
+                    <% } %>
+                    <button
+                      class="btn btn-danger"
+                      style="width: 90px"
+                      onclick="return confirmDelete()"
+                    >
+                      <a href="/admin/delete-brand?id=<%= brand._id%>" class="text-white">Delete</a>
+                    </button>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pagination-container">
+</div>
+</section> -->
+
+<style>
+  /* Main Content Styles */
+  .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f5f7fa;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Content Header */
+  .content-header {
+    margin-bottom: 2rem;
+  }
+
+  .content-title {
+    color: #1a1a1a;
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0;
+  }
+
+  /* Card Styles */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+
+  /* Form Styles */
+  .form-label {
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+  }
+
+  .form-control:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    outline: none;
+    background-color: #ffffff;
+  }
+
+  /* Upload Styles */
+  .input-upload {
+    margin-bottom: 1.5rem;
+  }
+
+  .input-upload img {
+    max-width: 100px;
+    max-height: 100px;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    display: block;
+  }
+
+  /* Button Styles */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    background-color: #4299e1;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #3182ce;
+  }
+
+  .btn-danger {
+    background-color: #f56565;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #e53e3e;
+  }
+
+  .btn-success {
+    background-color: #48bb78;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #38a169;
+  }
+
+  .btn a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .d-grid {
+    display: grid;
+  }
+
+  .mt-20 {
+    margin-top: 1.25rem;
+  }
+
+  /* Table Styles */
+  .table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .table th {
+    background-color: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #f8fafc;
+  }
+
+  /* Badge Styles */
+  .badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 50rem;
+  }
+
+  .alert-danger {
+    color: #9b2c2c;
+    background-color: #fed7d7;
+  }
+
+  .alert-success {
+    color: #276749;
+    background-color: #c6f6d5;
+  }
+
+  /* Brand Logo Styles */
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+  }
+
+  .brand-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* Layout */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -0.75rem;
+  }
+
+  .col-md-3, .col-md-7 {
+    padding: 0.75rem;
+  }
+
+  .col-md-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+
+  .col-md-7 {
+    flex: 0 0 calc(75% - 1.05rem);
+    max-width: calc(75% - 1.05rem);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 992px) {
+    .col-md-3, .col-md-7 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    
+    .col-md-7 {
+      margin-top: 1.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 70px;
+      padding: 1.5rem;
+    }
+    
+    .card-body {
+      padding: 1.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .main-content {
+      padding: 1rem;
+    }
+    
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+  }
+</style>
+
+<section class="main-content">
+  <div class="content-header">
+    <div>
+      <h2 class="content-title card-title">Brand Management</h2>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <!-- Add Brand Form -->
+        <div class="col-md-3">
+          <form method="post" action="/admin/add-brand" enctype="multipart/form-data">
+            <div class="mb-4">
+              <label for="brandName" class="form-label">Brand Name</label>
+              <input
+                type="text"
+                name="name"
+                id="brandName"
+                placeholder="Enter brand name"
+                class="form-control"
+                required
+              />
+            </div>
+            
+            <label for="brandImage" class="form-label">Brand Logo</label>
+            <div class="input-upload">
+              <img id="imagePreview" src="" alt="Brand logo preview" style="display: none;"/>
+              <input 
+                class="form-control border" 
+                name="image" 
+                id="brandImage" 
+                type="file" 
+                accept="image/*"
+                required
+                onchange="previewImage(this)"
+              />
+            </div>
+            
+            <div class="d-grid">
+              <button class="btn btn-primary mt-20" type="submit">
+                Add Brand
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Brands Table -->
+        <div class="col-md-7 ml-105">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Brand</th>
+                  <th>Logo</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% data.reverse().forEach((brand,index)=>{ %>
+                <tr>
+                  <td class="text-start"><%= brand.brandName %></td>
+                  <td class="text-start">
+                    <div class="brand-logo">
+                      <img
+                        src="/uploads/re-image/<%= brand.brandImage[0] %>"
+                        alt="<%= brand.brandName %>"
+                      />
+                    </div>
+                  </td>
+                  <td class="text-start">
+                    <% if(brand.isBlocked===true){ %>
+                    <span class="badge alert-danger">Blocked</span>
+                    <% }else{ %>
+                    <span class="badge alert-success">Active</span>
+                    <% } %>
+                  </td>
+                  <td class="text-start">
+                    <div style="display: flex; gap: 0.5rem;">
+                      <% if(brand.isBlocked===false){ %>
+                      <button class="btn btn-danger">
+                        <a href="/admin/block-brand?id=<%= brand._id %>">Block</a>
+                      </button>
+                      <% }else{ %>
+                      <button class="btn btn-success">
+                        <a href="/admin/unblock-brand?id=<%= brand._id %>">Unblock</a>
+                      </button>
+                      <% } %>
+                      <button class="btn btn-danger" onclick="return confirmDelete()">
+                        <a href="/admin/delete-brand?id=<%= brand._id%>">Delete</a>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function confirmDelete() {
+    return confirm('Are you sure you want to delete this brand?');
+  }
+</script>
+<%- include("../../views/partials/admin/footer") %>

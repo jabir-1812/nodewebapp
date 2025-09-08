@@ -1,52 +1,156 @@
 <style>
+  /* Base Styles */
+  :root {
+    --primary-color: #4361ee;
+    --primary-dark: #3a56d4;
+    --sidebar-bg: #2b2d42;
+    --header-bg: #ffffff;
+    --text-light: #f8f9fa;
+    --text-dark: #212529;
+    --hover-color: #4cc9f0;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
 
-    header {
-        display: flex;
-    }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: var(--text-dark);
+  }
 
+  /* Header Styles */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: var(--header-bg);
+    box-shadow: var(--shadow);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .dropdown-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .dropdown-content a {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  .dropdown-content a:hover {
+    color: var(--primary-color);
+    background-color: rgba(67, 97, 238, 0.1);
+  }
+
+  /* Sidebar Styles */
+  .side-bar {
+    position: fixed;
+    left: 0;
+    top: 70px;
+    width: 250px;
+    height: calc(100vh - 70px);
+    background-color: var(--sidebar-bg);
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+  }
+
+  .side-bar div {
+    width: 100%;
+  }
+
+  .side-bar a {
+    display: block;
+    color: var(--text-light);
+    text-decoration: none;
+    padding: 0.8rem 2rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+  }
+
+  .side-bar a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid var(--hover-color);
+    padding-left: 1.8rem;
+  }
+
+  .side-bar a.active {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-left: 4px solid var(--primary-color);
+    font-weight: 500;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
     .side-bar {
-        position: fixed;
+      width: 70px;
+      overflow: hidden;
     }
 
-</style>
-<header>
-    <div>
-        <h1>Shop Name</h1>
-    </div>
-    <div class="dropdown-content">
-        <!-- <a href="/user-profile" class="nav-link">Profile</a> -->
-        <a href="/logout" class=''>Logout</a>
-    </div>
+    .side-bar a {
+      padding: 0.8rem 1rem;
+      text-align: center;
+    }
 
+    .side-bar a span {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    header {
+      padding: 1rem;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+    }
+
+    .dropdown-content {
+      gap: 0.5rem;
+    }
+  }
+</style>
+
+<header>
+  <div>
+    <h1>Shop Name</h1>
+  </div>
+  <div class="dropdown-content">
+    <a href="/logout">Logout</a>
+  </div>
 </header>
 
 <div class="side-bar">
-    <div>
-        <a href="/admin">Dashboard</a>
-    </div>
-    <div>
-        <a href="/admin/users">Customers</a>
-    </div>
-    <div>
-        <a href="/admin/category">Category</a>
-    </div>
-    <div>
-        <a href="#">Brands</a>
-    </div>
-    <div>
-        <a href="#">Add product</a>
-    </div>
-    <div>
-        <a href="#">Products</a>
-    </div>
-    <div>
-        <a href="#">Coupon</a>
-    </div>
-    <div>
-        <a href="#">Banner</a>
-    </div>
-    <div>
-        <a href="#">Orders</a>
-    </div>
+  <div><a href="/admin"><i class="icon-dashboard"></i> <span>Dashboard</span></a></div>
+  <div><a href="/admin/users"><i class="icon-users"></i> <span>Customers</span></a></div>
+  <div><a href="/admin/category"><i class="icon-category"></i> <span>Category</span></a></div>
+  <div><a href="/admin/brands"><i class="icon-brands"></i> <span>Brands</span></a></div>
+  <div><a href="/admin/add-products"><i class="icon-add"></i> <span>Add product</span></a></div>
+  <div><a href="/admin/products"><i class="icon-products"></i> <span>Products</span></a></div>
+  <div><a href="#"><i class="icon-coupon"></i> <span>Coupon</span></a></div>
+  <div><a href="/admin/banners"><i class="icon-banner"></i> <span>Banner</span></a></div>
+  <div><a href="/admin/orders"><i class="icon-orders"></i> <span>Orders</span></a></div>
 </div>
 

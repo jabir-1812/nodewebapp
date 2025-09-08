@@ -1,0 +1,292 @@
+<style>
+     .main-content {
+        margin-left: 250px;
+        margin-top: 70px;
+        padding: 2rem;
+        min-height: calc(100vh - 120px);
+    }
+    .error-message {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<%- include("../../../views/partials/admin/header") %>
+
+<section class="main-content">
+    <h1>Edit Banner</h1>
+
+    <form id="editBannerForm" action="/admin/edit-banner/<%= banner._id %>">
+        <div>
+            <label for="bannerTitle">Banner Title</label>
+            <input type="text" name="title" id="bannerTitle" value="<%= banner.title %>">
+            <div id="bannerTitle-error" class="error-message"></div>
+        </div>
+        
+
+        <div>
+            <label for="description">Description</label>
+            <textarea name="description" id="description"> <%= banner.description %> </textarea>
+            <div id="description-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" name="startDate"
+                   value="<%= banner.startDate.toISOString().split('T')[0] %>">
+            <div id="startDate-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" name="endDate"
+                    value="<%= banner.endDate.toISOString().split('T')[0] %>">
+            <div id="endDate-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <label for="bannerLink">Link</label>
+            <input type="text" name="link" id="bannerLink" value="<%= banner.link %>">
+            <div id="bannerLink-error" class="error-message"></div>
+        </div>
+
+        <!-- hidden input field to track removing of old image -->
+        <input type="hidden" name="removeOldImage" id="removeOldImageInput" value="false">
+
+        <div id="oldImageContainer">
+            <h4>Current Image</h4>
+            <img src="/uploads/resized-images/<%= banner.image %>" alt="Current Banner Image">
+            <button type="button" id="removeOldImage">Remove image</button>
+        </div>
+
+        <div id="newImageSection" style="display: none;">
+            <input type="file" id="imageInput" accept="image/*" />
+            <div id="bannerImage-error" class="error-message"></div>
+            <img id="image" />
+            <button type="button" id="cropButton" style="display: none;">Crop & Save</button>
+        
+            <div id="preview" style="display: none;">
+                <img id="croppedPreview" />
+                <button type="button" id="removeImage">Remove</button>
+            </div>
+        </div>
+
+
+        <div>
+            <button class="btn btn-dark">Update</button>
+            <a href="/admin/banners" class="btn btn-outline-dark">Cancel</a>
+        </div>
+    </form>
+
+    <div id="successAlert" style="display: none; background: green; color: white; padding: 10px; margin-top: 20px;">
+         Item updated successfully!
+    </div>
+
+</section>
+
+<%- include("../../../views/partials/admin/footer") %>
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+    const form=document.getElementById('editBannerForm');
+    //error div elements
+    const errorElements=document.getElementsByClassName('error-message')
+    const bannerTitleError=document.getElementById('bannerTitle-error');
+    const descriptionError=document.getElementById('description-error');
+    const startDateError=document.getElementById('startDate-error');
+    const endDateError=document.getElementById('endDate-error');
+    const bannerLinkError=document.getElementById('bannerLink-error');
+
+    ////////////////////////////////////banner image error
+    const bannerImageError=document.getElementById('bannerImage-error')
+
+    let cropper;
+    let croppedBlob = null; // 🆕 store the cropped image file
+    const imageInput = document.getElementById('imageInput');//<input>
+    const image = document.getElementById('image');//<img>
+    const cropButton = document.getElementById('cropButton');
+    const preview = document.getElementById('preview');
+    const croppedPreview = document.getElementById('croppedPreview');
+    const removeImage = document.getElementById('removeImage');
+    const successAlert = document.getElementById('successAlert');
+    const newImageSection = document.getElementById('newImageSection');
+    const oldImageContainer = document.getElementById('oldImageContainer');
+    const removeOldImageInput = document.getElementById('removeOldImageInput');
+    const removeOldImageBtn = document.getElementById('removeOldImage');
+
+    if (removeOldImageBtn) {
+        removeOldImageBtn.addEventListener('click', () => {
+        oldImageContainer.style.display = 'none';
+        newImageSection.style.display = 'block';
+        removeOldImageInput.value = 'true';
+        });
+    }
+
+    imageInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      image.src = reader.result;
+      image.onload = () => {
+        image.style.display = 'block';
+        cropButton.style.display = 'inline';
+
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(image, {
+          aspectRatio: 1,
+          viewMode: 1,
+          autoCropArea: 1
+        });
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+
+  cropButton.addEventListener('click', () => {
+    if (!cropper) return;
+
+    cropper.getCroppedCanvas({ width: 300, height: 300 }).toBlob(blob => {
+      croppedBlob = blob;
+
+      const previewURL = URL.createObjectURL(blob);
+      croppedPreview.src = previewURL;
+
+      preview.style.display = 'block';
+      image.style.display = 'none';
+      cropButton.style.display = 'none';
+      cropper.destroy();
+    }, 'image/jpeg');
+  });
+
+  removeImage.addEventListener('click', () => {
+    preview.style.display = 'none';
+    croppedPreview.src = '';
+    imageInput.value = '';
+    croppedBlob = null;
+    image.style.display = 'none';
+  });
+
+
+
+    //form validation
+    form.addEventListener('submit',async (e)=>{
+        e.preventDefault();
+
+        //clearing error messages
+        Array.from(errorElements).forEach(element=>{
+            element.innerHTML='';
+            element.style.display='none';
+        });
+
+        const bannerTitle=document.getElementById('bannerTitle').value;
+        const description=document.getElementById('description').value;
+        // const descriptionValue=description.value;
+        const startDate=document.getElementById('startDate').value;
+        const endDate=document.getElementById('endDate').value;
+        const bannerLink=document.getElementById('bannerLink').value;
+
+         if(bannerTitle.trim()===""){
+            bannerTitleError.innerText="Banner title is required";
+            bannerTitleError.style.display='block';
+            return;
+        }
+
+        if(!/^[a-zA-Z0-9\s\-&]+$/.test(bannerTitle.trim())) {
+            bannerTitleError.innerText = "Only letters, numbers, spaces, hyphens, and ampersands are allowed";
+            bannerTitleError.style.display = 'block';
+            return;
+        }
+
+        if(description.trim()===""){
+            descriptionError.innerText='Description is required';
+            descriptionError.style.display='block';
+            return;
+        }
+
+        if(startDate===""){
+            startDateError.innerText="This field is required"
+            startDateError.style.display='block';
+            return;
+        }
+
+        if(endDate===""){
+            endDateError.innerText="This field is required";
+            endDateError.style.display='block';
+            return;
+        }
+
+        const startDateObj=new Date(startDate);
+        const endDateObj=new Date(endDate);
+
+        if(endDateObj<startDateObj){
+            endDateError.innerText="Ending date should greater than Starting date";
+            endDateError.style.display='block';
+            return;
+        }
+
+        if(bannerLink.trim()===""){
+            bannerLinkError.innerText="This feild is required";
+            bannerLinkError.style.display="block";
+            return;
+        }
+
+        const removeOld=removeOldImageInput.value==='true';
+        if (removeOld && !croppedBlob) {
+            bannerImageError.innerText="Please select and crop a new image";
+            bannerImageError.style.display='block';
+            // alert("Please select and crop a new image before submitting.");
+            return;
+        }
+
+        const formData=new FormData(form)
+        if(croppedBlob){
+            formData.append('image',croppedBlob,'cropped.jpg')
+        }
+
+        for (let pair of formData.entries()) {           
+            console.log(pair[0] + ':', pair[1]);
+        }
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: "Banner added successfully",
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = "/admin/banners";
+                });
+            } else {
+                Swal.fire({
+                    title: "Error!",
+                    text: result.message || "Failed to add banner",
+                    icon: "error"
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                title: "Error!",
+                text: "An unexpected error occurred",
+                icon: "error"
+            });
+            console.error("Error:", error);
+        }
+
+        
+    })
+</script>

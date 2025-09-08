@@ -1,0 +1,290 @@
+<style>
+     .main-content {
+        margin-left: 250px;
+        margin-top: 70px;
+        padding: 2rem;
+        min-height: calc(100vh - 120px);
+    }
+    .error-message {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<%- include("../../../views/partials/admin/header") %>
+
+<section class="main-content">
+    <h1>Add New Banner</h1>
+
+    <form id="addBannerForm">
+        <div>
+            <label for="bannerTitle">Banner Title</label>
+            <input type="text" name="title" id="bannerTitle">
+            <div id="bannerTitle-error" class="error-message"></div>
+        </div>
+        
+
+        <div>
+            <label for="description">Description</label>
+            <textarea name="description" id="description"></textarea>
+            <div id="description-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" name="startDate">
+            <div id="startDate-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" name="endDate">
+            <div id="endDate-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <label for="bannerLink">Link</label>
+            <input type="text" name="link" id="bannerLink">
+            <div id="bannerLink-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <h2>Choose Banner Image</h2>
+            <div id="preview"></div>
+            <input type="file" name="image" id="imageInputField" accept="image/*">
+            <div id="bannerImage-error" class="error-message"></div>
+        </div>
+
+        <div>
+            <button class="btn btn-dark">Submit</button>
+            <a href="/admin/banners" class="btn btn-outline-dark">Cancel</a>
+        </div>
+    </form>
+</section>
+
+<%- include("../../../views/partials/admin/footer") %>
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script>
+    const form=document.getElementById('addBannerForm');
+    //error elements
+    const bannerTitleError=document.getElementById('bannerTitle-error');
+    const descriptionError=document.getElementById('description-error');
+    const startDateError=document.getElementById('startDate-error');
+    const endDateError=document.getElementById('endDate-error');
+    const bannerLinkError=document.getElementById('bannerLink-error');
+    const bannerImageError=document.getElementById('bannerImage-error')
+
+    const errorElements=document.getElementsByClassName('error-message');
+
+    const imageInputField=document.getElementById('imageInputField');
+    const croppedImage=new Array(1).fill(null);
+    const preview=document.getElementById('preview')
+
+    imageInputField.addEventListener('change',function(){
+        preview.innerHTML="";
+        bannerImageError.style.display='none';
+
+        if(!imageInputField.files || !imageInputField.files[0]){
+            return;
+        }
+
+        const file=imageInputField.files[0];
+        const reader=new FileReader();
+
+        reader.onload=function(e){
+            const img=document.createElement('img');
+            img.src=reader.result;
+            img.style.maxWidth='100%';
+            preview.appendChild(img)
+
+            const cropper=new Cropper(img,{
+                aspectRatio:16/9,
+                viewMode:1,
+                autoCropArea:1,
+                responsive:true,
+                guides:false
+            });
+
+            const controlsDiv=document.createElement('div');
+            controlsDiv.className='cropper-controls';
+
+            const cropButton=document.createElement('button');
+            cropButton.type="button";
+            cropButton.textContent="Crop & Save";
+            cropButton.classList.add('btn', 'btn-dark');
+
+            const cancelButton=document.createElement('button');
+            cancelButton.type='button';
+            cancelButton.textContent='Cancel';
+            cancelButton.classList.add('btn','btn-outline-dark');
+            cancelButton.onclick=()=>{
+                preview.innerHTML="";
+                imageInputField.value='';
+            };
+
+            controlsDiv.appendChild(cropButton);
+            controlsDiv.appendChild(cancelButton);
+            preview.appendChild(controlsDiv);
+
+
+            cropButton.onclick=()=>{
+                const canvas=cropper.getCroppedCanvas({width:500,height:500});
+                canvas.toBlob(blob=>{
+                    croppedImage[0]={blob,name:file.name};
+                    let fileName=file.name;
+                    let imgFile=new File([blob],fileName,{type:blob.type});
+
+                    const fileList=new DataTransfer();
+                    fileList.items.add(imgFile);
+                    imageInputField.files=fileList.files;
+
+                    preview.innerHTML='';
+
+
+                    const croppedImg=document.createElement('img');
+                    croppedImg.src=URL.createObjectURL(blob);
+                    croppedImg.style.maxWidth='100%';
+                    preview.appendChild(croppedImg);
+
+                    const removeBtn=document.createElement('button');
+                    removeBtn.textContent="Remove Image";
+                    removeBtn.type="button";
+                    removeBtn.classList.add('btn','btn-outline-danger','mt-2');
+                    removeBtn.onclick=()=>{
+                        croppedImage[0]=null;
+                        imageInputField.value='';
+                        preview.innerHTML='<p> No image selected</p>';
+                    };
+                    preview.appendChild(removeBtn);
+                })
+            }
+        }
+
+        reader.readAsDataURL(file);
+    })
+
+    //form validation
+    form.addEventListener('submit',async (e)=>{
+        e.preventDefault();
+
+        //clearing error messages
+        Array.from(errorElements).forEach(element=>{
+            element.innerHTML="";
+            element.style.display='none';
+        });
+
+        const bannerTitle=document.getElementById('bannerTitle').value;
+        const description=document.getElementById('description').value;
+        // const descriptionValue=description.value;
+        const startDate=document.getElementById('startDate').value;
+        const endDate=document.getElementById('endDate').value;
+        const bannerLink=document.getElementById('bannerLink').value;
+
+
+        if(bannerTitle.trim()===""){
+            bannerTitleError.innerText="Banner title is required";
+            bannerTitleError.style.display='block';
+            return;
+        }
+
+        if(!/^[a-zA-Z0-9\s\-&]+$/.test(bannerTitle.trim())) {
+            bannerTitleError.innerText = "Only letters, numbers, spaces, hyphens, and ampersands are allowed";
+            bannerTitleError.style.display = 'block';
+            return;
+        }
+
+        if(description.trim()===""){
+            descriptionError.innerText='Description is required';
+            descriptionError.style.display='block';
+            return;
+        }
+
+        if(startDate===""){
+            startDateError.innerText="This field is required"
+            startDateError.style.display='block';
+            return;
+        }
+
+        if(endDate===""){
+            endDateError.innerText="This field is required";
+            endDateError.style.display='block';
+            return;
+        }
+
+        const startDateObj=new Date(startDate);
+        const endDateObj=new Date(endDate);
+
+        if(endDateObj<startDateObj){
+            endDateError.innerText="Ending date should greater than Starting date";
+            endDateError.style.display='block';
+            return;
+        }
+
+        if(bannerLink.trim()===""){
+            bannerLinkError.innerText="This feild is required";
+            bannerLinkError.style.display="block";
+            return;
+        }
+
+        if(!imageInputField.files || !imageInputField.files[0]){
+            bannerImageError.innerText="Please select an image";
+            bannerImageError.style.display='block';
+            return;
+        }
+
+        const croppedImageCount=croppedImage.filter(img=>img!==null).length;
+        if(croppedImageCount<1){
+            bannerImageError.innerText="Please crop and save your image";
+            bannerImageError.style.display='block';
+            return;
+        }
+
+
+        //submit form
+        const formData=new FormData(form);
+        for (let pair of formData.entries()) {           
+            console.log(pair[0] + ':', pair[1]);
+        }
+
+
+        try {
+            const response=await fetch('/admin/add-banner',{
+                method:'POST',
+                body:formData
+            });
+
+            const result=await response.json();
+
+            if(response.ok){
+                Swal.fire({
+                    title:'Success!',
+                    text:"Banner added successfully",
+                    icon:'success',
+                    timer:1500,
+                    showConfirmButton:false
+                }).then(()=>{
+                    window.location.href="/admin/banners";
+                });
+            }else{
+                Swal.fire({
+                    title:"Error!",
+                    text:result.message || "Failed to add banner",
+                    icon:"error"
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                title:"Error!",
+                text:"An unexpected error occurred",
+                icon:"error"
+            });
+            console.log("Error:",error)
+        }
+    })
+
+</script>

@@ -1,0 +1,414 @@
+<style>
+    .main-content {
+        margin-left: 250px;
+        margin-top: 70px;
+        padding: 2rem;
+        min-height: calc(100vh - 120px);
+        background-color: #f8f9fa;
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+.search-container {
+    margin-bottom: 1.5rem;
+}
+
+.search-container form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-container input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    flex-grow: 1;
+    max-width: 400px;
+}
+.search-container .clear-btn {
+    background-color: #ffffff;
+    color: #000000;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+
+.search-container .clear-btn:hover {
+    background-color: #c0392b;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #000000;
+    color: white;
+    font-weight: 500;
+}
+
+tr:hover {
+    background-color: #e1e1e1;
+}
+
+.text-danger {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.text-success {
+    color: #2ecc71;
+    font-weight: 500;
+}
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.pagination a {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #000000;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.pagination a:hover {
+    background-color: #bcbcbc;
+}
+
+.pagination a.active {
+    background-color: #000000;
+    color: white;
+    border-color: #000000;
+}
+</style>
+
+<%-include ('../../../views/partials/admin/header')%>
+    <main class="main-content">
+        <h1>Product Management</h1>
+
+         <div class="search-container">
+            <form action="/admin/products" method="GET">
+                <input type="text" name="search" value="<%= search %>" placeholder="Search products...">
+                <button type="submit" class="btn btn-dark">Search</button>
+                <% if (search) { %>
+                    <a href="/admin/products" class="btn btn-outline-dark">Clear</a>
+                <% } %>
+            </form>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Product name</th>
+                    <th scope="col">Brand</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Regular Price</th>
+                    <th scope="col">Offers</th>
+                    <th scope="col">Offer Actions</th>
+                    <th scope="col">Sale Price</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                    <% if(product.length > 0) {%>
+                        <% product.forEach((product,index)=>{ %>
+                    <tr>
+                        <td><%= product.productName %></td>
+                        <td><%= product.brand?.brandName || "NA" %></td>
+                        <td><%= product.category?.name || "NA" %></td>
+                        <td><%= product.regularPrice %></td>
+                        <td>
+                            <div>category offer:<%=product.categoryOffer%> %</div>
+                            <div>brand offer:<%=product.brandOffer%> %</div>
+                            <div>product offer:<%=product.productOffer%> %</div>
+                        </td>
+                        <td>
+                            <% if(product.productOffer===0){ %>
+                                <button class="btn btn-outline-primary" onclick="addOffer('<%= product._id %>')">Add Offer</button>
+                            <%}else{%>
+                                <button class="btn btn-outline-danger" onclick="removeOffer('<%= product._id %>')">Remove Offer</button>
+                            <% } %>
+                        </td>
+                        <td><%= product.salePrice.toFixed() %></td>
+                        <td><%= product.quantity %></td>
+
+                        <td id="status-<%= index %>"
+                            class="<%= product.isBlocked ? 'text-danger' : 'text-success' %>">
+                            <%= product.isBlocked ? 'Blocked' : 'Active' %>
+                        </td>
+                        <td>
+                            <a href="/admin/edit-product/<%= product._id %>" class="edit-btn btn btn-outline-dark">Edit</a>
+                            <button type="button"
+                                    class="<%= product.isBlocked ? 'btn btn-success' : 'btn btn-danger' %>"
+                                    id="product-<%= product._id %>"
+                                    data-product-id="<%= product._id %>"
+                                    data-is-blocked="<%= product.isBlocked %>"
+                                    onclick="toggleBlockProduct(this,'<%= index %>')">
+                                    <%= product.isBlocked ? 'Unblock' : 'Block' %>
+
+                            </button>
+                        </td>
+                    </tr>
+                    <% }) %>
+                <% }else{ %>
+                     <tr>
+                        <td colspan="8" style="text-align: center;">No products found</td>
+                    </tr>
+                    <% } %>
+            </tbody>
+        </table>
+
+
+        <!-- pagination -->
+        <% if (totalPages> 1) { %>
+            <div class="pagination">
+                <% if (currentPage> 1) { %>
+                    <a href="/admin/products?page=<%= currentPage - 1 %>&search=<%= search %>">Previous</a>
+                <% } %>
+
+                <% for(let i=1; i <=totalPages; i++) { %>
+                    <a href="/admin/products?page=<%= i %>&search=<%= search %>"
+                        class="<%= currentPage === i ? 'active' : '' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+
+                <% if (currentPage < totalPages) { %>
+                    <a href="/admin/products?page=<%= currentPage + 1 %>&search=<%= search %>">Next</a>
+                <% } %>
+            </div>
+            <% } %>
+    </main>
+    <%-include ('../../../views/partials/admin/footer')%>
+
+    <script>
+        async function addOffer(productId) {
+            const {value:percentage}=await Swal.fire({
+                title:"Offer in percentage",
+                input:"number",
+                inputLabel:"Percentage",
+                inputPlaceholder:"%"
+            });
+
+            if(percentage){
+                try {
+                    const response=await fetch('/admin/add-product-offer',{
+                        method:'POST',
+                        headers:{
+                            'content-type':'application/json'
+                        },
+                        body:JSON.stringify({
+                            percentage:percentage,
+                            productId:productId
+                        })
+                    })
+
+                    const responseJson=await response.json();
+                    if(response.ok && responseJson.status===true){
+                        Swal.fire(
+                            "Offer Added",
+                            `The offer has been added.<br><strong>${responseJson.message}</strong>`,
+                            "success"
+                        ).then(()=>{
+                            // Update the UI after adding offer
+                            const button = document.querySelector(`button[onclick="addOffer('${productId}')"]`);
+                            if (button) {
+                                button.textContent = "Remove Offer";
+                                button.classList.remove("btn-outline-primary");
+                                button.classList.add("btn-outline-danger");
+                                button.setAttribute("onclick", `removeOffer('${productId}')`);
+                                // Update the offer% text in the row
+                                const row = button.closest("tr");
+                                if (row) {
+                                    row.querySelector("td:nth-child(5) div:nth-child(1)").textContent = `Category Offer:${responseJson.categoryOffer} %`;
+                                    row.querySelector("td:nth-child(5) div:nth-child(2)").textContent = `Brand Offer:${responseJson.brandOffer} %`;
+                                    row.querySelector("td:nth-child(5) div:nth-child(3)").textContent = `Product Offer:${percentage} %`;
+
+                                    row.querySelector("td:nth-child(7)").textContent = responseJson.salePrice.toFixed();
+                                }
+                            }
+                        })
+                    }else{
+                        Swal.fire("Failed",responseJson.message || "Adding offer failed","error");
+                    }
+                } catch (error) {
+                    Swal.fire(
+                        "Error",
+                        "An error occured while adding the offer",
+                        "error"
+                    );
+
+                    console.log('Error Adding offer:',error)
+                }
+            }
+        }
+
+
+
+  async function removeOffer(productId) {
+            try {
+                const result =await Swal.fire({
+                    title:`Remove this offer?`,
+                    icon:'warning',
+                    showCancelButton:true,
+                    confirmButtonText:'Yes',
+                    cancelButtonText:'Cancel'
+                })
+                if(result.isConfirmed){
+                    const response=await fetch('/admin/remove-product-offer',{
+                        method:"POST",
+                        headers:{
+                        "content-type":"application/json"
+                        },
+                        body:JSON.stringify({
+                            productId:productId
+                        })
+                    })
+
+                    const responseJson=await response.json();
+
+                    if(response.ok && responseJson.status===true){
+                     Swal.fire(
+                        "Offer removed",
+                        "The offer has been removed",
+                        "success"
+                        ).then(()=>{
+                            // Update the UI after removing offer
+                            const button = document.querySelector(`button[onclick="removeOffer('${productId}')"]`);
+                            if (button) {
+                                button.textContent = "Add Offer";
+                                button.classList.remove("btn-outline-danger");
+                                button.classList.add("btn-outline-primary");
+                                button.setAttribute("onclick", `addOffer('${productId}')`);
+                                // Update the offer% text in the row
+                                const row = button.closest("tr");
+                                if (row) {
+                                    row.querySelector("td:nth-child(5) div:nth-child(3)").textContent = `Product Offer: 0 %`;
+
+                                    row.querySelector("td:nth-child(7)").textContent = responseJson.salePrice;
+                                    console.log("responseJson salePrice:",responseJson.salePrice);
+                                }
+                            }
+                        })
+                    }else{
+                        Swal.fire("Failed",responseJson.message || "Removing offer failed","error");
+                    }
+                }
+                
+            } catch (error) {
+                Swal.fire(
+                    "Error",
+                    "An error occured while removing the offer",
+                    "error"
+                );
+                console.log("Error removing offer:",error)
+            }
+        }
+
+
+
+        async function toggleBlockProduct(button,index) {
+    try {
+      const productId=button.dataset.productId;
+      const isBlocked=button.dataset.isBlocked==='true';
+      const action=isBlocked ? "Unblock" : "Block";
+
+      if(action==="Block"){
+        const result=await Swal.fire({
+          title:`Are you sure you want to Block this product`,
+          icon:'warning',
+          showCancelButton:true,
+          confirmButtonText:'Yes, Block this product',
+          cancelButtonText:'Cancel'
+        });
+
+        if(result.isConfirmed){
+          const response=await fetch('/admin/block-product',{
+            method:'post',
+            headers:{
+              'Content-Type':'application/json'
+            },
+            body:JSON.stringify({productId})
+          });
+
+          const data=await response.json();
+          await Swal.fire("Done",data.message);
+          if(data.success){
+            const blockToggleButton=document.getElementById(`product-${productId}`);
+            blockToggleButton.textContent="Unblock";
+            blockToggleButton.className="";
+            blockToggleButton.classList.add('btn','btn-success')
+            blockToggleButton.dataset.isBlocked="true";
+
+            const status=document.getElementById(`status-${index}`);
+            status.innerText="Blocked";
+            status.className="";
+            status.classList.add('text-danger');
+          }
+        }
+      }
+
+
+      if(action==="Unblock"){
+        const result=await Swal.fire({
+          title:`Are you sure you want to Unblock this product`,
+          icon:'warning',
+          showCancelButton:true,
+          confirmButtonText:'Yes, Unblock this product',
+          cancelButtonText:'Cancel'
+        });
+
+        if(result.isConfirmed){
+          const response=await fetch('/admin/unblock-product',{
+            method:'post',
+            headers:{
+              'Content-Type':'application/json'
+            },
+            body:JSON.stringify({productId})
+          });
+
+          const data=await response.json();
+          await Swal.fire("Done",data.message);
+          if(data.success){
+            const blockToggleButton=document.getElementById(`product-${productId}`);
+            blockToggleButton.textContent="Block";
+            blockToggleButton.className="";
+            blockToggleButton.classList.add('btn','btn-danger')
+            blockToggleButton.dataset.isBlocked="false";
+
+            const status=document.getElementById(`status-${index}`);
+            status.innerText="Active";
+            status.className="";
+            status.classList.add('text-success');
+          }
+        }
+      }
+    } catch (error) {
+      console.log("error fetching:",error)
+    }
+  }
+    </script>
