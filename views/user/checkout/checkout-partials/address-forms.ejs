@@ -1,0 +1,218 @@
+<% if(addresses && addresses.length > 0){ %>
+    <% addresses.forEach((address,index)=>{ %>
+        <div>
+            <input type="radio" name="addressId" value="<%= address._id %>" <%=index===0 ? 'checked' : '' %> >
+            <%= address.addressType %> - 
+            <strong><%= address.name %></strong> -
+            <%= address.city %> -
+            <%= address.landMark %> - 
+            <%= address.state %> -
+            <%= address.pincode %> - 
+            +91 <%= address.phone %> -
+            +91<%= address.altPhone %>
+
+            <button id="editFormBtn<%= index %>" type="button" onclick="showEditAddressForm('<%= index %>')">
+                EditAddress
+            </button>
+            <div id="editAddressFormContainer<%= index %>" style="display: none;">
+                <form action="" id="editAddressForm<%= index %>">
+                        <!-- hidden input to store address _id -->
+                        <input type="hidden" name="addressId" id="addressId" value="<%= address._id %>">
+
+                        <div class="row mb-50">
+                            <div class="form-group col-md-4">
+                                <label for="addressType">Address Type:</label>
+                                <input type="text" class="form-control border-3" value="<%= address.addressType %>"
+                                    id="addressType" name="addressType" required>
+                                <div id="addressType-error<%= index %>" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="name">Name:</label>
+                                <input type="text" class="form-control border-3" value="<%= address.name %>" id="name"
+                                    name="name" required>
+                                <div id="addressName-error<%= index %>" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="city">City:</label>
+                                <input type="text" class="form-control border-3" id="city" value="<%= address.city %>"
+                                    name="city" required>
+                                <div id="addressCity-error<%= index %>" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="form-group col-md-4">
+                                <label for="landMark">Landmark:</label>
+                                <input type="text" class="form-control border-3" value="<%= address.landMark%>"
+                                    id="landMark" name="landMark" required>
+                                <div id="addressLandmark-error<%= index %>" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="state">State:</label>
+                                <input type="text" class="form-control border-3" value="<%= address.state %>" id="state"
+                                    name="state" required>
+                                <div id="addressState-error<%= index %>" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="pincode">Pincode:</label>
+                                <input type="number" class="form-control border-3" value="<%= address.pincode %>"
+                                    id="pincode" name="pincode" required>
+                                <div id="addressPincode-error<%= index %>" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="form-group col-md-4">
+                                <label for="phone">Phone:</label>
+                                <input type="number" class="form-control border-3" id="phone" value="<%= address.phone %>"
+                                    name="phone" required>
+                                <div id="addressPhone-error<%= index %>" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="altPhone">Alternate Phone:</label>
+                                <input type="number" class="form-control border-3" id="altPhone"
+                                    value="<%= address.altPhone %>" name="altPhone" required>
+                                <div id="addressAltPhone-error<%= index %>" class="error-message"></div>
+                            </div>
+                        </div>
+                        <button type="submit" id="submitButton" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+
+            
+        </div>
+    <% }) %>
+    <div>
+        <button type="button" onclick="showAddAddressForm()">Add new address</button>
+        <div id="addNewAddressFormContainer" style="display: none;">
+                <form id="addAddressForm">
+                <input type="hidden" name="userId" value="<%= user._id %>">
+
+                <div class="row mb-50">
+                            <div class="form-group col-md-4">
+                                <label for="addressType">Address Type:</label>
+                                <input type="text" class="form-control border-3"
+                                    id="addressType" name="addressType" required>
+                                <div id="addressType-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="name">Name:</label>
+                                <input type="text" class="form-control border-3"  id="name"
+                                    name="name" required>
+                                <div id="addressName-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="city">City:</label>
+                                <input type="text" class="form-control border-3" id="city"
+                                    name="city" required>
+                                <div id="addressCity-error" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="form-group col-md-4">
+                                <label for="landMark">Landmark:</label>
+                                <input type="text" class="form-control border-3" 
+                                    id="landMark" name="landMark" required>
+                                <div id="addressLandmark-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="state">State:</label>
+                                <input type="text" class="form-control border-3" id="state"
+                                    name="state" required>
+                                <div id="addressState-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="pincode">Pincode:</label>
+                                <input type="number" class="form-control border-3" 
+                                    id="pincode" name="pincode" required>
+                                <div id="addressPincode-error" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="form-group col-md-4">
+                                <label for="phone">Phone:</label>
+                                <input type="number" class="form-control border-3" id="phone" 
+                                    name="phone" required>
+                                <div id="addressPhone-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="altPhone">Alternate Phone:</label>
+                                <input type="number" class="form-control border-3" id="altPhone"
+                                     name="altPhone" required>
+                                <div id="addressAltPhone-error" class="error-message"></div>
+                            </div>
+                        </div>
+                <button type="submit" id="submitButton" class="btn btn-primary">Submit</button>
+                <button type="button" onclick="hideAddAddressForm()">Cancel</button>
+
+            </form>
+        </div>
+        
+    </div>
+<% }else{ %>
+    <div>
+        <div>Add new address</div>
+        <div id="addNewAddressFormContainer">
+                <form id="addAddressForm">
+                <input type="hidden" name="userId" value="<%= user._id %>">
+
+                <div class="row mb-50">
+                            <div class="form-group col-md-4">
+                                <label for="addressType">Address Type:</label>
+                                <input type="text" class="form-control border-3"
+                                    id="addressType" name="addressType" required>
+                                <div id="addressType-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="name">Name:</label>
+                                <input type="text" class="form-control border-3"  id="name"
+                                    name="name" required>
+                                <div id="addressName-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="city">City:</label>
+                                <input type="text" class="form-control border-3" id="city"
+                                    name="city" required>
+                                <div id="addressCity-error" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="form-group col-md-4">
+                                <label for="landMark">Landmark:</label>
+                                <input type="text" class="form-control border-3" 
+                                    id="landMark" name="landMark" required>
+                                <div id="addressLandmark-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="state">State:</label>
+                                <input type="text" class="form-control border-3" id="state"
+                                    name="state" required>
+                                <div id="addressState-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="pincode">Pincode:</label>
+                                <input type="number" class="form-control border-3" 
+                                    id="pincode" name="pincode" required>
+                                <div id="addressPincode-error" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="form-group col-md-4">
+                                <label for="phone">Phone:</label>
+                                <input type="number" class="form-control border-3" id="phone" 
+                                    name="phone" required>
+                                <div id="addressPhone-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="altPhone">Alternate Phone:</label>
+                                <input type="number" class="form-control border-3" id="altPhone"
+                                     name="altPhone" required>
+                                <div id="addressAltPhone-error" class="error-message"></div>
+                            </div>
+                        </div>
+                <button type="submit" id="submitButton" class="btn btn-primary">Submit</button>
+                
+            </form>
+        </div>
+        
+    </div>
+<% } %>
+

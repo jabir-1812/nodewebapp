@@ -1,0 +1,90 @@
+<%-include ('../../../views/partials/user/header')%>
+
+<%-include ('../../../views/user/profile/profile-partials/sidebar')%>
+
+<style>
+    .main-content {
+        margin-left: 220px; /* matches sidebar width */
+        padding: 90px 30px 30px;
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .profile-container {
+        max-width: 800px;
+        margin: auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .profile-container h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .profile-info {
+        margin-bottom: 20px;
+        font-size: 16px;
+        color: #444;
+    }
+
+    .profile-info span {
+        font-weight: bold;
+        color: #222;
+        margin-right: 5px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 10px 18px;
+        background-color: #1976d2;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .btn:hover {
+        background-color: #1259a5;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+        background-color: #565e64;
+    }
+</style>
+
+<main class="main-content">
+    <div class="profile-container">
+        <h1>User Profile</h1>
+
+        <div class="profile-info"><span>Name:</span> <%= user.name %></div>
+        <div class="profile-info"><span>Phone:</span> <%= user.phone %></div>
+        <div class="profile-info">
+            <span>Email:</span> <%= user.email %>
+        </div>
+
+        <div class="actions">
+            <a href="/change-email"><button class="btn">Change Email</button></a>
+            <a href="/change-password"><button class="btn btn-secondary">Change Password</button></a>
+        </div>
+    </div>
+</main>
+
+<%-include ('../../../views/partials/user/footer')%>

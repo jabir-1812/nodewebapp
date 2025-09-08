@@ -1,0 +1,110 @@
+<style>
+  .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-content nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.main-content nav h1 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin: 0;
+}
+</style>
+
+<%-include ('../../../views/partials/admin/header')%>
+
+  <section class="main-content">
+
+    <nav>
+      <h1>Brand Management</h1>
+      <a href="/admin/add-brand">Add New Brand</a>
+    </nav>
+
+
+    <div class="search-container">
+      <form action="/admin/brands" method="GET">
+        <input type="text" name="search" value="<%= search %>" placeholder="Search brands...">
+        <button type="submit" class="btn btn-dark">Search</button>
+        <% if (search) { %>
+          <a href="/admin/brands" class="btn btn-outline-dark">Clear</a>
+          <% } %>
+      </form>
+    </div>
+
+
+    <table>
+      <thead>
+        <tr>
+          <th>Brand</th>
+          <th>Logo</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (brands.length> 0){ %>
+          <% brands.forEach((brand,index)=>{ %>
+            <tr>
+              <td>
+                <%= brand.brandName %>
+              </td>
+              <td>
+                <img src="/uploads/resized-images/<%= brand.brandImage[0] %>" alt="<%= brand.brandName %>" />
+              </td>
+              <% if(brand.isBlocked===true){ %>
+                <td>Blocked</td>
+                <% }else{ %>
+                <td>Active</td>
+                 <% } %>
+                <td>
+                  <a href="">Edit</a>
+                  
+                    <button type="button">
+                      <%= brand.isBlocked ? "Unblock" : "Block" %>
+                    </button>
+                  
+
+                </td>
+            </tr>
+            <% }) %>
+          <% }else{ %>
+          <tr>
+            <td>No brands found</td>
+          </tr>
+          <% } %>
+      </tbody>
+    </table>
+
+    
+    <% if (totalPages > 1) { %>
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="/admin/brands?page=<%= currentPage - 1 %>&search=<%= search %>">Previous</a>
+            <% } %>
+
+            <% for(let i=1; i <=totalPages; i++) { %>
+                <a href="/admin/brands?page=<%= i %>&search=<%= search %>" class="<%= currentPage === i ? 'active' : '' %>">
+                    <%= i %>
+                </a>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+                <a href="/admin/brands?page=<%= currentPage + 1 %>&search=<%= search %>">Next</a>
+            <% } %>
+        </div>
+    <% } %>
+  </section>
+
+  <%-include ('../../../views/partials/admin/footer')%>

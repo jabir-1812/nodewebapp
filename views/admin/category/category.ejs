@@ -1,0 +1,306 @@
+<%-include ('../../../views/partials/admin/header')%>
+
+    <style>
+.main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-content nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.main-content nav h1 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin: 0;
+}
+/* 
+.main-content nav a {
+    background-color: #3498db;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.main-content nav a:hover {
+    background-color: #2980b9;
+} */
+
+.search-container {
+    margin-bottom: 1.5rem;
+}
+
+.search-container form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-container input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    flex-grow: 1;
+    max-width: 400px;
+}
+
+/* .search-container button {
+    background-color: #2b2d42;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.search-container button:hover {
+    background-color: #4c529a;
+} */
+
+.search-container .clear-btn {
+    background-color: #ffffff;
+    color: #2b2d42;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+
+.search-container .clear-btn:hover {
+    background-color: #c0392b;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #2b2d42;
+    color: white;
+    font-weight: 500;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.text-danger {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.text-success {
+    color: #2ecc71;
+    font-weight: 500;
+}
+
+/* .edit-btn {
+    background-color: #33b4ff;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-right: 0.5rem;
+    transition: background-color 0.3s;
+} */
+
+/* .edit-btn:hover {
+    background-color: #134460;
+} */
+
+/* .list-unlist-form button {
+    background-color: #013d5e;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.list-unlist-form button:hover {
+    background-color: #000000;
+    color: white;
+} */
+ .btn {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-dark {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+}
+
+.btn-dark:hover {
+    background-color: #1a252f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-outline-dark {
+    background-color: transparent;
+    color: #2c3e50;
+    border: 1px solid #2c3e50;
+    margin-left: 1rem;
+}
+
+.btn-outline-dark:hover {
+    background-color: #f8f9fa;
+    color: #1a252f;
+    border-color: #1a252f;
+    transform: translateY(-1px);
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.pagination a {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #3498db;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.pagination a:hover {
+    background-color: #f5f5f5;
+}
+
+.pagination a.active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+</style>
+
+<section class="main-content">
+    <nav>
+        <h1>Category Management</h1>
+        <a href="/admin/add-category" class="btn btn-dark">Add Category</a>
+    </nav>
+
+    <div class="search-container">
+        <form action="/admin/category" method="GET">
+            <input type="text" name="search" value="<%= search %>" placeholder="Search categories...">
+            <button type="submit" class="btn btn-dark">Search</button>
+            <% if (search) { %>
+                <a href="/admin/category" class="btn btn-outline-dark">Clear</a>
+            <% } %>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Created At</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (categories.length > 0) { %>
+                <% categories.forEach((category,index)=> { %>
+                    <tr>
+                        <td><%= category.name %></td>
+                        <td><%= category.description || '-' %></td>
+                        <td><%= new Date(category.createdAt).toLocaleDateString() %></td>
+                        <% if(category.isDeleted){ %>
+                            <td class="text-danger">Inactive</td>
+                        <% }else{ %>
+                            <td class="text-success">Active</td>
+                        <% } %>
+                        <td>
+                            <a href="/admin/edit-category/<%= category._id %>" class="edit-btn btn btn-outline-dark">Edit</a>
+                            <form action="/admin/list-unlist-category/<%= category._id %>" method="POST" class="list-unlist-form" style="display: inline;">
+                                <button type="submit" class="btn btn-dark"><%= category.isDeleted ? "List" : "Unlist" %></button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="5" style="text-align: center;">No categories found</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+
+    <% if (totalPages > 1) { %>
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+                <a href="/admin/category?page=<%= currentPage - 1 %>&search=<%= search %>">Previous</a>
+            <% } %>
+
+            <% for(let i=1; i <=totalPages; i++) { %>
+                <a href="/admin/category?page=<%= i %>&search=<%= search %>" class="<%= currentPage === i ? 'active' : '' %>">
+                    <%= i %>
+                </a>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+                <a href="/admin/category?page=<%= currentPage + 1 %>&search=<%= search %>">Next</a>
+            <% } %>
+        </div>
+    <% } %>
+</section>
+    <%-include ('../../../views/partials/admin/footer')%>
+       <script>
+    document.querySelectorAll('.list-unlist-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const action = form.querySelector('button').textContent.trim();
+
+            Swal.fire({
+                title: `Are you sure you want to ${action} this category?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'Cancel',
+            }).then(result => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>

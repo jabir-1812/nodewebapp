@@ -1,1 +1,69 @@
-<footer>footer</footer>
+<style>
+  /* Footer Styles */
+.admin-footer {
+  background-color: #ffffff;
+  padding: 1rem 2rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 90;
+
+  /* instead of left positioning */
+  margin-left: 250px; /* same as sidebar width */
+  transition: margin-left 0.3s ease;
+}
+
+.admin-footer p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-links a {
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: var(--primary-color);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .admin-footer {
+    margin-left: 70px; /* collapsed sidebar */
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    margin-left: 0; /* no sidebar on small screens */
+  }
+  
+  .footer-links {
+    gap: 1rem;
+  }
+}
+
+</style>
+
+<footer class="admin-footer">
+  <p>© 2023 Shop Name. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="/contact">Contact Support</a>
+  </div>
+</footer>

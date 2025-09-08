@@ -1,0 +1,48 @@
+<style>
+    .side-bar {
+        position: fixed;
+        top: 70px; /* adjust if your header is taller */
+        left: 0;
+        width: 220px;
+        height: 100%;
+        background-color: #fff;
+        border-right: 1px solid #e0e0e0;
+        padding: 20px 0;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        font-family: Arial, sans-serif;
+    }
+
+    .side-bar div {
+        margin: 8px 0;
+    }
+
+    .side-bar a {
+        display: block;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        font-size: 15px;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+    }
+
+    .side-bar a:hover {
+        background-color: #f1f5ff;
+        color: #1976d2;
+        padding-left: 24px; /* slight shift effect */
+    }
+
+    .side-bar a.active {
+        background-color: #1976d2;
+        color: #fff;
+        font-weight: bold;
+    }
+</style>
+
+<div class="side-bar">
+    <div><a href="/user-profile" class="active">My Profile</a></div>
+    <div><a href="/user-profile/addresses">Manage My Address</a></div>
+    <div><a href="/user-profile/orders">My Orders</a></div>
+    <div><a href="/user-profile/wallet">My Wallet</a></div>
+    <div><a href="/logout">Logout</a></div>
+</div>

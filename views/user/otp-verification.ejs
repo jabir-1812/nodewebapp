@@ -109,6 +109,9 @@
                         timer:1500
                     }).then(()=>{
                         window.location.href=response.redirectUrl;
+                        //after successful otp verification,
+                        //we passing the '/' as redirectUrl from the back-end
+                        //so after successfull verification user redirected to '/'
                     })
                 }else{
                     Swal.fire({

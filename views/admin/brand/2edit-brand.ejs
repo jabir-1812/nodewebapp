@@ -1,0 +1,178 @@
+<style>
+    .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+</style>
+
+<%-include ('../../../views/partials/admin/header')%>
+
+<main class="main-content">
+    <h2>Edit Brand</h2>
+    <form id="editBrandForm" enctype="multipart/form-data">
+
+        <% if (error) { %>
+            <div>
+                <% error.forEach(err => { %>
+                    <p><%= err.msg %></p>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <!-- Brand Name -->
+        <div class="form-group">
+            <label for="brandName">Brand Name:</label>
+            <input type="text" id="brandName" name="name" value="<%= brand.brandName %>" placeholder="Enter brand name">
+            <div id="brandName-error" class="error-message"></div>
+        </div>
+
+        <!-- Existing Image -->
+        <div class="form-group" id="existingImageContainer" style="<%= brand.brandImage ? '' : 'display:none;' %>">
+            <label>Existing Brand Logo:</label>
+            <div>
+                <img src="/uploads/resized-images/<%= brand.brandImage %>" alt="Brand Logo" style="max-width: 150px;">
+                <button type="button" id="removeExistingImage" class="btn btn-sm btn-danger">Remove</button>
+            </div>
+        </div>
+
+        <!-- Upload New Image -->
+        <div class="form-group" id="newImageContainer" style="<%= brand.brandImage ? 'display:none;' : '' %>">
+            <label for="imageInputField">Choose New Brand Logo:</label>
+            <input type="file" name="image" id="imageInputField" accept="image/*">
+            <div id="imageCropPreview" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Hidden flag for removed image -->
+        <input type="hidden" name="removeExisting" id="removeExisting" value="false">
+
+        <!-- Submit -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-dark">Update Brand</button>
+            <a href="/admin/brands" class="btn btn-outline-dark">Cancel</a>
+        </div>
+    </form>
+</main>
+
+<%-include ('../../../views/partials/admin/footer')%>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<script>
+let cropper;
+const imageInput = document.getElementById('imageInputField');
+const previewContainer = document.getElementById('imageCropPreview');
+const form = document.getElementById('editBrandForm');
+const removeExisting = document.getElementById('removeExisting');
+
+let croppedFile = null;
+
+// Remove existing image
+document.getElementById('removeExistingImage')?.addEventListener('click', () => {
+    document.getElementById('existingImageContainer').style.display = 'none';
+    document.getElementById('newImageContainer').style.display = 'block';
+    removeExisting.value = 'true';
+});
+
+imageInput?.addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.style.maxWidth = '100%';
+
+        img.onload = () => {
+            previewContainer.innerHTML = '';
+            previewContainer.appendChild(img);
+
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(img, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+            });
+
+            // Save Crop Button
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.innerText = 'Save Crop';
+            saveBtn.className = 'btn btn-success mt-2';
+            saveBtn.onclick = () => {
+                const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+                canvas.toBlob((blob) => {
+                    croppedFile = new File([blob], 'cropped-image.png', { type: 'image/png' });
+
+                    // Show preview
+                    const previewImg = new Image();
+                    previewImg.src = URL.createObjectURL(blob);
+                    previewImg.style.maxWidth = '150px';
+
+                    previewContainer.innerHTML = '';
+                    previewContainer.appendChild(previewImg);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.innerText = 'Remove';
+                    removeBtn.className = 'btn btn-sm btn-danger mt-2';
+                    removeBtn.onclick = () => {
+                        previewContainer.innerHTML = '';
+                        imageInput.value = '';
+                        croppedFile = null;
+                    };
+                    previewContainer.appendChild(removeBtn);
+
+                    cropper.destroy();
+                }, 'image/png');
+            };
+
+            previewContainer.appendChild(saveBtn);
+        };
+    };
+
+    reader.readAsDataURL(file);
+});
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append('name', document.getElementById('brandName').value);
+    formData.append('removeExisting', removeExisting.value);
+
+    if (croppedFile) {
+        formData.append('image', croppedFile);
+    }
+
+    // Send using fetch
+    try {
+        const brandId = "<%= brand._id %>"; // dynamically injected by EJS
+        const response = await fetch(`/admin/edit-brand/${brandId}`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert('Brand updated successfully!');
+            window.location.href = '/admin/brands'; // Redirect to brand list
+        } else {
+            alert('Error: ' + (result.message || 'Something went wrong.'));
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Upload failed!');
+    }
+});
+</script>
+
+
+

@@ -1,0 +1,58 @@
+<link rel="stylesheet" href="/admin/customers.css">
+
+
+
+<%-include ('../../views/partials/admin/header')%>
+
+
+<div class="main-content">
+  <!-- search users -->
+  <form action="/admin/users" method="get" class="search-form">
+    <input type="text" name="search" placeholder="Search customers...">
+    <button type="submit">Search</button>
+  </form>
+
+  <!-- users lists -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% for(let i=0;i<data.length;i++){ %>
+          <tr>
+            <td><%=data[i].name%></td>
+            <td><%=data[i].email%></td>
+            <td><%=data[i].phone || 'N/A'%></td>
+            <td>
+              <%if(data[i].isBlocked===false){%>
+                <a href="/admin/block-customer?id=<%=data[i]._id%>" class="btn btn-danger">Block</a>
+              <% }else{ %>
+                <a href="/admin/unblock-customer?id=<%= data[i]._id %>" class="btn btn-success">Unblock</a>
+              <% } %>
+            </td>
+          </tr>
+        <%}%>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <nav>
+    <ul class="pagination">
+      <%for(let i=1;i<=totalPages;i++){ %>
+        <li class="page-item <%= (i===currentPage) ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= i %>"><%=i %></a>
+        </li>
+      <%}%>
+    </ul>
+  </nav>
+</div>
+
+ <%-include ('../../views/partials/admin/footer')%>

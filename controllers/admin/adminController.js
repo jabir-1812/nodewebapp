@@ -7,26 +7,29 @@ const loadLogin=(req,res)=>{
     if(req.session.admin){
         return res.redirect('/admin')
     }
-    res.render('./admin/admin-login',{title:"Admin Login",message:null})
+    res.render('./admin/login',{title:"Admin Login",message:null})
 }
 
 
 const login=async (req,res)=>{
     try {
         const {email,password}=req.body;
+        console.log(`email:${email}
+            password:${password}`)
         const admin=await User.findOne({email,isAdmin:true});
+        console.log("admin=====>",admin)
+        
         if(admin){
-            
-            const passwordMatch=bcrypt.compare(password,admin.password);
+            console.log("if case worked=====")
+            const passwordMatch=await bcrypt.compare(password,admin.password);
             if(passwordMatch){
-                req.session.admin=true;
+                req.session.admin=admin._id;
                 return res.redirect('/admin')
             }else{
-                return res.redirect('/admin/login')
+                return res.render('./admin/login',{title:"Admin Login",message:"email or password do not match"})
             }
-
         }else{
-            return res.redirect('/admin/login')
+            return res.render('./admin/login',{title:"Admin Login",message:"admin not found"})
         }
     } catch (error) {
     console.log("Login error:",error)

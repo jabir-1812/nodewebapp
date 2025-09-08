@@ -1,0 +1,438 @@
+<style>
+  /* Main Layout */
+  .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  /* Form Header */
+  .main-content h2 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    font-weight: 600;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  /* Form Elements */
+  .form-group {
+    margin-bottom: 1.75rem;
+    max-width: 600px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #ffffff;
+    font-size: 0.95rem;
+  }
+
+  .form-group input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+  }
+
+  .form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #000000;
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15);
+  }
+
+  /* File Input Styling */
+  .file-input-container {
+    position: relative;
+    margin-top: 0.5rem;
+  }
+
+  .file-input-container input[type="file"] {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+  }
+
+  .file-input-label {
+    display: inline-block;
+    padding: 0.65rem 1.25rem;
+    background-color: #000000;
+    color: rgb(255, 255, 255);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .file-input-label:hover {
+    background-color: #555555;
+  }
+
+  /* Image Preview Area */
+  #preview {
+    width: 100%;
+    min-height: 200px;
+    margin: 1rem 0;
+    border: 2px dashed #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #preview img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Cropper Controls */
+  .cropper-controls {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  /* Error Handling */
+  .error-container {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.75rem;
+    border: 1px solid #f5c6cb;
+  }
+
+  .error-container p {
+    margin: 0;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .error-container p:last-child {
+    margin-bottom: 0;
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  /* Form Actions */
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+
+  /* .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+  }
+
+  .btn-dark {
+    background-color: #000000;
+    color: white;
+  }
+
+  .btn-dark:hover {
+    background-color: #454545;
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-dark {
+    background-color: transparent;
+    color: #000000;
+    border: 1px solid #000000;
+  }
+
+  .btn-outline-dark:hover {
+    background-color: #cdcdcd;
+  }
+
+  .btn-outline-danger {
+    background-color: transparent;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+  }
+
+  .btn-outline-danger:hover {
+    background-color: #e1e1e1;
+  } */
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0;
+      padding: 1.5rem;
+    }
+    
+    .form-actions {
+      flex-direction: column;
+    }
+    
+    /* .btn {
+      width: 100%;
+    } */
+  }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<%-include ('../../../views/partials/admin/header')%>
+
+<main class="main-content">
+    <h2>Add New Brand</h2>
+    
+    <% if (error) { %>
+        <div class="error-container">
+            <% error.forEach(err => { %>
+                <p><%= err.msg %></p>
+            <% }) %>
+        </div>
+    <% } %>
+
+    <form action="/admin/add-brand" id="addBrandForm" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="brandName">Brand Name</label>
+            <input type="text" id="brandName" name="name" value="<%= formData.name || '' %>" 
+                   placeholder="Enter brand name" required>
+            <div id="brandName-error" class="error-message"></div>
+        </div>
+        
+        <div class="form-group">
+            <label>Brand Logo</label>
+            <div id="preview">
+                <% if (formData.image) { %>
+                    <img src="/uploads/resized-images/<%= formData.image %>" alt="Current brand logo">
+                <% } else { %>
+                    <p>No image selected</p>
+                <% } %>
+            </div>
+            <div class="file-input-container">
+                <label for="imageInputField" class="file-input-label">
+                    <i class="fas fa-upload"></i> Choose Image
+                </label>
+                <input type="file" name="image" id="imageInputField" accept="image/*">
+            </div>
+            <div id="brandImage-error" class="error-message"></div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-dark">
+                <i class="fas fa-save"></i> Submit
+            </button>
+            <a href="/admin/brands" class="btn btn-outline-dark">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</main>
+
+<%-include ('../../../views/partials/admin/footer')%>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script>
+  const form = document.getElementById('addBrandForm');
+  const brandNameError = document.getElementById('brandName-error');
+  const brandImageError = document.getElementById('brandImage-error');
+  const errorElements = document.getElementsByClassName('error-message');
+  const preview = document.getElementById('preview');
+  const croppedImage = new Array(1).fill(null);
+
+  // Image preview and cropping functionality
+  const imageInputField = document.getElementById('imageInputField');
+  imageInputField.addEventListener('change', function() {
+    preview.innerHTML = '';
+    brandImageError.style.display = 'none';
+    
+    if(!imageInputField.files || !imageInputField.files[0]) {
+      return;
+    }
+    
+    const file = imageInputField.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      const img = document.createElement('img');
+      img.src = reader.result;
+      img.style.maxWidth = '100%';
+      preview.appendChild(img);
+
+      const cropper = new Cropper(img, {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 1,
+        responsive: true,
+        guides: false
+      });
+
+      const controlsDiv = document.createElement('div');
+      controlsDiv.className = 'cropper-controls';
+      
+      const cropButton = document.createElement('button');
+      cropButton.type = "button";
+      cropButton.textContent = 'Crop & Save';
+      cropButton.classList.add('btn', 'btn-dark');
+      
+      const cancelButton = document.createElement('button');
+      cancelButton.type = "button";
+      cancelButton.textContent = 'Cancel';
+      cancelButton.classList.add('btn', 'btn-outline-dark');
+      cancelButton.onclick = () => {
+        preview.innerHTML = '';
+        imageInputField.value = '';
+      };
+
+      controlsDiv.appendChild(cropButton);
+      controlsDiv.appendChild(cancelButton);
+      preview.appendChild(controlsDiv);
+
+      cropButton.onclick = () => {
+        const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+        canvas.toBlob(blob => {
+          croppedImage[0] = { blob, name: file.name };
+          let fileName = file.name;
+          let imgFile = new File([blob], fileName, { type: blob.type });
+          
+          const fileList = new DataTransfer();
+          fileList.items.add(imgFile);
+          imageInputField.files = fileList.files;
+
+          preview.innerHTML = '';
+
+          const croppedImg = document.createElement('img');
+          croppedImg.src = URL.createObjectURL(blob);
+          croppedImg.style.maxWidth = '100%';
+          preview.appendChild(croppedImg);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.textContent = 'Remove Image';
+          removeBtn.type = 'button';
+          removeBtn.classList.add('btn', 'btn-outline-danger', 'mt-2');
+          removeBtn.onclick = () => {
+            croppedImage[0] = null;
+            imageInputField.value = '';
+            preview.innerHTML = '<p>No image selected</p>';
+          };
+          preview.appendChild(removeBtn);
+        });
+      };
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  // Form validation
+  form.addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    // Reset error messages
+    Array.from(errorElements).forEach(element => {
+      element.innerHTML = "";
+      element.style.display = 'none';
+    });
+
+    const brandName = document.getElementById('brandName').value;
+    const imageInputField = document.getElementById('imageInputField');
+    
+    // Validate brand name
+    if(brandName.trim() === "") {
+      brandNameError.innerText = "Brand name is required";
+      brandNameError.style.display = 'block';
+      return;
+    }
+    
+    if(!/^[a-zA-Z0-9\s\-&]+$/.test(brandName.trim())) {
+      brandNameError.innerText = "Only letters, numbers, spaces, hyphens, and ampersands are allowed";
+      brandNameError.style.display = 'block';
+      return;
+    }
+
+    // Validate image
+    if(!imageInputField.files || !imageInputField.files[0]) {
+      brandImageError.innerText = "Please select an image";
+      brandImageError.style.display = 'block';
+      return;
+    }
+
+    const croppedImageCount = croppedImage.filter(img => img !== null).length;
+    if(croppedImageCount < 1) {
+      brandImageError.innerText = "Please crop and save your image";
+      brandImageError.style.display = 'block';
+      return;
+    }
+
+    // Submit form
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if(response.ok) {
+        Swal.fire({
+          title: "Success!",
+          text: "Brand added successfully",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          window.location.href = '/admin/brands';
+        });
+      } else {
+        Swal.fire({
+          title: "Error!",
+          text: result.message || "Failed to add brand",
+          icon: "error"
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error!",
+        text: "An unexpected error occurred",
+        icon: "error"
+      });
+      console.error('Error:', error);
+    }
+  });
+</script>

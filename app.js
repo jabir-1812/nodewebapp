@@ -28,8 +28,9 @@ app.use(session({
     }
 }))
 
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.initialize());// Start Passport or using passport log in & out features 
+app.use(passport.session());// Let Passport store user in session (stay logged in)
+
 
 
 app.set('view engine','ejs');

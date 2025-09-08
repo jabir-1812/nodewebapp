@@ -1,0 +1,472 @@
+<style>
+    .error-message{
+        color: red;
+        font-size: smaller;
+    }
+</style>
+
+<%-include ('../../views/partials/user/header') %>
+
+    <h1 style="text-align: center;">Checkout</h1>
+
+    <section class="mt-50 mb-50">
+        <div class="container">
+
+            <!-- addresses -->
+            <div class="row">
+
+                <h3>Address</h3>
+
+                    <div id="address-section">
+                    <% if (addresses.length === 0) { %>
+                        <p>No saved addresses.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">Add New Address</button>
+                    <% } else { %>
+                        <% addresses.forEach(address => { %>
+                        <div class="border p-2 mb-2">
+                            <input type="radio" name="addressId" value="<%= address._id %>">
+                            <strong><%= address.addressType %></strong> - <%= address.name %>, <%= address.city %>, <%= address.landMark %> - <%= address.pincode %> -
+                            <%= address.phone %>, <%= address.altPhone %>
+                            <button class="btn btn-sm btn-secondary edit-btn" data-id="<%= address._id %>">Edit</button>
+                        </div>
+                        <% }) %>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">Add Another Address</button>
+                    <% } %>
+                    </div>
+
+                    <!-- Add Address Modal -->
+                    <div class="modal fade" id="addAddressModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <form id="addAddressForm" class="modal-content">
+                        <div class="modal-header"><h5>Add Address</h5></div>
+                        <div class="modal-body">
+                            <input type="text" name="addressType" placeholder="Address Type" class="form-control mb-2" required>
+                            <input type="text" name="name" placeholder="Name" class="form-control mb-2" required>
+                            <input type="text" name="city" placeholder="City" class="form-control mb-2" required>
+                            <input type="text" name="landMark" placeholder="Landmark" class="form-control mb-2" required>
+                            <input type="text" name="state" placeholder="State" class="form-control mb-2" required>
+                            <input type="text" name="pincode" placeholder="PINCODE" class="form-control mb-2" required>
+                            <input type="text" name="phone" placeholder="Phone Number" class="form-control mb-2" required>
+                            <input type="text" name="altPhone" placeholder="Alternative Phone Number" class="form-control mb-2" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    <!-- Edit Address Modal -->
+                    <div class="modal fade" id="editAddressModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <form id="editAddressForm" class="modal-content">
+                        <input type="hidden" name="id">
+                        <div class="modal-header"><h5>Edit Address</h5></div>
+                        <div class="modal-body">
+                            <input type="hidden" name="addressId" class="form-control mb-2">
+                            <input type="text" name="addressType" placeholder="Address Type" class="form-control mb-2" required>
+                            <input type="text" name="name" placeholder="Name" class="form-control mb-2" required>
+                            <input type="text" name="city" placeholder="City" class="form-control mb-2" required>
+                            <input type="text" name="landMark" placeholder="Landmark" class="form-control mb-2" required>
+                            <input type="text" name="state" placeholder="State" class="form-control mb-2" required>
+                            <input type="text" name="pincode" placeholder="PINCODE" class="form-control mb-2" required>
+                            <input type="text" name="phone" placeholder="Phone Number" class="form-control mb-2" required>
+                            <input type="text" name="altPhone" placeholder="Alternative Phone Number" class="form-control mb-2" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">Update</button>
+                        </div>
+                        </form>
+                    </div>
+                    </div>
+
+                    <script>
+                    document.getElementById("addAddressForm").addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const formData = Object.fromEntries(new FormData(e.target).entries());
+
+                    const res = await fetch("/add-address-in-checkout", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(formData)
+                    });
+                    const newAddress = await res.json();
+                    console.log("newAddress====>",newAddress)
+
+                    // Append new address to page & select it
+                    const addressDiv = document.createElement("div");
+                    addressDiv.innerHTML = `
+                        <input type="radio" name="addressId" value="${newAddress._id}" checked>
+                        <strong>${newAddress.addressType} </strong>- ${newAddress.name}, ${newAddress.city},${newAddress.landMark}, ${newAddress.state} - ${newAddress.pincode} -${newAddress.phone} -${newAddress.altPhone}
+                        <button class="btn btn-sm btn-secondary edit-btn" data-id="${newAddress._id}">Edit</button>
+                    `;
+                    document.getElementById("address-section").appendChild(addressDiv);
+                    e.target.reset();
+                    bootstrap.Modal.getInstance(document.getElementById("addAddressModal")).hide();
+                    });
+
+                    // Handle edit button click
+                    document.addEventListener("click", async (e) => {
+                        if (e.target.classList.contains("edit-btn")) {
+                            const id = e.target.dataset.id;
+
+                            const res = await fetch(`/get-address-to-edit/${id}`);
+                            const data = await res.json();
+
+                            if (data.success) {
+                                const addr = data.address;
+                                console.log("data.address=====>",data.address)
+
+                                // Fill modal fields
+                                const form = document.getElementById("editAddressForm");
+                                form.querySelector("[name='addressId']").value = addr._id;
+                                form.querySelector("[name='addressType']").value = addr.addressType;
+                                form.querySelector("[name='name']").value = addr.name;
+                                form.querySelector("[name='city']").value = addr.city;
+                                form.querySelector("[name='landMark']").value = addr.landMark;
+                                form.querySelector("[name='state']").value = addr.state;
+                                form.querySelector("[name='pincode']").value = addr.pincode;
+                                form.querySelector("[name='phone']").value = addr.phone;
+                                form.querySelector("[name='altPhone']").value = addr.altPhone;
+
+                                // Show modal
+                                new bootstrap.Modal(document.getElementById("editAddressModal")).show();
+                            } else {
+                                alert("Address not found");
+                            }
+                        }
+                    });
+
+
+                    document.getElementById("editAddressForm").addEventListener("submit", async (e) => {
+                        e.preventDefault();
+
+                        const formData = Object.fromEntries(new FormData(e.target).entries());
+
+                        const res = await fetch("/edit-address-in-checkout", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(formData)
+                        });
+
+                        const data = await res.json();
+
+                        if (data.success) {
+                            const updated = data.address;
+
+                            // Update address text in the DOM
+                            const radio = document.querySelector(`input[value='${updated._id}']`);
+                            if (radio) {
+                                radio.parentNode.innerHTML = `
+                                    <input type="radio" name="addressId" value="${updated._id}" checked>
+                                   <strong>${updated.addressType} </strong>- ${updated.name}, ${updated.city},${updated.landMark}, ${updated.state} - ${updated.pincode} -${updated.phone} -${updated.altPhone}
+                                    <button class="btn btn-sm btn-secondary edit-btn" data-id="${updated._id}">Edit</button>
+                                `;
+                            }
+
+                            // Close modal
+                            bootstrap.Modal.getInstance(document.getElementById("editAddressModal")).hide();
+                        }
+                    });
+
+                    </script>
+                
+
+
+
+            </div>
+
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="col-9">
+                        <h3>Order Summary</h3>
+                        <div class="table-responsive">
+                        <table class="table shopping-summery text-center clean">
+                            <thead>
+                            <tr class="main-heading">
+                                <th scope="col">Image</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Remove</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            <% if (userCart && userCart.items.length> 0) { %>
+                                <% var x=0 %>
+                                <% for (let i=0; i < userCart.items.length;i++) { %>
+
+                                    <tr>
+
+                                    <td class="image product-thumbnail">
+                                        <img style="width: 40%;"
+                                            src="/uploads/resized-images/<%= userCart.items[i].productDetails.productImage[0] %>" alt="#" />
+                                        
+
+                                    </td>
+                                    <td class="product-des product-name">
+                                        <h5 class="product-name">
+                                        
+                                            <%= userCart.items[i].productDetails.productName %>
+                                        
+                                        </h5>
+                                        <p class="font-xs">
+                                        <%= userCart.items[i].productDetails.category?.name %><br />
+                                            <%= userCart.items[i].productDetails.brand?.brandName %>
+                                        </p>
+                                    </td>
+                                    <td class="price" data-title="Price">₹
+                                        <text id="subTotal<%= userCart.items[i].productDetails._id %>">
+                                            <%= userCart.items[i].productDetails.salePrice * userCart.items[i].quantity %>
+                                            <!-- <strike><%= userCart.items[i].productDetails.regularPrice * userCart.items[i].quantity %></strike> -->
+                                        </text><br>
+                                        
+                                        <small class="text-muted text-nowrap">
+                                            ₹<span id="price">
+                                            <%= userCart.items[i].productDetails.salePrice %>
+                                            ₹<strike><%= userCart.items[i].productDetails.regularPrice %></strike>
+                                            </span>/ per item 
+                                        </small>
+                                    </td>
+
+                                        <td class="text-center" data-title="Stock">
+                                        <div class="detail-qty border radius m-auto">
+                                            <div class="quantity-control">
+
+
+                                            <% if(userCart.items[i].productDetails.quantity !==0 ){ %>
+                                            <button class="btn btn-sm increment-button"
+                                                onclick="changeQuantity(
+                                                    '<%= userCart.items[i].productDetails._id %>',
+                                                    1,
+                                                    '<%= userCart.items[i].productDetails.salePrice %>',
+                                                    '<%= grandTotal %>'
+                                                )">+</button>
+
+
+                                            <input class="quantity-input" id="cartProductQuantity<%= userCart.items[i].productDetails._id %>"
+                                                value="<%=userCart.items[i].quantity %>" style="width: 45px;" type="text" readonly>
+                                            
+                                            <%= userCart.items[i].quantity %>
+                                            </p>
+
+
+                                            <button class="btn btn-sm decrement-button"
+                                                onclick="changeQuantity(
+                                                    '<%= userCart.items[i].productDetails._id %>',
+                                                    -1,
+                                                    '<%= userCart.items[i].productDetails.salePrice %>',
+                                                    '<%= grandTotal %>'
+                                                )">-</button>
+                                                <% }else{ %>
+                                                <h5 class="text-danger">Out Of Stock</h5>
+                                                <% } %>
+
+                                            </div>
+                                            <div>
+                                            <strong id="outOfStockMessage" class="text-danger"></strong>
+                                            </div>
+                                        </div>
+                                        </td>
+
+                                        <td class="action" data-title="Remove">
+                                        <a class="btn btn-sm" href="#"
+                                            onclick="removeItem('<%= userCart.items[i].productDetails._id %>')">
+                                            <i class="fi-rs-trash"></i>🗑️Remove
+                                        </a>
+                                        </td>
+
+                                        <% } %>
+
+                                        <% } else { %>
+                                    <tr>
+
+                                    <td colspan="2" class="text-center">
+                                        <p class="lead mb-4">No item found in Cart</p>
+                                    </td>
+                                    </tr>
+                                    <% } %>
+
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                    <h2>Choose Payment Method</h2>
+                    <div>
+                        <input type="radio" name="paymentOption" id="COD">
+                        <strong><label for="COD"> Cash On Delivery </label></strong>
+                    </div>
+                    
+                    <div>
+                        <input type="radio" name="paymentOption" id="UPI">
+                        <strong><label for="UPI"> UPI </label></strong>
+                    </div>
+            </div>
+
+            <div class="row">
+                <div class="col-9">
+                    <div class="border p-md-4 p-30 border-radius cart-totals">
+                        <div class="heading_s1 mb-3">
+                            <h4>PRICE DETAILS</h4>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <td class="cart_total_label">Shipping</td>
+                                        <td class="cart_total_amount">
+                                            <i class="ti-gift mr-5"></i>
+                                            Free Shipping
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="cart_total_label">Total</td>
+                                        <td class="cart_total_amount">
+                                            <span class="font-lg fw-900 text-brand">₹
+                                                <text id="grandTotal"><h2>
+                                                        <%= grandTotal %>/-
+                                                </h2></text>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <a href="#" class="btn btn-success"> <i class="fi-rs-box-alt mr-10"></i>
+                            Proceed
+                        </a>
+                    </div>
+                </div>
+            </div>
+             <script>
+                async function changeQuantity(productId,count,saleprice,grandTotal){
+                    // console.log('changeQuantity() started');
+                    document.getElementById('outOfStockMessage').innerHTML="";
+
+                    console.log('salePrice======>',saleprice);
+                    const currentQtyElement=document.getElementById(`cartProductQuantity${productId}`);
+                    let currentQty=currentQtyElement.value;
+                    const subtotalElement=document.getElementById(`subTotal${productId}`);
+                    const grandTotalElement=document.getElementById('grandTotal');
+                    // console.log('current Qty====>',currentQty);
+                    if(parseInt(currentQty)+count > 3){
+                        return Swal.fire({
+                            title:"Maximum limit is 3",
+                            icon:'warning',
+                            timer:5000
+                        })
+                    }
+                    if(parseInt(currentQty)+count <1){
+                        console.log("minimum limit is 1")
+                        return;
+                    }
+
+
+                    const response=await fetch('/change-cart-quantity',{
+                        method:'post',
+                        headers:{
+                            'Content-Type':'application/json',
+                        },
+                        body:JSON.stringify({
+                            productId:productId,
+                            count:count
+                        })
+                    })
+
+                    if(response.ok){
+                        const result= await response.json()
+                        // console.log("response ok")
+                        // console.log(result.message);
+                        if(result.status){
+                            // console.log('cart qty increased')
+                            // console.log(typeof currentQty)
+                            let newQty=parseInt(currentQty)+count;
+                            currentQtyElement.value=newQty;
+                            // currentQtyElement.placeholder=newQty;
+                            subtotalElement.innerHTML=parseFloat(saleprice) * newQty;
+                            
+
+
+                        }else{
+                            // console.log("cart qty defaulted")
+                            // console.log("cartProductQty=====>",result.cartProductQty)
+                            let newQty=parseInt(result.updatedCartProductQty);
+                            console.log("cartProductQty=====>",result.updatedCartProductQty)
+                            if(newQty===0){
+                            document.getElementById('outOfStockMessage').innerHTML="Out of Stock";
+                            }
+                            
+                            currentQtyElement.value=newQty;
+                            // currentQtyElement.placeholder=newQty;
+                            subtotalElement.innerHTML=parseFloat(saleprice) * newQty;
+                            Swal.fire({
+                                title:"Sorry, Only limited stock available",
+                                icon:"warning"
+                            })
+                        }
+                        // Update grand total from backend
+                        grandTotalElement.innerHTML =`<h2> ${result.grandTotal}/- </h2>`;
+                        grandTotalElement.dataset.grandTotal=result.grandTotal;
+                        
+                    }
+
+                }     
+
+                async function removeItem(productId) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, remove it!'
+                }).then((result) => {
+                if (result.isConfirmed) {
+                        fetch(`/delete-cart-item/${productId}`, {
+                            method: 'DELETE'
+                        })
+                        .then(res => {
+                            if (res.ok) {
+                            window.location.reload();
+                            }
+                        });
+                        }
+
+                })
+                }
+
+                document.addEventListener('DOMContentLoaded',()=>{
+                const checkouPageLinkElement=document.getElementById('checkouPageLink');
+                checkouPageLinkElement.addEventListener('click',(e)=>{
+                    const grandTotalElement=document.getElementById('grandTotal');
+                    const grandTotal=parseFloat (grandTotalElement.dataset.grandTotal);
+                    console.log("grandTotal======>",grandTotal);
+                    if(grandTotal===0){
+                    e.preventDefault();
+                    Swal.fire({
+                        title:"Add products in the cart",
+                        icon:"warning"
+                    })
+                    }
+                })
+                })
+
+            </script>
+
+        </div>
+
+    </section>
+
+   
+
+
+
+    <%-include ('../../views/partials/user/footer') %>

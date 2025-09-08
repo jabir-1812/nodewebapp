@@ -1,63 +1,60 @@
-// const mongoose=require('mongoose');
-// const {Schema}=mongoose;
-// const {v4:uuidv4}=require('uuid');
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-// const orderSchema=new Schema({
-//     orderId:{
-//         type:String,
-//         default:()=>uuidv4(),
-//         unique:true
-//     },
-//     orderedItems:[{
-//         product:{
-//             type:Schema.Types.ObjectId,
-//             ref:'Product',
-//             required:true
-//         },
-//         quantity:{
-//             type:Number,
-//             required:true
-//         },
-//         price:{
-//             type:Number,
-//             default:0
-//         }
-//     }],
-//     totalPrice:{
-//         type:Number,
-//         required:true
-//     },
-//     discount:{
-//         type:Number,
-//         default:0
-//     },
-//     finalAmount:{
-//         type:Number,
-//         required:true
-//     },
-//     address:{
-//         type:Schema.Types.ObjectId,
-//         ref:"User",
-//         required:true
-//     },
-//     invoiceDate:{
-//         type:Date,
-//     },
-//     status:{
-//         type:String,
-//         required:true,
-//         enum:['Pending','Processing','Shipped','Delivered','Cancelled','Return Request','Returned']
-//     },
-//     createdOn:{
-//         type:Date,
-//         default:Date.now,
-//         required:true
-//     },
-//     couponApplied:{
-//         type:Boolean,
-//         default:false
-//     }
-// })
+const orderSchema = new Schema(
+  {
+    orderId: { type: String, unique: true }, 
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    shippingAddress: { type: Object, required: true },
+    paymentMethod: { type: String, required: true },
+    paymentStatus: { type: String, default: "Pending" }, // Paid, Pending, Failed
+    orderStatus: { type: String, default: "Pending" }, // Pending, Shipped, Delivered, Cancelled
+    orderItems: [
+      {
+        productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+        quantity: { type: Number, required: true },
+        price: { type: Number, required: true },
+        productName: { type: String },
+        productImage: { type: String },
+        itemStatus: { type: String, default: "Pending" },
+        deliveredAt:{type:Date},
+        // 📦 Return-related fields
+        returnReason: { type: String },       // Why user returned
+        returnStatus: {
+          type: String,
+          enum: [
+            "Requested", 
+            "Approved", 
+            "Pickup Scheduled",
+            "Picked Up",
+            "In Transit",
+            "Received",
+            "Refunded",
+            "Replacement Shipped",
+            "Rejected"
+          ],
+          default: null
+        },
 
-// const Order=mongoose.model('Order',orderSchema);
-// module.exports=Order;
+        returnRequestedAt: { type: Date },    // When user initiated
+        returnResolvedAt: { type: Date },     // When admin approved/rejected
+      }
+      
+    ],
+    totalAmount: { type: Number, required: true },
+
+    // 🧾 Invoice-related fields
+    invoice: {
+      number: { type: String }, // e.g., INV-2025-0001
+      date: { type: Date },
+      fileUrl: { type: String }, // optional: store generated PDF URL if you save it
+      generated: { type: Boolean, default: false }, // has invoice been created?
+    },
+    deliveredAt:{type:Date}
+  },
+  { timestamps: true }
+);
+
+
+const Order = mongoose.model("Order", orderSchema);
+module.exports=Order;

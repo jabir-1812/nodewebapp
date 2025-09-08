@@ -1,0 +1,338 @@
+<!-- views/user/orders/order-details.ejs -->
+
+<%-include ('../../../../views/partials/user/header')%>
+
+<%-include ('../../../../views/user/profile/profile-partials/sidebar')%>
+
+<style>
+    .main-content {
+        margin-left: 220px; /* sidebar width */
+        padding: 90px 30px 30px;
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+    .order-details {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .order-summary, .shipping-address {
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #444;
+    }
+
+    .order-items .item {
+    display: flex;
+    gap: 15px;
+    margin: 15px 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    }
+
+    .order-items .item img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    }
+
+</style>
+<div class="main-content">
+    <div class="order-details">
+        <h2>Order Details</h2>
+
+        <div class="order-summary">
+            <p><strong>Order ID:</strong> <%= order.orderId %></p>
+            <p>
+                <strong>Status:</strong> 
+                <span class="<%= 
+                    order.orderStatus === 'Cancelled' ? 'text-danger' : 
+                    order.orderStatus === 'Delivered' ? 'text-success' : 
+                    order.orderStatus === 'Shipped' ? 'text-primary' : 
+                    order.orderStatus === 'Out for Delivery' ? 'text-info' : 
+                    order.orderStatus === 'Pending' ? 'text-warning' : 
+                    '' 
+                %>">
+                    <%= order.orderStatus %>
+                </span>
+                <% if(order.orderStatus==="Delivered"){ %>
+                    - On <%= new Date(order.deliveredAt).toDateString().slice(4) %>
+                <%}%>
+            </p>
+
+            <p><strong>Placed on:</strong> <%= new Date(order.createdAt).toDateString() %></p>
+            <p><strong>Payment:</strong> <%= order.paymentMethod %> ( <%= order.paymentStatus %> )</p>
+            <p><strong>Total:</strong><strong style="font-size: x-large;">₹<%= order.totalAmount %></strong></p>
+        </div>
+
+        <h3>Shipping Address</h3>
+        <div class="shipping-address">
+            <p><%= order.shippingAddress.name %></p>
+            <p><%= order.shippingAddress.landMark %>, <%= order.shippingAddress.city %></p>
+            <p><%= order.shippingAddress.state %> - <%= order.shippingAddress.pincode %></p>
+            <p>Phone: <%= order.shippingAddress.phone %></p>
+        </div>
+        
+        <% if (order.invoice && order.invoice.generated) { %>
+        <a href="/orders/<%= order._id %>/invoice" class="btn btn-primary">
+            Download Invoice
+        </a>
+        <% } %>
+
+
+        <h3>Items</h3>
+        <div class="order-items">
+            <% order.orderItems.forEach(item => { %>
+                <div class="item">
+                <img src="/uploads/product-images/<%= item.productImage %>" alt="<%= item.productName %>">
+                <div class="item-info">
+                    <h4><%= item.productName %></h4>
+                    <p>₹<%= item.price %> | Qty: <%= item.quantity %></p>
+                    <p>
+                        <strong>Delivery Status:</strong>
+                        <span class="<%= 
+                            item.itemStatus === 'Cancelled' ? 'text-danger' : 
+                            item.itemStatus === 'Delivered' ? 'text-success' : 
+                            item.itemStatus === 'Shipped' ? 'text-primary' : 
+                            item.itemStatus === 'Out for Delivery' ? 'text-info' : 
+                            item.itemStatus === 'Pending' ? 'text-warning' : 
+                            '' 
+                        %>">
+                            <%= item.itemStatus %>
+                        </span>
+                        <% if(item.itemStatus==="Delivered"){ %>
+                           - On <%= new Date(item.deliveredAt).toDateString().slice(4) %>
+                        <%}%>
+                    </p>
+
+                        <% if (item.returnStatus && item.returnStatus !== "None") { %>
+                    <p>
+                            <strong>Return Status:</strong>
+                            <span class="<%= 
+                                item.returnStatus === 'Requested' ? 'text-warning' : 
+                                item.returnStatus === 'Approved' ? 'text-info' : 
+                                item.returnStatus === 'Rejected' ? 'text-danger' : 
+                                item.returnStatus === 'Completed' ? 'text-success' : 
+                                '' 
+                            %>">
+                            <%= item.returnStatus %>
+                            </span>
+                    </p>
+                    <p><strong>Return Reason:</strong> <%= item.returnReason %></p>
+                        <% } %>
+
+
+
+
+
+                    <% if (item.itemStatus === "Pending") { %>
+                       <form class="cancel-form">
+                        <input type="hidden" name="orderId" value="<%= order.orderId %>">
+                        <input type="hidden" name="itemId" value="<%= item._id %>">
+                        <button type="submit" class="btn btn-danger">Cancel Item</button>
+                    </form>
+                    <% } %>
+
+                   <% if (item.itemStatus === "Delivered" && (!item.returnStatus || item.returnStatus === "None")) { %>
+                    <form class="return-form">
+                        <input type="hidden" name="orderId" value="<%= order.orderId %>">
+                        <input type="hidden" name="itemId" value="<%= item._id %>">
+                        <button type="submit" class="btn btn-warning">Return Item</button>
+                    </form>
+                    <% } %>
+
+
+
+                   
+                </div>
+                </div>
+            <% }) %>
+            </div>
+
+            <%
+                const hasRestrictedStatus = order.orderItems.some(
+                    item => ["Shipped", "Delivered", "Out for Delivery"].includes(item.itemStatus)
+                );
+            %>
+            <!-- 🔎 Explanation:
+                order.orderItems.some(...) → checks if any item is shipped/delivered.
+                If yes → hide button.
+                If no → allow cancel whole order (only if status is "Pending" or "Partially Cancelled"). -->
+
+            <% if (!hasRestrictedStatus && (order.orderStatus === "Pending" || order.orderStatus === "Partially Cancelled")) { %>
+            <form id="cancelOrderForm">
+                <input type="hidden" name="orderId" value="<%= order.orderId %>">
+                <button type="submit" class="btn btn-danger">Cancel Entire Order</button>
+            </form>
+            <% } %>
+
+
+
+
+
+             <script>
+                document.querySelectorAll(".cancel-form").forEach(form => {
+                    form.addEventListener("submit", async (e) => {
+                            e.preventDefault();
+
+                            const confirmResult=await Swal.fire({
+                                title:"Are you sure, Cancel this order?",
+                                icon:'question',
+                                showConfirmButton:true,
+                                showCancelButton:true
+                            })
+
+                            if (!confirmResult.isConfirmed) return;
+
+                            const formData = new FormData(form);
+                            const data = Object.fromEntries(formData.entries());
+
+                            const response = await fetch("/user-profile/orders/order-details/cancel-item", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(data)
+                            });
+
+                            const result = await response.json();
+                            console.log("result=====>",result)
+                            if (result.success) {
+                                Swal.fire({
+                                    title:"Done",
+                                    text:result.message,
+                                    icon:"success",
+                                    timer:2000
+                                })
+                                .then(()=>{
+                                    location.reload();
+                                })
+                            } else {
+                            Swal.fire("Oops!",result.message,"error")
+                            }
+                        });
+                    });
+            </script>
+
+            <script>
+                const cancelOrderForm=document.getElementById('cancelOrderForm');
+                cancelOrderForm.addEventListener('submit',async (e)=>{
+                    e.preventDefault()
+                    // console.log("form prevented")
+                    const confirmResult=await Swal.fire({
+                        title:"Are you sure, Cancel Whole order ?",
+                        showConfirmButton:true,
+                        showCancelButton:true,
+                        icon:"question"
+                    })
+
+                    if(!confirmResult.isConfirmed) return;
+                    // console.log("confirmed")
+                    const formData=new FormData(cancelOrderForm);
+                    const data=Object.fromEntries(formData.entries());
+
+                    const response=await fetch("/user-profile/orders/order-details/cancel-orders",{
+                        method:'post',
+                        headers:{
+                            'Content-Type':'application/json'
+                        },
+                        body:JSON.stringify(data)
+                    })
+
+                    const result=await response.json();
+                    if(result.success){
+                        Swal.fire({
+                            title:"Done",
+                            text:result.message,
+                            icon:'success',
+                            timer:2000
+                        }).then(()=>{
+                            location.reload();
+                        })
+                    }else{
+                        Swal.fire("Oops!",result.message,"error")
+                    }
+                })
+            </script>
+
+            <script>
+                document.querySelectorAll(".return-form").forEach(form => {
+                    form.addEventListener("submit", async (e) => {
+                        e.preventDefault();
+
+                        const confirmResult = await Swal.fire({
+                            title: "Why are you returning this item?",
+                            input: "select",
+                            inputOptions: {
+                                "wrong": "Wrong item received",
+                                "damaged": "Damaged product",
+                                "defective": "Defective/Not working",
+                                "quality": "Quality not as expected",
+                                "size": "Size/fit issue",
+                                "mind": "Changed my mind",
+                                "other": "Other"
+                            },
+                            inputPlaceholder: "Select a reason",
+                            showCancelButton: true,
+                            inputValidator: (value) => {
+                                if (!value) {
+                                    return "⚠️ Please select a reason before continuing!";
+                                }
+                            }
+                        });
+
+                        let reason = confirmResult.value;
+
+                        if (reason === "other") {
+                            const customReason = await Swal.fire({
+                                title: "Please specify your reason",
+                                input: "textarea",
+                                inputPlaceholder: "Type your reason here...",
+                                inputAttributes: { 'aria-label': 'Return reason' },
+                                showCancelButton: true,
+                                inputValidator: (value) => {
+                                    if (!value.trim()) {
+                                        return "⚠️ Please enter a reason!";
+                                    }
+                                }
+                            });
+
+                            if (!customReason.isConfirmed) return; // user cancelled
+                            reason = customReason.value; // use custom input as reason
+                        }
+
+
+
+                        const formData = new FormData(form);
+                        const data = Object.fromEntries(formData.entries());
+                        data.reason = reason; // either predefined or custom
+
+                        const response = await fetch("/user-profile/orders/order-details/return-item", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(data)
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            Swal.fire({
+                                title: "Returned",
+                                text: result.message,
+                                icon: "success",
+                                timer: 2000
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire("Oops!", result.message, "error");
+                        }
+                    });
+                });
+                </script>
+
+        </div>
+</div>
+
+<%-include ('../../../../views/partials/user/footer')%>

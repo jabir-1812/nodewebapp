@@ -1,0 +1,320 @@
+<%- include("../../views/partials/user/header") %>
+
+<style>
+    .product-container {
+        display: flex;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        gap: 30px;
+    }
+    .image-section {
+        display: flex;
+        gap: 20px;
+        width: 60%;
+    }
+    .thumbnail-container {
+        width: 80px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .thumbnail:hover {
+        border-color: #ff6b6b;
+    }
+    .thumbnail.active {
+        border: 2px solid #ff6b6b;
+    }
+    .main-image-container {
+        position: relative;
+        width: 440px;
+        height: 440px;
+        overflow: hidden;
+    }
+    #mainImage {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        cursor: zoom-in;
+    }
+    .product-details {
+        width: 40%;
+    }
+    .product-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .brand-name {
+        color: #666;
+        margin-bottom: 15px;
+    }
+    .price-section {
+        margin: 20px 0;
+    }
+    .current-price {
+        font-size: 28px;
+        font-weight: bold;
+        color: #d32f2f;
+    }
+    .original-price {
+        text-decoration: line-through;
+        color: #999;
+        margin-left: 10px;
+    }
+    .discount {
+        color: #388e3c;
+        font-weight: 500;
+        margin-left: 10px;
+    }
+    .stock-info {
+        color: #d32f2f;
+        font-weight: 500;
+        margin: 15px 0;
+    }
+    .action-buttons {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+    }
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .btn-primary {
+        background-color: #ff6b6b;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #ff5252;
+    }
+    .btn-secondary {
+        background-color: #f5f5f5;
+        color: #333;
+    }
+    .btn-secondary:hover {
+        background-color: #e0e0e0;
+    }
+    .thumbnail-nav {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    .nav-arrow {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #666;
+    }
+    .nav-arrow:hover {
+        color: #ff6b6b;
+    }
+    .thumbnail-slider {
+        max-height: 400px;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+    .thumbnail-slider::-webkit-scrollbar {
+        display: none;
+    }
+    .thumbnail-slider {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .description {
+        margin: 20px 0;
+        line-height: 1.6;
+    }
+    .image-zoom-container {
+        position: relative;
+        width: 440px;
+        height: 440px;
+    }
+    .zoom-box {
+        position: absolute;
+        width: 440px;
+        height: 440px;
+        left: 460px;
+        top: 0;
+        background-repeat: no-repeat;
+        display: none;
+        border: 1px solid #ddd;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        z-index: 100;
+    }
+</style>
+
+<div class="product-container">
+    <% if(product){ %>
+    <div class="image-section">
+        <div class="thumbnail-container">
+            <div class="thumbnail-nav">
+                <button class="nav-arrow" id="thumbUp">↑</button>
+            </div>
+            <div class="thumbnail-slider">
+                <% product.productImage.forEach((img, i) => { %>
+                <img src="/uploads/product-images/<%= img %>" 
+                     class="thumbnail <%= i === 0 ? 'active' : '' %>" 
+                     data-full="/uploads/product-images/<%= img %>"
+                     alt="Thumbnail <%= i+1 %>">
+                <% }) %>
+            </div>
+            <div class="thumbnail-nav">
+                <button class="nav-arrow" id="thumbDown">↓</button>
+            </div>
+        </div>
+
+        <div class="image-zoom-container">
+            <div class="main-image-container">
+                <img id="mainImage" 
+                     src="/uploads/product-images/<%= product.productImage[0] %>" 
+                     data-zoom-image="/uploads/product-images/<%= product.productImage[0] %>"
+                     alt="<%= product.description %>">
+            </div>
+            <div class="zoom-box" id="zoomBox"></div>
+        </div>
+    </div>
+
+    <div class="product-details">
+        <h1 class="product-title"><%= product.name %></h1>
+        <p class="brand-name">Brand: <%= product.brand?.brandName %></p>
+        
+        <div class="price-section">
+            <span class="current-price">Rs.<%= product.salePrice %></span>
+            <% if(product.regularPrice > product.salePrice) { %>
+                <span class="original-price">Rs.<%= product.regularPrice %></span>
+                <% const higherDiscount = Math.max(product.productOffer, product.brandOffer, product.categoryOffer) %>
+                <span class="discount"><%= higherDiscount %>% OFF</span>
+            <% } %>
+        </div>
+
+        <% if(product.quantity<=10 && product.quantity > 0){ %>
+            <p class="stock-info">Only <%= product.quantity %> left in stock!</p>
+        <% } %>
+
+        <div class="description">
+            <h3>Description</h3>
+            <p><%= product.description %></p>
+        </div>
+
+        <div class="action-buttons">
+            <% if (product.quantity===0){ %>
+                <strong>Out of stock</strong>
+                <button class="btn btn-secondary">Notify me when available</button>
+            <% }else{ %>
+                <button id="addToCartBtn" onclick="addToCart('<%= product._id %>')" class="btn btn-primary">Add to cart</button>
+            <% } %>
+        </div>
+    </div>
+    <% }else{ %>
+        <p>Product not found</p>
+    <% } %>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const mainImage = document.getElementById('mainImage');
+        const zoomBox = document.getElementById('zoomBox');
+        const zoomContainer = document.querySelector('.image-zoom-container');
+        const ZOOM_LEVEL = 2;
+
+        // Thumbnail click handler
+        document.querySelectorAll('.thumbnail').forEach(thumb => {
+            thumb.addEventListener('click', function() {
+                document.querySelector('.thumbnail.active')?.classList.remove('active');
+                this.classList.add('active');
+                
+                const newImage = new Image();
+                newImage.src = this.dataset.full;
+                newImage.onload = function() {
+                    mainImage.src = this.src;
+                    mainImage.dataset.zoomImage = this.src;
+                    zoomBox.style.backgroundImage = `url('${this.src}')`;
+                    zoomBox.style.backgroundSize = `${this.naturalWidth * ZOOM_LEVEL}px ${this.naturalHeight * ZOOM_LEVEL}px`;
+                };
+            });
+        });
+
+        // Zoom functionality
+        mainImage.addEventListener('mousemove', (e) => {
+            if (!zoomBox.style.backgroundImage) {
+                zoomBox.style.backgroundImage = `url('${mainImage.dataset.zoomImage}')`;
+                zoomBox.style.backgroundSize = `${mainImage.naturalWidth * ZOOM_LEVEL}px ${mainImage.naturalHeight * ZOOM_LEVEL}px`;
+            }
+            
+            zoomBox.style.display = 'block';
+            const rect = mainImage.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const percX = (x / mainImage.width) * 100;
+            const percY = (y / mainImage.height) * 100;
+            
+            zoomBox.style.left = `${rect.width + 20}px`;
+            zoomBox.style.backgroundPosition = `${percX}% ${percY}%`;
+        });
+
+        zoomContainer.addEventListener('mouseleave', () => {
+            zoomBox.style.display = 'none';
+        });
+
+        // Thumbnail navigation
+        document.getElementById('thumbUp')?.addEventListener('click', () => {
+            document.querySelector('.thumbnail-slider').scrollBy({ top: -80, behavior: 'smooth' });
+        });
+
+        document.getElementById('thumbDown')?.addEventListener('click', () => {
+            document.querySelector('.thumbnail-slider').scrollBy({ top: 80, behavior: 'smooth' });
+        });
+    });
+
+    //////////////////////add to cart////////////////////////
+    async function addToCart(productId) {
+        try {
+            const response=await fetch('/add-to-cart',{
+                method:'post',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({productId:productId})
+            })
+            const responseJson=await response.json();
+
+            if(responseJson.status===true){
+                await Swal.fire({
+                    title:'Success',
+                    text:'Item Added to Cart',
+                    icon:'success',
+                    timer:1000,
+                    showConfirmButton:false
+                })
+                // update cart icon
+                document.getElementById('cartCount').textContent = responseJson.cartLength;
+            }else{
+                throw new Error(responseJson.status || 'Failed to add to cart');
+            }
+        } catch (error) {
+            console.error("Error:",error),
+            Swal.fire({
+                title:"Error",
+                text:error.message || 'Something went wrong',
+                icon:'error'
+            })
+        }
+    }
+</script>
+
+<%- include("../../views/partials/user/footer") %>

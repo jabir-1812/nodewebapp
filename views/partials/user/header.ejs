@@ -1,23 +1,243 @@
-<header>
-    <div class="nav-container">
-        <a href="/" class="logo">YourLogo</a>
+<style>
+:root {
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --text-color: #2b2d42;
+    --text-light: #6c757d;
+    --border-color: #e9ecef;
+    --bg-color: #ffffff;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
 
-        <div class="nav-links">
-            <% if(user){ %>
-                <div class="dropdown">
-                    <a href="#">
-                        <%=user.name%>
-                    </a>
-                    <div class="dropdown-content">
-                        <a href="/user-profile" class="nav-link">Profile</a>
-                        <a href="/logout" class="nav-link">Logout</a>
+.site-header {
+    background-color: var(--bg-color);
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-decoration: none;
+    margin-right: 2rem;
+}
+
+.main-nav {
+    display: flex;
+    gap: 1.5rem;
+    margin-right: auto;
+}
+
+.nav-link {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    position: relative;
+    transition: var(--transition);
+}
+
+.nav-link:hover {
+    color: var(--primary-color);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.user-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: var(--transition);
+}
+
+.user-toggle:hover {
+    background-color: rgba(67, 97, 238, 0.1);
+}
+
+.dropdown-arrow {
+    transition: transform 0.3s ease;
+}
+
+.user-dropdown:hover .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--bg-color);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    padding: 0.5rem 0;
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: var(--transition);
+    z-index: 100;
+    
+    display: block;
+}
+
+.user-dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: var(--transition);
+
+     opacity: 1;
+    visibility: visible;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(67, 97, 238, 0.1);
+    color: var(--primary-color);
+}
+
+.icon {
+    flex-shrink: 0;
+}
+
+.auth-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.auth-link {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.login-btn {
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.login-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.signup-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.signup-btn:hover {
+    background-color: var(--primary-hover);
+}
+</style>
+<header class="site-header">
+    <div class="nav-container">
+        <a href="/" class="logo">
+            <span class="logo-text">TeeSpace</span>
+        </a>
+        
+        <nav class="main-nav">
+            <a href="/" class="nav-link nav-home">Home</a>
+            <a href="/shop" class="nav-link nav-shop">Shop</a>
+        </nav>
+
+        <div class="user-nav">
+            <a href="/wishlist" class="nav-link nav-home">Wishlist</a>
+            <a href="/cart" class="nav-link nav-home">cart(<span id="cartCount"><%= cartLength ? cartLength : 0 %></span>)</a>
+            <% if(user) { %>
+                <div class="user-dropdown">
+                    <button class="user-toggle">
+                        <span class="user-name"><%= user.name %></span>
+                        <svg class="dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                            <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="/user-profile" class="dropdown-item">
+                            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="currentColor" stroke-width="2"/>
+                                <path d="M20 22C20 17.5817 16.4183 14 12 14C7.58172 14 4 17.5817 4 22" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Profile
+                        </a>
+                        <a href="/logout" class="dropdown-item">
+                            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M15 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M10 17L15 12L10 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Logout
+                        </a>
                     </div>
                 </div>
-                <% }else{ %>
-                    <a href="/signup" class="nav-link">Sign up</a>
-                    <a href="/login" class="nav-link">Login</a>
-                    <% } %>
-
+            <% } else { %>
+                <div class="auth-links">
+                    <a href="/signup" class="auth-link signup-btn">Sign up</a>
+                    <a href="/login" class="auth-link login-btn">Login</a>
+                </div>
+            <% } %>
         </div>
     </div>
 </header>
+
+
+
+
+
+
+
+
+
+
