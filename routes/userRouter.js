@@ -34,6 +34,8 @@ router.post('/login',userController.login);//
 router.get('/logout',userController.logout);//
 
 router.get('/user-profile',userAuth,profileController.userProfile)
+router.post('/change-username',userAuth,profileController.changeUsername)
+router.post('/change-phone-number',userAuth,profileController.changePhoneNumber)
 router.get('/change-email',userAuth,profileController.loadChangeEmailPage)
 router.post('/change-email',userAuth,profileController.changeEmail)
 //verifying otp to change-email
@@ -58,13 +60,13 @@ router.get('/reset-password',profileController.getResetPasswordPage);
 router.post('/resend-forgot-otp',profileController.resendOtp)
 router.post('/reset-password',profileController.postNewPassword)
 
-
+//address Management
 router.get('/user-profile/addresses',userAuth,profileController.showAddresses)
 router.get('/add-address',userAuth,profileController.loadAddAddressPage);
 router.post('/add-address',userAuth,profileController.addAddress);
 router.get('/edit-address',userAuth,profileController.loadEditAddressPage);
-router.post('/edit-address',userAuth,profileController.editAddress);
-router.get('/delete-address',userAuth,profileController.deleteAddress);
+router.put('/edit-address',userAuth,profileController.editAddress);
+router.delete('/delete-address',userAuth,profileController.deleteAddress);
 
 //home page & shop page
 router.get('/',userController.loadHomepage);

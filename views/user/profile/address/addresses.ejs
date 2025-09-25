@@ -133,12 +133,14 @@
 <%-include ('../../../../views/partials/user/footer')%>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded",() =>{
         document.querySelectorAll(".delete-address").forEach(button => {
-            button.addEventListener("click", function () {
+            button.addEventListener("click",async function (e) {
+                // console.log("e.target======>",e.target)
+                // console.log("this=======>",this)
                 const addressId = this.getAttribute("data-id");
 
-                Swal.fire({
+                const confirm=await Swal.fire({
                     title: "Are you sure?",
                     text: "This address will be permanently deleted!",
                     icon: "warning",
@@ -146,14 +148,32 @@
                     confirmButtonColor: "#d33",
                     cancelButtonColor: "#3085d6",
                     confirmButtonText: "Yes, delete it!"
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Redirect to delete route
-                        window.location.href = `/delete-address?id=${addressId}`;
+                })
+                if (confirm.isConfirmed) {
+                    const response=await fetch('/delete-address',{
+                        method:"DELETE",
+                        headers:{
+                            'Content-Type':'application/json'
+                        },
+                        body:JSON.stringify({addressId:addressId})
+                    })
+                    const result=await response.json()
+                    if(response.ok){
+                        Swal.fire({
+                            title:"Done",
+                            text:"Address has been deleted successfully",
+                            icon:"success",
+                            showConfirmButton:true,
+                            timer:1000
+                        }).then(()=>{
+                            window.location.href='/user-profile/addresses'
+                        })
+                    }else{
+                        Swal.fire("Error",`${result.message}`,"error")
                     }
+                }
                 });
             });
         });
-    });
 </script>
 

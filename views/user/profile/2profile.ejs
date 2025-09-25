@@ -5,86 +5,242 @@
 <style>
     .main-content {
         margin-left: 220px; /* matches sidebar width */
-        padding: 90px 30px 30px;
-        font-family: Arial, sans-serif;
+        padding: 90px 40px 40px;
+        font-family: "Segoe UI", Arial, sans-serif;
         background-color: #f8f9fa;
         min-height: 100vh;
     }
 
-    .profile-container {
-        max-width: 800px;
-        margin: auto;
+    .main-content h1 {
+        font-size: 2rem;
+        margin-bottom: 30px;
+        color: #343a40;
+    }
+
+    /* Profile sections */
+    .profile-section {
+        margin-bottom: 25px;
+        padding: 15px 20px;
         background: #fff;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    .profile-container h1 {
-        font-size: 24px;
-        margin-bottom: 20px;
-        color: #333;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 10px;
-    }
-
-    .profile-info {
-        margin-bottom: 20px;
-        font-size: 16px;
-        color: #444;
-    }
-
-    .profile-info span {
-        font-weight: bold;
-        color: #222;
-        margin-right: 5px;
-    }
-
-    .actions {
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         display: flex;
-        gap: 15px;
-        margin-top: 20px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .profile-label {
+        font-weight: 600;
+        color: #495057;
+        min-width: 80px;
+        display: inline-block;
+    }
+
+    .profile-value {
+        flex-grow: 1;
+        color: #212529;
+        margin-left: 10px;
+    }
+
+    /* Edit button */
+    .edit-btn {
+        background: none;
+        border: none;
+        color: #007bff;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: color 0.2s;
+    }
+
+    .edit-btn:hover {
+        color: #0056b3;
+        text-decoration: underline;
+    }
+
+    /* Forms */
+    form {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    form input {
+        padding: 8px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        flex: 1;
+    }
+
+    form button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    form button:hover {
+        background-color: #218838;
+    }
+
+    #name-error,
+    #phone-error {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-left: 10px;
+    }
+
+    /* Actions */
+    .actions {
+        margin-top: 30px;
     }
 
     .btn {
         padding: 10px 18px;
-        background-color: #1976d2;
-        color: #fff;
+        border-radius: 8px;
         border: none;
-        border-radius: 6px;
-        font-size: 14px;
         cursor: pointer;
-        transition: background 0.2s ease;
-    }
-
-    .btn:hover {
-        background-color: #1259a5;
+        transition: background-color 0.2s;
+        font-size: 0.95rem;
     }
 
     .btn-secondary {
         background-color: #6c757d;
+        color: #fff;
     }
 
     .btn-secondary:hover {
-        background-color: #565e64;
+        background-color: #5a6268;
     }
 </style>
 
 <main class="main-content">
-    <div class="profile-container">
-        <h1>User Profile</h1>
+    <h1>User Profile</h1>
 
-        <div class="profile-info"><span>Name:</span> <%= user.name %></div>
-        <div class="profile-info"><span>Phone:</span> <%= user.phone %></div>
-        <div class="profile-info">
-            <span>Email:</span> <%= user.email %>
-        </div>
+    <div class="profile-section">
+        <span class="profile-label">Name:</span>
+        <span class="profile-value username"><%= user.name %></span>
+        <button id="editUsernameBtn" class="edit-btn" onclick="showEditUsernameForm()">edit</button>
+    </div>
+    <form id="editUsernameForm" style="display: none;">
+        <input class="username" type="text" name="username" value="<%= user.name %>" required>
+        <div id="name-error"></div>
+        <button type="submit">Save Change</button>
+    </form>
 
-        <div class="actions">
-            <a href="/change-email"><button class="btn">Change Email</button></a>
-            <a href="/change-password"><button class="btn btn-secondary">Change Password</button></a>
-        </div>
+    <div class="profile-section">
+        <span class="profile-label">Phone:</span>
+        <span class="profile-value phone"><%= user.phone %></span>
+        <button id="editPhoneBtn" class="edit-btn" onclick="showEditPhoneForm()">edit</button>
+    </div>
+    <form id="editPhoneForm" style="display: none;">
+        <input type="tel" name="phone" class="phone" value="<%= user.phone %>">
+        <div id="phone-error"></div>
+        <button type="submit">Save Change</button>
+    </form>
+
+    <div class="profile-section">
+        <span class="profile-label">Email:</span>
+        <span class="profile-value"><%= user.email %></span>
+        <a href="/change-email" class="edit-btn">edit</a>
+    </div>
+
+    <div class="actions">
+        <a href="/change-password"><button class="btn btn-secondary">Change Password</button></a>
     </div>
 </main>
+
+
+<script>
+    function showEditUsernameForm(){
+        const editUsernameForm=document.getElementById('editUsernameForm');
+        const btn=document.getElementById('editUsernameBtn');
+
+        if(editUsernameForm.style.display==="block"){
+            editUsernameForm.style.display="none";
+            btn.innerHTML="Edit"
+        }else{
+            editUsernameForm.style.display="block";
+            btn.innerHTML="cancel"
+        }   
+    }
+
+    document.getElementById('editUsernameForm').addEventListener('submit',async(e)=>{
+        e.preventDefault();
+        document.getElementById('name-error').innerHTML = ""; //clearing old error messages
+
+        const username=document.querySelector('input.username').value;
+        const namePattern = /^[A-Za-z\s]+$/;
+        if(!namePattern.test(username)){
+            document.getElementById('name-error').innerHTML = "Name should contain alphabets only";
+            return;
+        }
+
+        const response= await fetch('/change-username',{
+            method:"POST",
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({username:username})
+        })
+        
+        const result=await response.json()
+
+        if(response.ok){
+            Swal.fire("Done","Name updated","success");
+            document.querySelector('span.username').innerHTML=result.username;
+            editUsernameForm.style.display="none";
+            document.getElementById('editUsernameBtn').innerHTML="Edit";
+        }else{
+            Swal.fire("Oops!",result.message,"error")
+        }
+    })
+
+</script>
+
+<script>
+    function showEditPhoneForm(){
+        const editUsernameForm=document.getElementById('editPhoneForm');
+        const btn=document.getElementById('editPhoneBtn');
+
+        if(editPhoneForm.style.display==="block"){
+            editPhoneForm.style.display="none";
+            btn.innerHTML="Edit"
+        }else{
+            editPhoneForm.style.display="block";
+            btn.innerHTML="cancel"
+        }   
+    }
+
+    document.getElementById('editPhoneForm').addEventListener('submit',async(e)=>{
+        e.preventDefault();
+        document.getElementById('phone-error').innerHTML = ""; //clearing old error messages
+
+        const phone=document.querySelector('input.phone').value;
+        const phonePattern = /^\d{10}$/;
+        if(!phonePattern.test(phone)){
+            document.getElementById('phone-error').innerHTML = "Phone number should be a 10-digit number.";
+            return;
+        }
+
+        const response= await fetch('/change-phone-number',{
+            method:"POST",
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({phone:phone})
+        })
+        
+        const result=await response.json()
+
+        if(response.ok){
+            Swal.fire("Done","Phone number updated","success");
+            document.querySelector('span.phone').innerHTML=result.phone;
+            editPhoneForm.style.display="none";
+            document.getElementById('editPhoneBtn').innerHTML="Edit";
+        }else{
+            Swal.fire("Oops!",result.message,"error")
+        }
+    })
+</script>
 
 <%-include ('../../../views/partials/user/footer')%>

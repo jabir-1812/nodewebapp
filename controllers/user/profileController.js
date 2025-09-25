@@ -174,10 +174,8 @@ const postNewPassword=async (req,res)=>{
 }
 
 
-const userProfile=async (req,res)=>{
+const userProfile= async (req,res)=>{
   try {
-    // const userId=req.session.user;
-    // const userData=await User.findById(userId);
     const userId=req.session.user || req.session.passport?.user;
     const userData=await User.findById(userId);
     // const addressData=await Address.findOne({userId})
@@ -193,6 +191,37 @@ const userProfile=async (req,res)=>{
     res.redirect('/page-not-found')
   }
 }
+
+const changeUsername= async (req,res)=>{
+  try {
+    const userId=req.session.user || req.session.passport?.user;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({success:false,message:"User not found"});
+
+    const {username}=req.body;
+    await User.findByIdAndUpdate(userId,{name:username});
+    res.status(200).json({success:true,username:username})
+  } catch (error) {
+    console.log("changeUsername() error====>",error);
+    res.status(500).json({success:false,message:"Something went wrong"})
+  }
+}
+
+const changePhoneNumber= async (req,res)=>{
+  try {
+    const userId=req.session.user || req.session.passport?.user;
+    const user =await User.findById(userId)
+    if(!user) return res.status(404).json({success:false,message:"User not found"});
+
+    const {phone}=req.body;
+    await User.findByIdAndUpdate(userId,{phone:phone});
+    res.status(200).json({success:true,phone:phone})
+  } catch (error) {
+    console.log("changePhoneNumber() error====>",error);
+    res.status(500).json({success:false,message:"Something went wrong"})
+  }
+}
+
 
 const showAddresses=async (req,res)=>{
   try {
@@ -285,7 +314,8 @@ const verifyEmailOtp =async (req,res)=>{
       res.render('./user/change-email-otp',{
         title:"Change Email",
         message:"OTP not matching",
-        user:req.session.userData
+        user:req.session.userData,
+        cartLength:""
       })
     }
   } catch (error) {
@@ -397,6 +427,7 @@ const addAddress=async (req,res)=>{
   try {
     const userId=req.session.user || req.session.passport?.user;
     const userData=await User.findOne({_id:userId});
+    // console.log(req.body)
     const {addressType,name,city,landMark,state,pincode,phone,altPhone}=req.body;
     const userAddress=await Address.findOne({userId:userData._id});
     if(!userAddress){
@@ -405,16 +436,16 @@ const addAddress=async (req,res)=>{
         address:[{addressType,name,city,landMark,state,pincode,phone,altPhone}]
       })
       await newAddress.save()
+      return res.status(200).json({success:true,message:"New address added successfully"})
     }else{
       userAddress.address.push({addressType,name,city,landMark,state,pincode,phone,altPhone})
       await userAddress.save();
+      return res.status(200).json({success:true,message:"New address added successfully"})
     }
-
-    res.redirect('/user-profile/addresses')
   } catch (error) {
     console.log("addAddress() error");
     console.log("addAddress() error,Error adding address",error);
-    res.redirect('/page-not-found')
+    res.status(500).json({success:false,message:"Something went wrong"})
   }
 }
 
@@ -453,15 +484,12 @@ const loadEditAddressPage=async (req,res)=>{
 
 const editAddress=async (req,res)=>{
   try {
-    const data=req.body;
-    const addressId=req.query.id;
-    const userId=req.session.user || req.session.passport?.user;
-    const userData=await User.findOne({_id:userId});
+    const {addressId,addressType,name,city,landMark,state,pincode,phone,altPhone}=req.body;
 
     const findAddress=await Address.findOne({'address._id':addressId});
 
     if(!findAddress){
-      res.redirect('/page-not-found');
+      return res.status(404).json({success:false,message:"Address not found"})
     }
 
     await Address.updateOne(
@@ -469,31 +497,31 @@ const editAddress=async (req,res)=>{
       {$set:{
         "address.$":{
           _id:addressId,
-          addressType:data.addressType,
-          name:data.name,
-          city:data.city,
-          landMark:data.landMark,
-          state:data.state,
-          pincode:data.pincode,
-          phone:data.phone,
-          altPhone:data.altPhone
+          addressType:addressType,
+          name:name,
+          city:city,
+          landMark:landMark,
+          state:state,
+          pincode:pincode,
+          phone:phone,
+          altPhone:altPhone
         }
       }}
     )
 
-    res.redirect('/user-profile/addresses')
+    return res.status(200).json({success:true,message:"Address has been updated"})
   } catch (error) {
     console.log("editAddress() error:",error)
-    res.redirect('/page-not-found')
+    return res.status(500).json({success:false,message:"Something went wrong"})
   }
 }
 
 const deleteAddress=async (req,res)=>{
   try {
-    const addressId=req.query.id;
+    const {addressId}=req.body;
     const findAddress=await Address.findOne({"address._id":addressId})
     if(!findAddress){
-      return res.status(404).send('Address not found')
+      return res.status(404).json({success:false,message:'Address not found'})
     }
 
     await Address.updateOne(
@@ -506,10 +534,10 @@ const deleteAddress=async (req,res)=>{
         }
       }
     )
-    res.redirect('/user-profile/addresses')
+    return res.status(200).json({success:true,message:"Address has been deleted successfully"})
   } catch (error) {
     console.log("deleteAddress() error:",error)
-    res.redirect('/page-not-found')
+    res.status(500).json({success:false,message:"Something went wrong, Please try later"})
   }
 }
 
@@ -521,6 +549,8 @@ module.exports = {
   resendOtp,
   postNewPassword,
   userProfile,
+  changeUsername,
+  changePhoneNumber,
   loadChangeEmailPage,
   changeEmail,
   verifyEmailOtp,

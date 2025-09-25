@@ -1,189 +1,210 @@
 <% if(addresses && addresses.length> 0){ %>
-                            <% addresses.forEach((address,index)=>{ %>
-                                <div class="address-item <%=index===0 ? 'selected' : '' %>">
-                                    <div class="address-header">
-                                        <span class="address-type"><%= address.addressType %></span>
-                                        <div class="address-actions">
-                                            <button class="btn btn-sm btn-outline" id="editFormBtn<%= index %>" type="button" onclick="showEditAddressForm('<%= index %>')">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="address-content">
-                                        <p><strong><%= address.name %></strong></p>
-                                        <p><%= address.landMark %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
-                                        <p>Phone: +91 <%= address.phone %> <% if(address.altPhone){ %> | Alt: +91 <%= address.altPhone %><% } %></p>
-                                    </div>
-                                    <div class="address-radio">
-                                        <input type="radio" name="addressId" value="<%= address._id %>" <%=index===0 ? 'checked' : '' %> 
-                                            onchange="document.querySelectorAll('.address-item').forEach(el => el.classList.remove('selected')); this.closest('.address-item').classList.add('selected')">
-                                        <label>Deliver to this address</label>
-                                    </div>
-                                    
-                                    <div class="address-form-container" id="editAddressFormContainer<%= index %>" style="display: none;">
-                                        <form action="" id="editAddressForm<%= index %>">
-                                            <input type="hidden" name="addressId" id="addressId" value="<%= address._id %>">
-                                            
-                                            <div class="form-grid">
-                                                <div class="form-group">
-                                                    <label for="addressType">Address Type</label>
-                                                    <input type="text" class="form-control" value="<%= address.addressType %>" id="addressType" name="addressType" required>
-                                                    <div id="addressType-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="name">Name</label>
-                                                    <input type="text" class="form-control" value="<%= address.name %>" id="name" name="name" required>
-                                                    <div id="addressName-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="city">City</label>
-                                                    <input type="text" class="form-control" id="city" value="<%= address.city %>" name="city" required>
-                                                    <div id="addressCity-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="landMark">Landmark</label>
-                                                    <input type="text" class="form-control" value="<%= address.landMark%>" id="landMark" name="landMark" required>
-                                                    <div id="addressLandmark-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="state">State</label>
-                                                    <input type="text" class="form-control" value="<%= address.state %>" id="state" name="state" required>
-                                                    <div id="addressState-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="pincode">Pincode</label>
-                                                    <input type="number" class="form-control" value="<%= address.pincode %>" id="pincode" name="pincode" required>
-                                                    <div id="addressPincode-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="phone">Phone</label>
-                                                    <input type="number" class="form-control" id="phone" value="<%= address.phone %>" name="phone" required>
-                                                    <div id="addressPhone-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="altPhone">Alternate Phone</label>
-                                                    <input type="number" class="form-control" id="altPhone" value="<%= address.altPhone %>" name="altPhone" required>
-                                                    <div id="addressAltPhone-error<%= index %>" class="error-message"></div>
-                                                </div>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-primary">Update Address</button>
-                                                <button type="button" class="btn btn-outline" onclick="showEditAddressForm('<%= index %>')">Cancel</button>
-                                            </div>
-                                        </form>
-                                    </div>
+    <% addresses.forEach((address,index)=>{ %>
+        <div class="address-item <%=index===0 ? 'selected' : '' %>">
+            <div class="address-header">
+                <span class="address-type">
+                    <%= address.addressType %>
+                </span>
+                <div class="address-actions">
+                    <button class="btn btn-sm btn-outline" id="editFormBtn<%= index %>" type="button"
+                        onclick="showEditAddressForm('<%= index %>')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+            </div>
+            <div class="address-content">
+                <p><strong>
+                        <%= address.name %>
+                    </strong></p>
+                <p>
+                    <%= address.landMark %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %>
+                </p>
+                <p>Phone: +91 <%= address.phone %>
+                        <% if(address.altPhone){ %> | Alt: +91 <%= address.altPhone %>
+                                <% } %>
+                </p>
+            </div>
+            <div class="address-radio">
+                <input type="radio" name="addressId" value="<%= address._id %>" <%=index===0 ? 'checked' : '' %>
+                onchange="document.querySelectorAll('.address-item').forEach(el => el.classList.remove('selected'));
+                this.closest('.address-item').classList.add('selected')">
+                <label>Deliver to this address</label>
+            </div>
+
+            <div class="address-form-container" id="editAddressFormContainer<%= index %>" style="display: none;">
+                <form action="" id="editAddressForm<%= index %>">
+                    <input type="hidden" name="addressId" id="addressId" value="<%= address._id %>">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="addressType">Address Type</label>
+                            <input type="text" class="form-control" value="<%= address.addressType %>" id="addressType"
+                                name="addressType" required>
+                            <div id="addressType-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" class="form-control" value="<%= address.name %>" id="name" name="name"
+                                required>
+                            <div id="addressName-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" class="form-control" id="city" value="<%= address.city %>" name="city"
+                                required>
+                            <div id="addressCity-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="landMark">Landmark</label>
+                            <input type="text" class="form-control" value="<%= address.landMark%>" id="landMark"
+                                name="landMark" required>
+                            <div id="addressLandmark-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" class="form-control" value="<%= address.state %>" id="state" name="state"
+                                required>
+                            <div id="addressState-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="pincode">Pincode</label>
+                            <input type="number" class="form-control" value="<%= address.pincode %>" id="pincode"
+                                name="pincode" required>
+                            <div id="addressPincode-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="number" class="form-control" id="phone" value="<%= address.phone %>"
+                                name="phone" required>
+                            <div id="addressPhone-error<%= index %>" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="altPhone">Alternate Phone</label>
+                            <input type="number" class="form-control" id="altPhone" value="<%= address.altPhone %>"
+                                name="altPhone" required>
+                            <div id="addressAltPhone-error<%= index %>" class="error-message"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Update Address</button>
+                        <button type="button" class="btn btn-outline"
+                            onclick="showEditAddressForm('<%= index %>')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <% }) %>
+
+            <div class="text-center">
+                <button type="button" class="btn btn-outline" onclick="showAddAddressForm()">
+                    <i class="fas fa-plus"></i> Add New Address
+                </button>
+
+                <div class="address-form-container mt-3" id="addNewAddressFormContainer" style="display: none;">
+                    <form id="addAddressForm">
+                        <input type="hidden" name="userId" value="<%= user._id %>">
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="addressType">Address Type</label>
+                                <input type="text" class="form-control" id="addressType" name="addressType" required>
+                                <div id="addressType-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                                <div id="addressName-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="city">City</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                                <div id="addressCity-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="landMark">Landmark</label>
+                                <input type="text" class="form-control" id="landMark" name="landMark" required>
+                                <div id="addressLandmark-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="state">State</label>
+                                <input type="text" class="form-control" id="state" name="state" required>
+                                <div id="addressState-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pincode">Pincode</label>
+                                <input type="number" class="form-control" id="pincode" name="pincode" required>
+                                <div id="addressPincode-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="number" class="form-control" id="phone" name="phone" required>
+                                <div id="addressPhone-error" class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="altPhone">Alternate Phone</label>
+                                <input type="number" class="form-control" id="altPhone" name="altPhone" required>
+                                <div id="addressAltPhone-error" class="error-message"></div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save Address</button>
+                            <button type="button" class="btn btn-outline" onclick="hideAddAddressForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <% } else { %>
+                <div class="text-center">
+                    <p class="mb-3">No addresses found. Please add a delivery address.</p>
+                    <div id="addNewAddressFormContainer">
+                        <form id="addAddressForm">
+                            <input type="hidden" name="userId" value="<%= user._id %>">
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="addressType">Address Type</label>
+                                    <input type="text" class="form-control" id="addressType" name="addressType"
+                                        required>
+                                    <div id="addressType-error" class="error-message"></div>
                                 </div>
-                            <% }) %>
-                            
-                            <div class="text-center">
-                                <button type="button" class="btn btn-outline" onclick="showAddAddressForm()">
-                                    <i class="fas fa-plus"></i> Add New Address
-                                </button>
-                                
-                                <div class="address-form-container mt-3" id="addNewAddressFormContainer" style="display: none;">
-                                    <form id="addAddressForm">
-                                        <input type="hidden" name="userId" value="<%= user._id %>">
-                                        
-                                        <div class="form-grid">
-                                            <div class="form-group">
-                                                <label for="addressType">Address Type</label>
-                                                <input type="text" class="form-control" id="addressType" name="addressType" required>
-                                                <div id="addressType-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="name">Name</label>
-                                                <input type="text" class="form-control" id="name" name="name" required>
-                                                <div id="addressName-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="city">City</label>
-                                                <input type="text" class="form-control" id="city" name="city" required>
-                                                <div id="addressCity-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="landMark">Landmark</label>
-                                                <input type="text" class="form-control" id="landMark" name="landMark" required>
-                                                <div id="addressLandmark-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="state">State</label>
-                                                <input type="text" class="form-control" id="state" name="state" required>
-                                                <div id="addressState-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="pincode">Pincode</label>
-                                                <input type="number" class="form-control" id="pincode" name="pincode" required>
-                                                <div id="addressPincode-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="phone">Phone</label>
-                                                <input type="number" class="form-control" id="phone" name="phone" required>
-                                                <div id="addressPhone-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="altPhone">Alternate Phone</label>
-                                                <input type="number" class="form-control" id="altPhone" name="altPhone" required>
-                                                <div id="addressAltPhone-error" class="error-message"></div>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            <button type="submit" class="btn btn-primary">Save Address</button>
-                                            <button type="button" class="btn btn-outline" onclick="hideAddAddressForm()">Cancel</button>
-                                        </div>
-                                    </form>
+                                <div class="form-group">
+                                    <label for="name">Name</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <div id="addressName-error" class="error-message"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="city">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" required>
+                                    <div id="addressCity-error" class="error-message"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="landMark">Landmark</label>
+                                    <input type="text" class="form-control" id="landMark" name="landMark" required>
+                                    <div id="addressLandmark-error" class="error-message"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">State</label>
+                                    <input type="text" class="form-control" id="state" name="state" required>
+                                    <div id="addressState-error" class="error-message"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pincode">Pincode</label>
+                                    <input type="number" class="form-control" id="pincode" name="pincode" required>
+                                    <div id="addressPincode-error" class="error-message"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Phone</label>
+                                    <input type="number" class="form-control" id="phone" name="phone" required>
+                                    <div id="addressPhone-error" class="error-message"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="altPhone">Alternate Phone</label>
+                                    <input type="number" class="form-control" id="altPhone" name="altPhone" required>
+                                    <div id="addressAltPhone-error" class="error-message"></div>
                                 </div>
                             </div>
-                        <% } else { %>
-                            <div class="text-center">
-                                <p class="mb-3">No addresses found. Please add a delivery address.</p>
-                                <div id="addNewAddressFormContainer">
-                                    <form id="addAddressForm">
-                                        <input type="hidden" name="userId" value="<%= user._id %>">
-                                        
-                                        <div class="form-grid">
-                                            <div class="form-group">
-                                                <label for="addressType">Address Type</label>
-                                                <input type="text" class="form-control" id="addressType" name="addressType" required>
-                                                <div id="addressType-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="name">Name</label>
-                                                <input type="text" class="form-control" id="name" name="name" required>
-                                                <div id="addressName-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="city">City</label>
-                                                <input type="text" class="form-control" id="city" name="city" required>
-                                                <div id="addressCity-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="landMark">Landmark</label>
-                                                <input type="text" class="form-control" id="landMark" name="landMark" required>
-                                                <div id="addressLandmark-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="state">State</label>
-                                                <input type="text" class="form-control" id="state" name="state" required>
-                                                <div id="addressState-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="pincode">Pincode</label>
-                                                <input type="number" class="form-control" id="pincode" name="pincode" required>
-                                                <div id="addressPincode-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="phone">Phone</label>
-                                                <input type="number" class="form-control" id="phone" name="phone" required>
-                                                <div id="addressPhone-error" class="error-message"></div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="altPhone">Alternate Phone</label>
-                                                <input type="number" class="form-control" id="altPhone" name="altPhone" required>
-                                                <div id="addressAltPhone-error" class="error-message"></div>
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Save Address</button>
-                                    </form>
-                                </div>
-                            </div>
-                        <% } %>
+                            <button type="submit" class="btn btn-primary">Save Address</button>
+                        </form>
+                    </div>
+                </div>
+                <% } %>

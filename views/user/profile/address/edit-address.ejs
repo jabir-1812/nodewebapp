@@ -1,51 +1,69 @@
 <%- include("../../../../views/partials/user/header") %>
+<style>
+    .is-invalid {
+    border: 1px solid red;
+    }
+    .error-message {
+    color: red;
+    font-size: 12px;
+    }
+
+</style>
 <div class="container mt-4">
    <h3 class="mt-3" style="color: #046963; margin-bottom:70px">Edit User Address</h3>
-   <form id="addressForm" method="POST" action="/edit-address?id=<%= address._id.toLocaleString() %>" class="border-0 p-3">
+   <form id="addressForm" class="border-0 p-3">
        <div class="row mb-50">
            <div class="form-group col-md-4">
                <label for="addressType">Address Type:</label>
-               <input type="text" class="form-control border-3" value="<%= address.addressType %>" id="addressType" name="addressType" required>
+               <input type="text" class="form-control border-3" value="<%= address.addressType %>" name="addressType" data-rule="required|addressType">
+               <small class="error-message"></small>
            </div>
            <div class="form-group col-md-4">
                <label for="name">Name:</label>
-               <input type="text" class="form-control border-3" value="<%= address.name %>" id="name" name="name" required>
+               <input type="text" class="form-control border-3" value="<%= address.name %>" name="name" data-rule="required|min:3|name">
+               <small class="error-message"></small>
            </div>
            <div class="form-group col-md-4">
                <label for="city">City:</label>
-               <input type="text" class="form-control border-3" id="city" value="<%= address.city %>" name="city" required>
+               <input type="text" class="form-control border-3" value="<%= address.city %>" name="city" data-rule="required|city">
+               <small class="error-message"></small>
            </div>
        </div>
        <div class="row mb-3">
            <div class="form-group col-md-4">
                <label for="landMark">Landmark:</label>
-               <input type="text" class="form-control border-3" value="<%= address.landMark%>" id="landMark" name="landMark" required>
+               <input type="text" class="form-control border-3" value="<%= address.landMark%>" name="landMark" data-rule="required|landMark">
+               <small class="error-message"></small>
            </div>
            <div class="form-group col-md-4">
                <label for="state">State:</label>
-               <input type="text" class="form-control border-3" value="<%= address.state %>" id="state" name="state" required>
+               <input type="text" class="form-control border-3" value="<%= address.state %>" name="state" data-rule="required|state">
+               <small class="error-message"></small>
            </div>
            <div class="form-group col-md-4">
                <label for="pincode">Pincode:</label>
-               <input type="number" class="form-control border-3" value="<%= address.pincode %>" id="pincode" name="pincode" required>
+               <input type="number" class="form-control border-3" value="<%= address.pincode %>" name="pincode" data-rule="required|pincode">
+               <small class="error-message"></small>
            </div>
        </div>
        <div class="row mb-3">
            <div class="form-group col-md-4">
                <label for="phone">Phone:</label>
-               <input type="number" class="form-control border-3" id="phone" value="<%= address.phone %>" name="phone" required>
+               <input type="number" class="form-control border-3" value="<%= address.phone %>" name="phone" data-rule="required|phone">
+               <small class="error-message"></small>
            </div>
            <div class="form-group col-md-4">
                <label for="altPhone">Alternate Phone:</label>
-               <input type="number" class="form-control border-3" id="altPhone" value="<%= address.altPhone %>" name="altPhone" required>
+               <input type="number" class="form-control border-3" value="<%= address.altPhone %>" name="altPhone" data-rule="required|phone|different:phone">
+               <small class="error-message"></small>
            </div>
        </div>
-       <button type="submit" id="submitButton" class="btn btn-primary">Submit</button>
+       <button type="submit" class="btn btn-primary">Submit</button>
    </form>
 </div>
 
 
-<script>
+<!-- <script>
    document.getElementById('submitButton').addEventListener('click', function (event) {
        if (!validateForm()) {
            event.preventDefault();
@@ -71,6 +89,113 @@
 
        return isValid;
    }
+</script> -->
+<script>
+    
+    document.getElementById("addressForm").addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const form=e.target;
+
+        if(validateForm(form)){
+            let formData=new FormData(form);
+            const data = Object.fromEntries(formData.entries())
+            // console.log("data=====>",data)
+
+            const response = await fetch('/edit-address', {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    addressId: "<%= address._id.toString() %>",
+                    ...data                               
+                })
+            });
+
+            const result=await response.json()
+            if(response.ok){
+                Swal.fire({
+                   title:"Done",
+                   text:"Address has been updated",
+                   icon:"success",
+                   showConfirmButton:true,
+                   timer:1000 
+                }).then(()=>{
+                    window.location.href = '/user-profile/addresses'
+                })
+            }else{
+               Swal.fire("Error",`${result.message}`,"error")
+            }
+        }
+    })
+
+    function validateForm(form){
+        let isValid = true;
+
+        const regex = {
+            phone: /^\d{10}$/,
+            pincode: /^\d{6}$/,
+            alphabets: /^[A-Za-z\s]+$/
+        };
+
+        form.querySelectorAll("input").forEach((input)=>{
+            const rules = input.dataset.rule?.split("|") || [];
+            const errorElement = input.nextElementSibling;
+            let value = input.value.trim();
+            let error = "";
+
+            for(let rule of rules){
+                if(rule === "required" && !value){
+                    error = "This field is required";
+                    break;
+                }
+
+                if(rule.startsWith("min")){
+                    let min = parseInt(rule.split(":")[1]);
+                    if(value.length < min){
+                        error = `Minimum ${min} characters required`;
+                        break;
+                    }
+                }
+
+                if(rule === "phone" && !regex.phone.test(value)){
+                    error = "Enter a valid 10-digit phone number";
+                    break;
+                }
+
+                if(rule.startsWith("different:")){
+                    let otherFieldName = rule.split(":")[1];
+                    let otherInput = form.querySelector(`[name="${otherFieldName}"]`);
+                    if(otherInput && otherInput.value.trim() === value){
+                        error = `This field must be different from ${otherFieldName}`;
+                        break;
+                    }
+                }
+
+                if(["name","city","landMark","state"].includes(rule) && !regex.alphabets.test(value)){
+                    error = `${rule.charAt(0).toUpperCase() + rule.slice(1)} should contain alphabets only.`;
+                    break;
+                }
+
+                if(rule === "pincode" && !regex.pincode.test(value)){
+                    error = "Pincode should be a 6-digit number.";
+                    break;
+                }
+            }
+
+            if(error){
+                isValid = false;
+                if(errorElement) errorElement.textContent = error;
+                input.classList.add("is-invalid");
+            } else {
+                if(errorElement) errorElement.textContent = "";
+                input.classList.remove("is-invalid");
+            }
+        });
+
+        return isValid;
+    }
+
 </script>
 <%- include("../../../../views/partials/user/footer") %>
 
