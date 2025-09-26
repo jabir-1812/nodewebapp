@@ -50,15 +50,16 @@ router.post('/verify-change-password-otp',userAuth,profileController.verifyChang
 router.get('/forgot-password',profileController.getForgotPasswordPage);//
 
 //verifying email in 'forgot password page'
-router.post('/forgot-email-valid',profileController.forgotEmailValid);
+router.post('/forgot-password/verify-email',profileController.verifyEmail);
+router.get('/forgot-password/email-otp-verification',profileController.getEmailOtpVerficationPage)
 
 //verifying otp in 'forgot password page'
-router.post('/verify-password-forgot-otp',profileController.verifyForgotPasswordOtp);
+router.post('/forgot-password/verify-otp',profileController.verifyForgotPasswordOtp);
 
 //after successful otp verifcation in forgot password, it redirect to reset password route
 router.get('/reset-password',profileController.getResetPasswordPage);
 //resending the otp in forgot-password page
-router.post('/resend-forgot-otp',profileController.resendOtp)
+router.post('/forgot-password/resend-otp',profileController.resendOtp)
 router.post('/reset-password',profileController.postNewPassword)
 
 //address Management
