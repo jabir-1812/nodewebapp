@@ -75,7 +75,40 @@ const getForgotPasswordPage = async (req, res) => {
 
 
 
-const forgotEmailValid = async (req, res) => {
+// const forgotEmailValid = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     const findUser = await User.findOne({ email: email });
+//     if (findUser) {
+//       const otp = generateOTP();
+//       const emailSent = await sendVerificationEmail(email, otp);
+//       if (emailSent) {
+//         req.session.userOtp = otp;
+//         req.session.email = email;
+//         res.render("./user/forgot-password-otp", {
+//           title: "Forgot password OTP",
+//           user:""
+//         });
+//         console.log("OTP:", otp);
+//       } else {
+//         res.json({
+//           success: false,
+//           message: "Failed to send OTP. Please try again",
+//         });
+//       }
+//     } else {
+//       res.render("./user/forgot-password", {
+//         title: "Forgot Password",
+//         message: "User with this email does not exist",
+//         user:""
+//       });
+//     }
+//   } catch (error) {
+//     console.log("error:",error)
+//     res.redirect("/page-not-found");
+//   }
+// };
+const verifyEmail = async (req, res) => {
   try {
     const { email } = req.body;
     const findUser = await User.findOne({ email: email });
@@ -85,10 +118,7 @@ const forgotEmailValid = async (req, res) => {
       if (emailSent) {
         req.session.userOtp = otp;
         req.session.email = email;
-        res.render("./user/forgot-password-otp", {
-          title: "Forgot password OTP",
-          user:""
-        });
+        res.status(200).json({success:true,message:"Email verified",redirectUrl:'/forgot-password/email-otp-verification'})
         console.log("OTP:", otp);
       } else {
         res.json({
@@ -97,17 +127,28 @@ const forgotEmailValid = async (req, res) => {
         });
       }
     } else {
-      res.render("./user/forgot-password", {
-        title: "Forgot Password",
-        message: "User with this email does not exist",
-        user:""
-      });
+      res.status(404).json({success:false,message:"User with this email does not exist"})
     }
   } catch (error) {
     console.log("error:",error)
-    res.redirect("/page-not-found");
+    res.status(500).json({success:false,message:"Something went wrong, Please try later"});
   }
 };
+
+const getEmailOtpVerficationPage = async (req,res)=>{
+  try {
+    if(!req.session.email){
+      return res.redirect('/page-not-found')
+    }
+    res.render('./user/forgot-password-otp',{
+      title:"Email OTP verfication",
+      user:""
+    })
+  } catch (error) {
+    console.log("getEmailOtpVerificationPage() error=====>",error)
+    res.redirect('/page-not-found')
+  }
+}
 
 
 const verifyForgotPasswordOtp=async (req,res)=>{
@@ -586,8 +627,9 @@ const deleteAddress=async (req,res)=>{
 
 module.exports = {
   getForgotPasswordPage,
-  forgotEmailValid,
+  verifyEmail,
   verifyForgotPasswordOtp,
+  getEmailOtpVerficationPage,
   getResetPasswordPage,
   resendOtp,
   postNewPassword,
