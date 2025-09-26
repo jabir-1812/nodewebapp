@@ -33,6 +33,7 @@ router.get('/login',userController.laodLogin);//
 router.post('/login',userController.login);//
 router.get('/logout',userController.logout);//
 
+//profile management
 router.get('/user-profile',userAuth,profileController.userProfile)
 router.post('/change-username',userAuth,profileController.changeUsername)
 router.post('/change-phone-number',userAuth,profileController.changePhoneNumber)
@@ -42,7 +43,7 @@ router.post('/change-email',userAuth,profileController.changeEmail)
 router.post('/verify-email-otp',userAuth,profileController.verifyEmailOtp);
 router.post('/update-email',userAuth,profileController.updateEmail)
 router.get('/change-password',userAuth,profileController.laodChangePasswordPage)
-router.post('/change-password',userAuth,profileController.changePassword)
+router.post('/verify-current-password',userAuth,profileController.verifyCurrentPassword)
 router.post('/verify-change-password-otp',userAuth,profileController.verifyChangePasswordOtp);
 
 //forgot password
