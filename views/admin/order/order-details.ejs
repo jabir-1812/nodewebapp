@@ -142,7 +142,12 @@ document.querySelectorAll(".update-status-btn").forEach(btn => {
       const result = await response.json();
 
       if (result.success) {
-        alert("Status updated successfully!");
+        // alert("Status updated successfully!");
+        Swal.fire({
+          timer:1500,
+          icon:'success',
+          title:"Status updated"
+        })
         document.getElementById("order-status").innerText = result.orderStatus;
       } else {
         alert(result.message || "Failed to update");

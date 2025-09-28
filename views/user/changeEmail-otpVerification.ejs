@@ -1,0 +1,227 @@
+<%- include("../../views/partials/user/header") %>
+
+<style>
+  body {
+    background: #f5f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 400px;
+    margin: 80px auto;
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  form {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #444;
+    text-align: left;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    margin-bottom: 15px;
+    outline: none;
+    transition: border 0.3s;
+  }
+
+  input:focus {
+    border-color: #007bff;
+  }
+
+  button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  button[type="submit"] {
+    background: #007bff;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  button[type="submit"]:hover {
+    background: #0056b3;
+  }
+
+  .resend-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #444;
+  }
+
+  #resendBtn {
+    background: #28a745;
+    color: #fff;
+    width: auto;
+    padding: 6px 12px;
+    font-size: 14px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  #resendBtn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<div class="container">
+  <h1>Email Verification</h1>
+  <p>We've sent a 6-digit code to your email</p>
+
+  <form id="otpForm">
+    <label for="otp">Enter the OTP</label>
+    <input type="number" id="otp" required>
+    <button type="submit">Verify OTP</button>
+  </form>
+
+  <div class="resend-wrapper">
+    <span id="timer">(1:00)</span>
+    <button id="resendBtn" onclick="resendOtp()" disabled>
+      Resend OTP
+    </button>
+  </div>
+</div>
+
+<script>
+  let countdown;
+  let timeLeft = 60; // 1 minute countdown
+
+  function startTimer() {
+    const timerDisplay = document.getElementById("timer");
+    const resendBtn = document.getElementById("resendBtn");
+    resendBtn.disabled = true;
+    timeLeft = 60;
+
+    clearInterval(countdown);
+    countdown = setInterval(() => {
+      let minutes = Math.floor(timeLeft / 60);
+      let seconds = timeLeft % 60;
+      timerDisplay.textContent = `(${minutes}:${seconds < 10 ? '0' : ''}${seconds})`;
+
+      if (timeLeft <= 0) {
+        clearInterval(countdown);
+        timerDisplay.textContent = "";
+        resendBtn.disabled = false;
+      }
+      timeLeft--;
+    }, 1000);
+  }
+
+  // Start timer on page load
+  startTimer();
+
+  document.getElementById('otpForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const otp = document.getElementById('otp').value;
+
+    const response = await fetch('/change-email/verify-email-otp', {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp })
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      if (result.success) {
+        Swal.fire("OTP verified", "", "success")
+          .then(() => window.location.href = result.redirectUrl);
+      } else {
+        Swal.fire(result.message, "", "error");
+      }
+    } else {
+      Swal.fire("Error", result.message, "error");
+    }
+  });
+
+  async function resendOtp() {
+    const resendBtn = document.getElementById("resendBtn");
+    const originalText = resendBtn.textContent;
+
+    // show spinner
+    resendBtn.innerHTML = '<div class="spinner"></div> Sending...';
+    resendBtn.disabled = true;
+
+    try {
+      const response = await fetch('/change-email/resend-otp', {
+        method: "POST"
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        if (result.success) {
+          Swal.fire("Resend OTP Successful", "", "success");
+          startTimer(); // restart timer after resend
+        } else {
+          Swal.fire(result.message, "", "error");
+          resendBtn.disabled = false;
+        }
+      } else {
+        Swal.fire("Error", result.message, "error");
+        resendBtn.disabled = false;
+      }
+    } catch (err) {
+      Swal.fire("Error", "Something went wrong", "error");
+      resendBtn.disabled = false;
+    } finally {
+      // reset button text (only if timer expired, otherwise timer will manage state)
+      resendBtn.innerHTML = originalText;
+    }
+  }
+</script>
+
+<%- include("../../views/partials/user/footer") %>

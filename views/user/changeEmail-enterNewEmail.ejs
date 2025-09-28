@@ -5,9 +5,9 @@
    <div class="card mx-auto card-login col-4">
        <div class="card-body">
            <h4 class="card-title mb-4">Enter New Email</h4>
-           <form method="post" action="/update-email" onsubmit="return validateEmailForm()">
+           <form id="emailForm">
                <div class="mb-3">
-                   <input class="form-control" name="newEmail" placeholder="New Email" type="text" id="email">
+                   <input class="form-control" placeholder="New Email" type="text" id="email">
                    <div class="error-message" id="email-error"></div>
                </div>
                <div class="mb-4">
@@ -20,6 +20,36 @@
 
 
 <script>
+
+    document.getElementById('emailForm').addEventListener('submit',async (e)=>{
+        e.preventDefault()
+
+        const email=document.getElementById('email').value;
+        if(validateEmailForm()){
+            const response=await fetch('/change-email/update-email',{
+                method:"POST",
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({newEmail:email})
+            })
+
+            const result=await response.json()
+            if(result.success){
+                Swal.fire({
+                    title:"Email updated successfully",
+                    icon:'success',
+                    showConfirmButton:true,
+                    timer:2000
+                }).then(()=>{
+                    window.location.href=result.redirectUrl;
+                })
+            }else{
+                Swal.fire("Error",result.message,"error")
+            }
+
+        }
+    })
    function validateEmailForm() {
        const emailInput = document.getElementById('email');
        const emailError = document.getElementById('email-error');

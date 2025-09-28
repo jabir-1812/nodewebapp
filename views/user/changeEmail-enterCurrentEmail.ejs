@@ -1,0 +1,205 @@
+<%- include("../../views/partials/user/header") %>
+
+<style>
+/* Page background */
+body {
+  background: #f5f7fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Centered container */
+form#emailForm {
+  max-width: 380px;
+  margin: 60px auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+form#emailForm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+}
+
+/* Heading */
+h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #2c3e50;
+  font-size: 2.4rem;
+  font-weight: 600;
+}
+
+/* Input field */
+#emailForm input {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 10px;
+  font-size: 15px;
+  background: #fafafa;
+  outline: none;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+#emailForm input:focus {
+  border-color: #4a90e2;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(74,144,226,0.3);
+}
+
+/* Error message */
+.error-message {
+  color: #e74c3c;
+  font-size: 13px;
+  margin: 4px 0 12px 2px;
+  font-weight: 500;
+}
+
+/* Button */
+#emailForm button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #4a90e2, #357ab8);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+#emailForm button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(53,122,184,0.3);
+}
+
+#emailForm button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Spinner inside button */
+.spinner {
+  border: 3px solid #fff;
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+.loading .spinner {
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+
+<h1>Enter Current Email</h1>
+<form id="emailForm">
+    <div>
+        <input placeholder="Email" type="text" id="email">
+        <div class="error-message" id="email-error"></div>
+    </div>
+    <div>
+        <button type="submit" id="submitBtn">
+          <span class="btn-text">Verify</span>
+          <span class="spinner"></span>
+        </button>
+    </div>
+</form>
+
+<script>
+    const emailForm = document.getElementById('emailForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const spinner = submitBtn.querySelector('.spinner');
+
+    emailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        if (validateForm()) {
+            // Start loading state
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            btnText.textContent = "Verifying...";
+
+            try {
+                const response = await fetch('/change-email/verify-current-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (result.success) {
+                        Swal.fire({
+                            title: "Verified",
+                            text: result.message,
+                            icon: 'success',
+                            showConfirmButton: true,
+                            timer: 1000
+                        }).then(() => {
+                            window.location.href = result.redirectUrl;
+                        });
+                    } else {
+                        Swal.fire("Oops", result.message, 'warning');
+                    }
+                } else {
+                    Swal.fire("Failed to Verify", result.message, "error");
+                }
+            } catch (err) {
+                Swal.fire("Error", "Something went wrong. Try again later.", "error");
+            }
+
+            // Reset button
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+            btnText.textContent = "Verify";
+        }
+    });
+
+    function validateForm() {
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('email-error');
+        const emailValue = emailInput.value.trim();
+        const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+
+        if (emailValue === '') {
+            emailError.textContent = 'Please enter your email.';
+            emailInput.classList.add('is-invalid');
+            return false;
+        } else if (!emailValue.match(emailPattern)) {
+            emailError.textContent = 'Please enter a valid email address';
+            emailInput.classList.add('is-invalid');
+            return false;
+        } else {
+            emailError.textContent = '';
+            emailInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+</script>
+
+<%- include("../../views/partials/user/footer") %>

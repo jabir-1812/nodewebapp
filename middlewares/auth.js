@@ -34,12 +34,19 @@ const userAuth = async (req, res, next) => {
 
         // 2. Check if user exists in DB
         const user = await User.findById(req.session.user);
+        console.log("user after block====>",user)
         if (!user) {
+            if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+                return res.status(401).json({ status: false, message: 'User not found, Login required' });
+            }
             return res.redirect('/login');
         }
 
         // 3. Check if user is blocked
         if (user.isBlocked) {
+            if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+                return res.status(401).json({ status: false, message: 'User blocked' });
+            }
             return res.redirect('/login');
         }
 

@@ -29,7 +29,7 @@ router.get('/auth/google/callback',passport.authenticate('google',{failureRedire
 });
 
 //login
-router.get('/login',userController.laodLogin);//
+router.get('/login',userController.loadLogin);//
 router.post('/login',userController.login);//
 router.get('/logout',userController.logout);//
 
@@ -37,28 +37,24 @@ router.get('/logout',userController.logout);//
 router.get('/user-profile',userAuth,profileController.userProfile)
 router.post('/change-username',userAuth,profileController.changeUsername)
 router.post('/change-phone-number',userAuth,profileController.changePhoneNumber)
-router.get('/change-email',userAuth,profileController.loadChangeEmailPage)
-router.post('/change-email',userAuth,profileController.changeEmail)
-//verifying otp to change-email
-router.post('/verify-email-otp',userAuth,profileController.verifyEmailOtp);
-router.post('/update-email',userAuth,profileController.updateEmail)
+//change email
+router.get('/change-email',userAuth,profileController.loadChangeEmailPage)//
+router.post('/change-email/verify-current-email',userAuth,profileController.verifyCurrentEmail)//
+router.get('/change-email/verify-email-otp',userAuth,profileController.getEmailOtpVerficationPage)//
+router.post('/change-email/resend-otp',userAuth,profileController.resendOtp)
+router.post('/change-email/verify-email-otp',userAuth,profileController.verifyEmailOtp);
+router.get('/change-email/enter-new-email',userAuth,profileController.getUpdateEmailPage)
+router.post('/change-email/update-email',userAuth,profileController.updateEmail)
+//change password
 router.get('/change-password',userAuth,profileController.laodChangePasswordPage)
 router.post('/verify-current-password',userAuth,profileController.verifyCurrentPassword)
 router.post('/verify-change-password-otp',userAuth,profileController.verifyChangePasswordOtp);
-
 //forgot password
 router.get('/forgot-password',profileController.getForgotPasswordPage);//
-
-//verifying email in 'forgot password page'
 router.post('/forgot-password/verify-email',profileController.verifyEmail);
 router.get('/forgot-password/email-otp-verification',profileController.getEmailOtpVerficationPage)
-
-//verifying otp in 'forgot password page'
 router.post('/forgot-password/verify-otp',profileController.verifyForgotPasswordOtp);
-
-//after successful otp verifcation in forgot password, it redirect to reset password route
 router.get('/reset-password',profileController.getResetPasswordPage);
-//resending the otp in forgot-password page
 router.post('/forgot-password/resend-otp',profileController.resendOtp)
 router.post('/reset-password',profileController.postNewPassword)
 

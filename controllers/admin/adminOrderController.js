@@ -14,7 +14,7 @@ const listAllOrders=async (req,res)=>{
 
         const query = {};
 
-        // 🔍 Search (orderId OR user name/email)
+        //  Search (orderId OR user name/email)
         if (search) {
         const users = await User.find({
             $or: [
@@ -31,18 +31,18 @@ const listAllOrders=async (req,res)=>{
         ];
         }
 
-        // 📌 Filter by status
+        //  Filter by status
         if (status) {
         query.orderStatus = status;
         }
 
-        // ↕️ Sorting
+        //  Sorting
         let sortOption = { createdAt: -1 }; // default newest
         if (sort === "oldest") sortOption = { createdAt: 1 };
         if (sort === "amountAsc") sortOption = { totalAmount: 1 };
         if (sort === "amountDesc") sortOption = { totalAmount: -1 };
 
-        // 📑 Pagination
+        // Pagination
         const totalOrders = await Order.countDocuments(query);
         const orders = await Order.find(query)
         .populate("userId", "name email")

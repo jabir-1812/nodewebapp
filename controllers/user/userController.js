@@ -177,14 +177,11 @@ const resendOtp=async (req,res)=>{
 
 
 
-const laodLogin=async (req,res)=>{
+const loadLogin=async (req,res)=>{
     try {
-        if(!req.session.user){
             return res.render('./user/login',{title:"Log in",message:"",passwordMsg:"",user:""})
-        }else{
-            res.redirect('/')
-        }
     } catch (error) {
+        console.log('loadLogin() error=====>',error)
         res.redirect('/page-not-found')
     }
 }
@@ -195,14 +192,11 @@ const login=async (req,res)=>{
     try {
 
         const {email,password}=req.body;
-
         const findUser=await User.findOne({isAdmin:0,email:email});
-
         
         if(!findUser){
             return res.render('./user/login',{title:"Log in",message:"User not found",passwordMsg:"",user:''})
         }
-
 
         if(findUser.isBlocked){
            return res.render('./user/login',{title:'Log in',message:'User is blocked by admin',passwordMsg:"",user:''})
@@ -217,7 +211,6 @@ const login=async (req,res)=>{
         req.session.user=findUser._id;
         // req.session.user=findUser;
         res.redirect('/')
-
 
     } catch (error) {
         console.log("login error:",error)
@@ -691,7 +684,7 @@ module.exports ={
     signup,
     verifyOtp,
     resendOtp,
-    laodLogin,
+    loadLogin,
     login,
     logout,
     loadShoppingPage,

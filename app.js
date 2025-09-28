@@ -43,6 +43,12 @@ app.use('/',userRouter);
 app.use('/admin',adminRouter);
 
 
+app.use((req, res) => {
+  res.render('invalid-route',{
+    title:"Invalid Route"
+  })
+});
+
 app.listen(process.env.PORT,(err)=>{
     if(err){
         console.log("error starting server:",err)
