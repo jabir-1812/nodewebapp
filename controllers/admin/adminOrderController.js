@@ -97,7 +97,7 @@ const updateItemStatus = async (req, res) => {
         // Update status
         item.itemStatus = status;
         if(status==="Delivered"){
-            item.deliveredAt=new Date();
+            item.deliveredOn=new Date();
         }
 
         // --- Update overall orderStatus based on items ---
@@ -107,7 +107,8 @@ const updateItemStatus = async (req, res) => {
             order.orderStatus = "Cancelled";
         } else if (allStatuses.every(s => s === "Delivered")) {
             order.orderStatus = "Delivered";
-            order.deliveredAt=new Date();
+            order.deliveredOn=new Date();
+            order.paymentStatus="Paid";
         } else if (allStatuses.some(s => s === "Shipped")) {
             order.orderStatus = "Partially Shipped";
         } else {
@@ -170,7 +171,12 @@ const updateReturnStatus=async(req,res)=>{
     if (!order) return res.json({ success: false, message: "Order not found" });
 
     const item = order.orderItems.id(itemId);
+    console.log("item=====>",item)
     if (!item) return res.json({ success: false, message: "Item not found" });
+
+    if(item.refundStatus==="Refunded"){
+        return res.json({success:false,message:"Already refunded"})
+    }
 
     item.returnStatus = status;
 
@@ -180,21 +186,28 @@ const updateReturnStatus=async(req,res)=>{
         });
       const refundAmount = item.price * item.quantity; // TODO: adjust for discounts
 
-      // 🔹 Get or create wallet
-      let wallet = await Wallet.findOne({ userId: order.userId });
-      if (!wallet) {
-        wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
+      if (order.paymentMethod === "Cash on Delivery") {
+        // ✅ COD → refund to wallet
+        let wallet = await Wallet.findOne({ userId: order.userId });
+        if (!wallet) {
+          wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
+        }
+
+        wallet.balance += refundAmount;
+        wallet.transactions.push({
+          amount: refundAmount,
+          type: "credit",
+          description: `Refund for ${item.productName} (Order ${order.orderId})`
+        });
+
+        await wallet.save();
+        item.refundStatus="Refunded";
+        item.refundedOn= new Date();
+      } else if (order.paymentMethod === "Online Payment" && paymentStatus==="Paid") {
+        // ✅ Online payment → just mark refunded (no wallet credit)
+        item.refundStatus = "Refunded";
+        item.refundedOn = new Date();
       }
-
-      // 🔹 Credit refund
-      wallet.balance += refundAmount;
-      wallet.transactions.push({
-        amount: refundAmount,
-        type: "credit",
-        description: `Refund for ${item.productName} (Order ${order.orderId})`
-      });
-
-      await wallet.save();
     }
 
     await order.save();

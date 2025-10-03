@@ -91,7 +91,7 @@
                                     <%= order.item.itemStatus %>
                                 </span>
                                 <% if(order.item.itemStatus==="Delivered"){ %>
-                                    On <%= new Date(order.item.deliveredAt).toDateString().slice(4) %>
+                                    On <%= new Date(order.item.deliveredOn).toDateString().slice(4) %>
                                 <%}%>
                             </p>
 

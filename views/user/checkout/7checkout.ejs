@@ -476,10 +476,10 @@
                     </div>
                     
                     <div class="payment-option">
-                        <input type="radio" name="paymentMethod" id="UPI" value="UPI"
+                        <input type="radio" name="paymentMethod" id="onlinePayment" value="onlinePayment"
                                onchange="document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected')); this.closest('.payment-option').classList.add('selected')">
-                        <label for="UPI">
-                            <i class="fas fa-mobile-alt"></i> UPI Payment
+                        <label for="onlinePayment">
+                            <i class="fas fa-mobile-alt"></i> Cards/Netbanking/Wallet
                         </label>
                     </div>
                 </div>
@@ -527,6 +527,7 @@
 
     <!-- Include SweetAlert2 for alerts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     
     <script>
     // Show/hide the "add new address" form
@@ -844,41 +845,114 @@
             addressId:selectedAddress.value,
             paymentMethod:selectedPayment.value
         }
+        if(selectedPayment.value==="COD"){
+            try {
+                const response=await fetch('/place-cod-order',{
+                    method:'post',
+                    headers:{
+                        'Content-Type':'application/json'
+                    },
+                    body:JSON.stringify(formData)
+                })
+                const res= await response.json();
 
-        try {
-            const response=await fetch('/place-order',{
-                method:'post',
+                if(res.success){
+                    Swal.fire({
+                        title:"Order Placed Successfully!",
+                        icon:"success",
+                        timer:2000
+                    }).then(() => {
+                        window.location.href=`/order-success/${res.orderId}`;
+                    });
+                }else{
+                    Swal.fire({
+                        title: "Order Failed",
+                        text: res.message,
+                        icon: "error"
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            } catch (error) {
+                console.log("Something went wrong:",error);
+                Swal.fire({
+                    title: "Error",
+                    text: "Something went wrong. Please try again.",
+                    icon: "error"
+                });
+            }
+        }
+        if(selectedPayment.value==="onlinePayment"){
+            const response=await fetch('/create-razorpay-order',{
+                method:"POST",
                 headers:{
                     'Content-Type':'application/json'
                 },
-                body:JSON.stringify(formData)
+                body:JSON.stringify({cartId})
             })
-            const res= await response.json();
+            const razorpayOrder = await response.json();
+            console.log("razorpayOrder=====>",razorpayOrder)
+            console.log("razorpayOrder.amount=====>",razorpayOrder.amount)
+            console.log("razorpayOrder.order?.amount=====>",razorpayOrder.order?.amount)
+            var options ={
+                "key":'<%= razorPayKeyId %>',
+                "amount": razorpayOrder.order?.amount,
+                "currency": "INR",
+                "name": "TeeSpace",
+                "description": "Test Transaction",
+                "order_id": razorpayOrder.order?.id,
+                "handler": async function (response) {
+                    // Send payment details to server for verification
+                    const verify = await fetch("/verify-razorpay-payment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(response)
+                    });
+                    const result = await verify.json();
+                    console.log("result=======>",result)
+                    // alert(result.message);
+                    if(result.success){
+                        Swal.fire({
+                            title:"Payment verified successfully",
+                            showConfirmButton:true,
+                            timer:3000,
+                            icon:"success"
+                        }).then(async ()=>{
+                                formData.orderId=razorpayOrder.teeSpaceOrderId;
+                                const response=await fetch('/place-online-paid-order',{
+                                    method:'post',
+                                    headers:{
+                                        'Content-Type':'application/json'
+                                    },
+                                    body:JSON.stringify(formData)
+                                })
+                                const res= await response.json();
 
-            if(res.success){
-                Swal.fire({
-                    title:"Order Placed Successfully!",
-                    icon:"success",
-                    timer:2000
-                }).then(() => {
-                    window.location.href=`/order-success/${res.orderId}`;
-                });
-            }else{
-                Swal.fire({
-                    title: "Order Failed",
-                    text: res.message,
-                    icon: "error"
-                }).then(() => {
-                    location.reload();
-                });
+                                if(res.success){
+                                    Swal.fire({
+                                        title:"Order placed successfully",
+                                        icon:"success",
+                                        showConfirmButton:true,
+                                        timer:5000
+                                    }).then(()=>{
+                                        window.location.href=`/order-success/${res.orderId}`
+                                    })
+                                }
+                            })
+                    }else{
+                        // alert("Payment verification failed")
+                        Swal.fire("Payment verfication failed","","error")
+                    }
+                    
+                },
+                "theme": {
+                "color": "#3399cc"
+                }
             }
-        } catch (error) {
-            console.log("Something went wrong:",error);
-            Swal.fire({
-                title: "Error",
-                text: "Something went wrong. Please try again.",
-                icon: "error"
-            });
+            var rzp1 = new Razorpay(options);
+            rzp1.open();
         }
+
+        
     });
 </script>

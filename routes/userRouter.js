@@ -95,7 +95,10 @@ router.post('/add-address-in-checkout',userAuth,checkoutController.addNewAddress
 
 
 //order
-router.post('/place-order',userAuth,orderController.placeOrder);
+router.post('/create-razorpay-order',userAuth,orderController.createRazorPayOrder);
+router.post('/verify-razorpay-payment',userAuth,orderController.verifyRazorpayPayment)
+router.post('/place-online-paid-order',userAuth,orderController.placeOnlinePaidOrder)
+router.post('/place-cod-order',userAuth,orderController.place_cod_order);
 router.get('/orders',userAuth,orderController.showOrders);
 router.get('/order-success/:orderId',userAuth,orderController.showOrderSuccessPage);
 router.get('/user-profile/orders',userAuth,orderController.showOrders);

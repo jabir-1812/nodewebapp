@@ -8,6 +8,11 @@ const orderSchema = new Schema(
     shippingAddress: { type: Object, required: true },
     paymentMethod: { type: String, required: true },
     paymentStatus: { type: String, default: "Pending" }, // Paid, Pending, Failed
+    refundStatus:{
+      type:String,
+      enum:["Not Initiated","Partially Refunded","Refunded"],
+      default:"Not Initiated"
+    },
     orderStatus: { type: String, default: "Pending" }, // Pending, Shipped, Delivered, Cancelled
     orderItems: [
       {
@@ -17,8 +22,8 @@ const orderSchema = new Schema(
         productName: { type: String },
         productImage: { type: String },
         itemStatus: { type: String, default: "Pending" },
-        deliveredAt:{type:Date},
-        // 📦 Return-related fields
+        deliveredOn:{type:Date},
+        //  Return-related fields
         returnReason: { type: String },       // Why user returned
         returnStatus: {
           type: String,
@@ -38,19 +43,21 @@ const orderSchema = new Schema(
 
         returnRequestedAt: { type: Date },    // When user initiated
         returnResolvedAt: { type: Date },     // When admin approved/rejected
+        refundStatus: { type: String, enum: ["Not Initiated", "Refunded"], default: "Not Initiated" },
+        refundedOn:{type:Date}
       }
       
     ],
     totalAmount: { type: Number, required: true },
 
-    // 🧾 Invoice-related fields
+    //  Invoice-related fields
     invoice: {
       number: { type: String }, // e.g., INV-2025-0001
       date: { type: Date },
       fileUrl: { type: String }, // optional: store generated PDF URL if you save it
       generated: { type: Boolean, default: false }, // has invoice been created?
     },
-    deliveredAt:{type:Date}
+    deliveredOn:{type:Date}
   },
   { timestamps: true }
 );

@@ -4,6 +4,7 @@ const Address=require('../../models/addressSchema');
 const Cart=require('../../models/cartSchema');
 const { ObjectId } = require('mongodb');
 const { default: mongoose } = require("mongoose");
+require('dotenv').config();
 
 
 // const loadCheckoutPage=async(req,res)=>{
@@ -154,7 +155,8 @@ const loadCheckoutPage = async (req, res) => {
         user,
         userCart: null,
         cartLength: 0,
-        grandTotal: 0
+        grandTotal: 0,
+        razorPayKeyId:process.env.RAZORPAY_KEY_ID
       });
     }
 
@@ -193,7 +195,8 @@ const loadCheckoutPage = async (req, res) => {
       user,
       userCart,
       cartLength: userCart.items.length,
-      grandTotal
+      grandTotal,
+      razorPayKeyId:process.env.RAZORPAY_KEY_ID
     });
   } catch (error) {
     console.log("loadCheckoutPage() error:", error);

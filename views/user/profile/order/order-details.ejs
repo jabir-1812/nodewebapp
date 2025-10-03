@@ -61,12 +61,15 @@
                     <%= order.orderStatus %>
                 </span>
                 <% if(order.orderStatus==="Delivered"){ %>
-                    - On <%= new Date(order.deliveredAt).toDateString().slice(4) %>
+                    - On <%= new Date(order.deliveredOn).toDateString().slice(4) %>
                 <%}%>
             </p>
 
             <p><strong>Placed on:</strong> <%= new Date(order.createdAt).toDateString() %></p>
             <p><strong>Payment:</strong> <%= order.paymentMethod %> ( <%= order.paymentStatus %> )</p>
+            <% if(order.refundStatus==="Refunded"){ %>
+            <p><strong>Refund Status:</strong> <%= order.refundStatus %> </p>
+            <% } %>
             <p><strong>Total:</strong><strong style="font-size: x-large;">₹<%= order.totalAmount %></strong></p>
         </div>
 
@@ -106,7 +109,7 @@
                             <%= item.itemStatus %>
                         </span>
                         <% if(item.itemStatus==="Delivered"){ %>
-                           - On <%= new Date(item.deliveredAt).toDateString().slice(4) %>
+                           - On <%= new Date(item.deliveredOn).toDateString().slice(4) %>
                         <%}%>
                     </p>
 
@@ -126,16 +129,21 @@
                     <p><strong>Return Reason:</strong> <%= item.returnReason %></p>
                         <% } %>
 
+                        <% if(item.refundStatus==="Refunded"){ %>
+                        <p><strong>Refund Status:</strong><%= item.refundStatus %></p>
+                        <p><strong>Refunded On:</strong><%= new Date(item.refundedOn).toDateString().slice(4) %></p>
+                        <% } %>
+
 
 
 
 
                     <% if (item.itemStatus === "Pending") { %>
                        <form class="cancel-form">
-                        <input type="hidden" name="orderId" value="<%= order.orderId %>">
-                        <input type="hidden" name="itemId" value="<%= item._id %>">
-                        <button type="submit" class="btn btn-danger">Cancel Item</button>
-                    </form>
+                            <input type="hidden" name="orderId" value="<%= order.orderId %>">
+                            <input type="hidden" name="itemId" value="<%= item._id %>">
+                            <button type="submit" class="btn btn-danger">Cancel Item</button>
+                        </form>
                     <% } %>
 
                    <% if (item.itemStatus === "Delivered" && (!item.returnStatus || item.returnStatus === "None")) { %>
@@ -283,6 +291,7 @@
                                 }
                             }
                         });
+                        if(!confirmResult.isConfirmed) return;
 
                         let reason = confirmResult.value;
 
@@ -320,7 +329,7 @@
 
                         if (result.success) {
                             Swal.fire({
-                                title: "Returned",
+                                title: "Return requested",
                                 text: result.message,
                                 icon: "success",
                                 timer: 2000

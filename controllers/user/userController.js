@@ -443,7 +443,7 @@ const loadShoppingPage = async (req, res) => {
     const brands = await Brand.find({ isBlocked: false });
 
     let { search = "" ,sort="",categoryIds=[],brandIds=[],minPrice='',maxPrice=''} = req.query;
-    console.log("search======>",search)
+    // console.log("search======>",search)
 
      // Make sure category is always an array
     if (!Array.isArray(categoryIds)) {
@@ -454,16 +454,18 @@ const loadShoppingPage = async (req, res) => {
     brandIds = [brandIds];
     }
 
+    // let filter = {
+    //     isBlocked:false,
+    //     quantity:{$gt:0}
+    // };
     let filter = {
-        isBlocked:false,
-        quantity:{$gt:0}
+        isBlocked:false
     };
-    
 
     if (search.length>0) {
         filter.productName= { $regex: ".*" + search + ".*", $options: "i" }
     }
-    console.log("filter======>",filter)
+    // console.log("filter======>",filter)
 
     let sortOption={};
     if (sort==='price-asc') sortOption.salePrice=1;
@@ -496,7 +498,7 @@ const loadShoppingPage = async (req, res) => {
     const products = await Product.find(filter)
     .sort(sortOption)
     .populate("brand").skip(skip)
-    console.log("products======>",products)
+    // console.log("products======>",products)
 
     const totalProducts = await Product.countDocuments({filter});
 

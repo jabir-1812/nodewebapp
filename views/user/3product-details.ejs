@@ -213,11 +213,11 @@
 
         <div class="action-buttons">
             <% if (product.quantity===0){ %>
-                <strong>Out of stock</strong>
-                <button class="btn btn-secondary">Notify me when available</button>
+                <strong class="text-danger">Out of stock</strong>
             <% }else{ %>
                 <button id="addToCartBtn" onclick="addToCart('<%= product._id %>')" class="btn btn-primary">Add to cart</button>
             <% } %>
+            <button id="addToCartBtn" onclick="addToWishlist('<%= product._id %>')" class="btn btn-primary">Add to Wishlist</button>
         </div>
     </div>
     <% }else{ %>
@@ -314,6 +314,42 @@
                 icon:'error'
             })
         }
+    }
+
+
+    async function addToWishlist(productId) {
+      try {
+        const response=await fetch(`/wishlist/add/${productId}`,{
+          method:"post",
+          headers:{
+            'Content-Type':'application/json'
+          }
+        });
+
+        const result=await response.json();
+        if(result.success){
+          Swal.fire({
+            title: "Added to Wishlist",
+            icon: "success",
+            timer: 1000,
+            showConfirmButton: false
+          });
+
+        }else{
+          Swal.fire({
+            title:"Oops",
+            text:result.message,
+            icon:"error",
+            timer:1000
+          })
+        }
+
+      } catch (error) {
+        console.log('addToWishlisht() error:',error);
+        Swal.fire(
+          "Something went wrong","","error"
+        )
+      }
     }
 </script>
 

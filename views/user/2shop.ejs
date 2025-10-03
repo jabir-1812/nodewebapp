@@ -539,7 +539,7 @@
                     <span class="badge">-<%= discount %>%</span>
                   <% } %>
                 </div>
-                <a href="/product-details?id=<%= products[i]._id %>">
+                <a href="/product-details?id=<%= products[i]._id %>" style="text-decoration: none;">
                   <div class="product-image-container">
                     <img src="/uploads/product-images/<%= products[i].productImage[0] %>" alt="<%= products[i].productName %>" class="product-image">
                     <button class="quick-view-btn">Quick View</button>
@@ -555,7 +555,11 @@
                     </div>
                   </div>
               </a>
+              <% if(products[i].quantity===0){ %>
+              <button class="btn btn-danger" disabled>Out of Stock</button>
+              <% }else{ %>
               <button id="addToCartBtn" onclick="addToCart('<%= products[i]._id %>')" class="btn btn-primary">Add to cart</button>
+              <% } %>
               <button id="addToWishlist" onclick="addToWishlist('<%= products[i]._id %>')" class="btn btn-outline-primary">Add to Wishlist</button>
             </div>
           
