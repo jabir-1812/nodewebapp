@@ -51,7 +51,90 @@
         color: #6c757d;
         font-style: italic;
     }
+     
 </style>
+<style>
+    /* Style only the add money field section */
+    #addMoneyField {
+        margin-top: 15px;
+        background: #f9f9f9;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        max-width: 350px;
+        transition: all 0.3s ease;
+        animation: fadeIn 0.3s ease;
+    }
+
+    #addMoneyField form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #addMoneyField input[type="number"] {
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        outline: none;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+    }
+
+    #addMoneyField input[type="number"]:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 3px rgba(40,167,69,0.1);
+    }
+
+    /* Button container (side-by-side layout) */
+    #addMoneyField .button-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    #addMoneyBtn,
+    #addMoneyField button[type="button"] {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    #addMoneyBtn {
+        background-color: #28a745;
+    }
+
+    #addMoneyBtn:hover {
+        background-color: #218838;
+    }
+
+    #addMoneyField button[type="button"] {
+        background-color: #dc3545;
+    }
+
+    #addMoneyField button[type="button"]:hover {
+        background-color: #c82333;
+    }
+
+    #error-message {
+        font-size: 0.9rem;
+        color: red;
+        height: 16px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+
 
 <div class="main-content">
     <h1 class="mb-4">💰 Wallet</h1>
@@ -59,7 +142,125 @@
     <% if(userWallet){ %>
         <div class="wallet-card">
             <p class="wallet-balance">Balance: ₹ <%= userWallet.balance %> /-</p>
-            <button class="btn btn-success mt-2" type="button">+ Add Money</button>
+            <% const currentWalletBalance= userWallet.balance %>
+            <% console.log("currentWalletBalance=======>",typeof currentWalletBalance) %>
+            <% if(currentWalletBalance>50000){ %>
+                <button class="btn btn-success" disabled>+ Add Money</button>
+                Your Wallet is reached the maximum limit of Rs.50,000/-
+            <% }else{ %>
+            
+            <button class="btn btn-success mt-2" type="button" onclick="showAddMoneyField()">+ Add Money</button>
+            <div id="addMoneyField" style="display: none;">
+                <form id="walletForm">
+                    <input type="number" placeholder="Enter amount" id="walletAmount" required>
+                    <small id="error-message"></small>
+                    <div class="button-group">
+                        <button type="submit" id="addMoneyBtn">Add Money</button>
+                        <button type="button" onclick="closeAddMoneyField()">Cancel</button>
+                    </div>
+                </form>
+
+            </div>
+            <% } %>
+            <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+            <script>
+                document.getElementById('walletForm').addEventListener('submit',async (e)=>{
+                    e.preventDefault();
+                    const addMoneyBtn=document.getElementById('addMoneyBtn')
+                    const errorMsg=document.getElementById('error-message');
+                    errorMsg.innerHTML=""
+                    const amount=parseInt(document.getElementById('walletAmount').value);
+                    if(amount<=0){
+                        errorMsg.innerHTML="Enter a valid amount"
+                        return;
+                    }
+                    const currentWalletBalance=parseInt('<%=userWallet.balance%>')
+                    console.log("type of amount======>",typeof amount)
+                    console.log("type of currentWalletBalance======>",typeof currentWalletBalance)
+                    if((amount+currentWalletBalance)>50000){
+                        errorMsg.innerHTML="Maximum wallet limit is Rs.50,000/-";
+                        return
+                    }
+                    
+                    addMoneyBtn.innerText="Loading..."
+                    //Create razorpay order on server
+                    const response=await fetch('/user-profile/wallet/create-razorpay-order',{
+                        method:"POST",
+                        headers:{
+                            'Content-Type':'application/json'
+                        },
+                        body:JSON.stringify({walletAmount:amount})
+                    })
+                    const order=await response.json()
+
+                    var options={
+                        "key":'<%= razorPayKeyId %>',
+                        "amount":order.amount,
+                        "currency": "INR",
+                        "name": "TeeSpace Wallet",
+                        "description": "Test Transaction",
+                        "order_id": order.id,
+                        "handler":async function (response) {
+                            // Send payment details to server for verification
+                            const verify = await fetch("/user-profile/wallet/verify-razorpay-payment", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(response)
+                            });
+
+                            const result=await verify.json()
+                            if(result.success){
+                                Swal.fire({
+                                    title:"Payment Verified Successfully",
+                                    showConfirmButton:true,
+                                    timer:5000,
+                                    icon:'success'
+                                }).then(async ()=>{
+                                    // console.log("amount=====>",amount);
+                                    const response=await fetch('/user-profile/wallet/add-money',{
+                                        method:"POST",
+                                        headers:{
+                                            'Content-Type':"application/json"
+                                        },
+                                        body:JSON.stringify({amount})
+                                    })
+
+                                    const result=await response.json();
+                                    if(result.success){
+                                        Swal.fire({
+                                            title:"Money added to your wallet",
+                                            timer:5000,
+                                            showConfirmButton:true,
+                                            icon:'success'
+                                        }).then(()=>{
+                                            location.reload()
+                                        })
+                                    }
+                                })
+                            }else{
+                                Swal.fire("Payment verification failed","","error")
+                                addMoneyBtn.innerText="Add Money"
+                            }
+                        },
+                        "theme":{
+                            "color":'#3399cc'
+                        }
+                    }
+                    var rzp1=new Razorpay(options);
+                    rzp1.open()
+
+                })
+            </script>
+            <script>
+                const addMoneyField = document.getElementById('addMoneyField');
+                function showAddMoneyField(){
+                    addMoneyField.style.display='block';
+                }
+
+                function closeAddMoneyField(){
+                    addMoneyField.style.display='none';
+                }
+            </script>
         </div>
 
         <h3 class="mb-3">Transactions</h3>

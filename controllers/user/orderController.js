@@ -7,6 +7,7 @@ const User = require('../../models/userSchema')
 const PDFDocument = require("pdfkit");
 const Razorpay=require('razorpay')
 const crypto = require('crypto')
+const Wallet = require('../../models/walletSchema')
 require('dotenv').config();
 
 class AppError extends Error {
@@ -329,6 +330,81 @@ const place_cod_order=async (req,res)=>{
     }
 }
 
+const placeWalletPaidOrder = async (req,res)=>{
+  try {
+      const userId=req.session.user || req.session.passport?.user;
+      const userWallet=await Wallet.findOne({userId})
+      if(!userWallet)return res.status(500).json({success:false,message:"Your wallet is not found"})
+
+      
+      const {cartId,addressId,paymentMethod}=req.body;
+      const {cart,orderItems,totalAmount}=await prepareCartForOrder(userId,cartId)
+
+      // 2. Fetch address and copy it
+      const userAddressDoc = await Address.findOne(
+          { userId, "address._id": addressId },
+          { "address.$": 1 }
+      );
+      if (!userAddressDoc || userAddressDoc.address.length === 0) {
+          return res.status(404).json({ success: false, message: "Address not found" });
+      }
+      const selectedAddress = userAddressDoc.address[0];
+
+
+      // 🔑 Generate custom order ID
+      const customOrderId = await getNextOrderId();
+
+      userWallet.balance-=totalAmount;
+      userWallet.transactions.push({
+        amount:totalAmount,
+        type:"debit",
+        description:`Paid for ${customOrderId}`
+      })
+
+      // 5. Create order
+      const newOrder = new Order({
+          orderId: customOrderId,
+          userId,
+          shippingAddress: selectedAddress.toObject(),
+          paymentMethod:"TeeSpace Wallet",
+          paymentStatus: "Paid", // update after payment success
+          orderStatus: "Pending",
+          orderItems,
+          totalAmount
+      });
+
+      await newOrder.save();
+
+      // 6. Reduce stock
+      for (let item of cart.items) {
+          await Product.findByIdAndUpdate(item.productId._id, {
+              $inc: { quantity: -item.quantity }
+          });
+      }
+
+      await userWallet.save();
+
+      // 7. Clear cart
+      await Cart.findByIdAndUpdate(cartId, { $set: { items: [] } });
+      console.log("newOrder===>orderId====>",newOrder);
+
+      res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
+  } catch (error) {
+      console.error("orderController / placeOrder() error:",error);
+      if(error.isOperational){
+        // ❌ Known error, safe to show to user
+        return res.status(error.statusCode).json({ success: false, message: error.message });
+      }
+
+      // ❌ Unknown/internal error
+      return res.status(500).json({
+        success: false,
+        message: "Something went wrong. Please try again later."
+      });
+
+  }
+}
+
 
 const showOrderSuccessPage=async (req,res)=>{
     try {
@@ -500,6 +576,19 @@ const cancelOrderItem = async (req, res) => {
       item.refundedOn=new Date();
     }
 
+    if(order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid"){
+      const userWallet=await Wallet.findOne({userId})
+      userWallet.balance+=item.price;
+      userWallet.transactions.push({
+        amount:item.price,
+        type:"credit",
+        description:`Refund for ${item.productName} (Order ${order.orderId})`
+      });
+      await userWallet.save();
+      item.refundStatus = "Refunded";
+      item.refundedOn = new Date();
+    }
+
     //  Update order status
     const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
     const someCancelled = order.orderItems.some(i => i.itemStatus === "Cancelled");
@@ -531,6 +620,19 @@ const cancelOrderItem = async (req, res) => {
 };
 
 
+const refundToWallet = async (userId, amount, orderId) => {
+  let wallet = await Wallet.findOne({ userId });
+
+  wallet.balance += amount;
+  wallet.transactions.push({
+    type: "Credit",
+    amount,
+    description: `Refund for Order ${orderId}`
+  });
+
+  return wallet.save();
+};
+
 
 // Cancel entire order
 const cancelWholeOrder = async (req, res) => {
@@ -543,57 +645,166 @@ const cancelWholeOrder = async (req, res) => {
     const order = await Order.findOne({ orderId, userId });
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
-    //  Extra safety: block if any shipped/delivered items exist
+    // Block cancellation if shipped/delivered items exist
     if (order.orderItems.some(i => ["Shipped", "Delivered"].includes(i.itemStatus))) {
-      return res.status(400).json({ success: false, message: "Some items are already shipped/delivered. Order cannot be cancelled." });
+      return res.status(400).json({
+        success: false,
+        message: "Some items are already shipped/delivered. Order cannot be cancelled."
+      });
     }
 
-    //means if order is 'pending' or 'partially cancelled', then the if block won't run
-    //means if oreder is 'shipped' or 'delivered', the if block will run
+    // Allow cancel only if order is in these statuses
     if (!["Pending", "Partially Cancelled"].includes(order.orderStatus)) {
-        return res.status(400).json({ success: false, message: "Order cannot be cancelled at this stage" });
+      return res.status(400).json({ success: false, message: "Order cannot be cancelled at this stage" });
     }
 
-
+    // Restore stock for all Pending items
     await restoreStock(order.orderItems);
 
-    // update status
-    const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
-    // order.orderStatus = allCancelled ? "Cancelled" : "Partially Cancelled";
-    if (allCancelled) {
-      order.orderStatus = "Cancelled";
+    // Track total refunded (for wallet)
+    let totalWalletRefund = 0;
 
-      // ✅ Only mark refund if online payment & already paid
-      if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
-        order.refundStatus = "Refunded";
-        order.orderItems.forEach(item => {
+    // Loop through each item
+    order.orderItems.forEach(item => {
+      if (item.itemStatus === "Cancelled") {
+        if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
           item.refundStatus = "Refunded";
           item.refundedOn = new Date();
-        });
-      } else {
-        // For COD orders → no refund needed
-        order.refundStatus = "Not Initiated";
+        } else if (order.paymentMethod === "Cash on Delivery") {
+          item.refundStatus = "Not Initiated";
+        } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
+          if (item.refundStatus !== "Refunded") {
+            totalWalletRefund += item.price * item.quantity;
+            item.refundStatus = "Refunded";
+            item.refundedOn = new Date();
+          }
+        }
       }
+    });
 
+    // Refund wallet if needed
+    if (totalWalletRefund > 0) {
+      const userWallet = await Wallet.findOne({ userId });
+      if (userWallet) {
+        userWallet.balance += totalWalletRefund;
+        userWallet.transactions.push({
+          type: "credit",
+          amount: totalWalletRefund,
+          description: `Refund for cancelled order ${order.orderId}`,
+          createdAt: new Date()
+        });
+        await userWallet.save();
+      }
+    }
+
+    // Determine order-level status
+    const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
+    const anyRefunded = order.orderItems.some(i => i.refundStatus === "Refunded");
+
+    if (allCancelled) {
+      order.orderStatus = "Cancelled";
+      order.refundStatus = anyRefunded ? "Refunded" : "Not Initiated";
     } else {
       order.orderStatus = "Partially Cancelled";
-
-      if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
-        order.refundStatus = "Partially Refunded";
-      } else {
-        order.refundStatus = "Not Initiated"; // still nothing refunded for COD
-      }
+      order.refundStatus = anyRefunded ? "Partially Refunded" : "Not Initiated";
     }
 
     await order.save();
-    res.json({ success: true, message: "Order cancelled and stock updated" });
 
+    res.json({
+      success: true,
+      message: "Order cancelled successfully",
+      refundedAmount: totalWalletRefund > 0 ? totalWalletRefund : undefined
+    });
 
   } catch (error) {
-    console.log("cancelWholeOrder() error =>", error);
+    console.error("cancelWholeOrder() error =>", error);
     res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
+
+
+
+// const cancelWholeOrder = async (req, res) => {
+//   try {
+//     const userId = req.session.user || req.session.passport?.user;
+//     if (!userId) return res.status(401).json({ success: false, message: "Login required" });
+
+//     const { orderId } = req.body;
+//     const order = await Order.findOne({ orderId, userId });
+//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+//     // Block if any shipped/delivered items exist
+//     if (order.orderItems.some(i => ["Shipped", "Delivered"].includes(i.itemStatus))) {
+//       return res.status(400).json({ success: false, message: "Some items are already shipped/delivered. Order cannot be cancelled." });
+//     }
+
+//     // Allow only Pending or Partially Cancelled orders
+//     if (!["Pending", "Partially Cancelled"].includes(order.orderStatus)) {
+//       return res.status(400).json({ success: false, message: "Order cannot be cancelled at this stage" });
+//     }
+
+//     // Cancel only Pending items
+//     const itemsToCancel = order.orderItems.filter(i => i.itemStatus === "Pending");
+//     await restoreStock(itemsToCancel);
+
+//     // Refund logic per item
+//     itemsToCancel.forEach(item => {
+//       item.itemStatus = "Cancelled";
+
+//       if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
+//         item.refundStatus = "Refunded";
+//         item.refundedOn = new Date();
+//       } else if (order.paymentMethod === "Cash on Delivery") {
+//         item.refundStatus = "Not Initiated";
+//       } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
+//         item.refundStatus = "Refunded";
+//         item.refundedOn = new Date();
+//       }
+//     });
+
+//     // Determine overall order status
+//     const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
+
+//     if (allCancelled) {
+//       order.orderStatus = "Cancelled";
+
+//       if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
+//         order.refundStatus = "Refunded";
+//       } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
+//         order.refundStatus = "Refunded";
+
+//         // 💰 Refund full amount to wallet
+//         await refundToWallet(userId, order.totalAmount, order.orderId);
+//       } else {
+//         order.refundStatus = "Not Initiated";
+//       }
+
+//     } else {
+//       order.orderStatus = "Partially Cancelled";
+
+//       if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
+//         order.refundStatus = "Partially Refunded";
+//       } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
+//         order.refundStatus = "Partially Refunded";
+
+//         // 💰 Refund only for newly cancelled items
+//         const refundAmount = itemsToCancel.reduce((sum, i) => sum + i.price * i.quantity, 0);
+//         await refundToWallet(userId, refundAmount, order.orderId);
+//       } else {
+//         order.refundStatus = "Not Initiated";
+//       }
+//     }
+
+//     await order.save();
+//     res.json({ success: true, message: "Order cancelled and refund processed" });
+
+//   } catch (error) {
+//     console.log("cancelWholeOrder() error =>", error);
+//     res.status(500).json({ success: false, message: "Something went wrong" });
+//   }
+// };
+
 
 
 const getInvoice = async (req, res) => {
@@ -683,6 +894,7 @@ module.exports={
 	verifyRazorpayPayment,
 	placeOnlinePaidOrder,
     place_cod_order,
+    placeWalletPaidOrder,
     showOrders,
     showOrderSuccessPage,
     showOrderDetails,

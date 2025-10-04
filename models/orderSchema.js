@@ -10,7 +10,7 @@ const orderSchema = new Schema(
     paymentStatus: { type: String, default: "Pending" }, // Paid, Pending, Failed
     refundStatus:{
       type:String,
-      enum:["Not Initiated","Partially Refunded","Refunded"],
+      enum:["Not Initiated","Partially Refunded","Refunded","Refunded to your wallet"],
       default:"Not Initiated"
     },
     orderStatus: { type: String, default: "Pending" }, // Pending, Shipped, Delivered, Cancelled
@@ -43,7 +43,7 @@ const orderSchema = new Schema(
 
         returnRequestedAt: { type: Date },    // When user initiated
         returnResolvedAt: { type: Date },     // When admin approved/rejected
-        refundStatus: { type: String, enum: ["Not Initiated", "Refunded"], default: "Not Initiated" },
+        refundStatus: { type: String, enum: ["Not Initiated", "Refunded","Refunded to your wallet"], default: "Not Initiated" },
         refundedOn:{type:Date}
       }
       

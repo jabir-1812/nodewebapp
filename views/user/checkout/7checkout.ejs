@@ -467,8 +467,8 @@
                     <div class="card-header">
                         <h3>Payment Method</h3>
                     </div>
-                    <div class="payment-option selected">
-                        <input type="radio" name="paymentMethod" id="COD" value="COD" required checked 
+                    <div class="payment-option">
+                        <input type="radio" name="paymentMethod" id="COD" value="COD" required 
                                onchange="document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected')); this.closest('.payment-option').classList.add('selected')">
                         <label for="COD"> 
                             <i class="fas fa-money-bill-wave"></i> Cash On Delivery
@@ -482,6 +482,27 @@
                             <i class="fas fa-mobile-alt"></i> Cards/Netbanking/Wallet
                         </label>
                     </div>
+                    <% const grandTotalAmount=grandTotal %>
+                    <% const walletBalance=userWallet.balance %>
+                    <% console.log(grandTotalAmount) %>
+                    <% if(grandTotalAmount <= walletBalance){ %>
+
+                    <div class="payment-option">
+                        <input type="radio" name="paymentMethod" id="walletPayment" value="walletPayment"
+                               onchange="document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected')); this.closest('.payment-option').classList.add('selected')">
+                        <label for="walletPayment">
+                            <i class="fas fa-mobile-alt"></i> TeeSpace Wallet TeeSpace Wallet - <small> (Avaiable Balance: Rs.<%= userWallet.balance %>/-)</small>
+                        </label>
+                    </div>
+                    <% }else{ %>
+                        <div class="payment-option" style=" color: gray;">
+                            <input type="radio" name="paymentMethod" id="walletPayment" value="walletPayment" disabled
+                                onchange="document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected')); this.closest('.payment-option').classList.add('selected')">
+                            <label for="walletPayment">
+                                <i class="fas fa-mobile-alt"></i> TeeSpace Wallet - (Avaiable Balance: Rs.<%= userWallet.balance %>/-)
+                            </label>
+                        </div>
+                    <% } %>
                 </div>
             </div>
             
@@ -819,6 +840,7 @@
         
         const selectedAddress = document.querySelector("input[name='addressId']:checked");
         const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+        console.log("selectedPayment=====>",selectedPayment)
         const cartId = document.getElementById("cartId").value;
 
         if (!selectedAddress) {
@@ -946,11 +968,37 @@
                     
                 },
                 "theme": {
-                "color": "#3399cc"
+                    "color": "#3399cc"
                 }
             }
             var rzp1 = new Razorpay(options);
             rzp1.open();
+        }
+
+        if(selectedPayment.value==="walletPayment"){
+            const response=await fetch('/place-wallet-paid-order',{
+                method:"POST",
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify(formData)
+            })
+
+            const result=await response.json()
+            
+            if(result.success){
+                Swal.fire({
+                    title:"Order placed successfully",
+                    text:"Paid by Wallet Money",
+                    icon:"success",
+                    showConfirmButton:true,
+                    timer:5000
+                }).then(()=>{
+                    window.location.href=`/order-success/${result.orderId}`
+                })
+            }else{
+                Swal.fire(result.message,"","error")
+            }
         }
 
         

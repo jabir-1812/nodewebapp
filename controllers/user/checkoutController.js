@@ -2,6 +2,7 @@ const User=require('../../models/userSchema');
 const Product=require('../../models/productSchema');
 const Address=require('../../models/addressSchema');
 const Cart=require('../../models/cartSchema');
+const Wallet=require('../../models/walletSchema')
 const { ObjectId } = require('mongodb');
 const { default: mongoose } = require("mongoose");
 require('dotenv').config();
@@ -94,6 +95,11 @@ const loadCheckoutPage = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).send("User not found");
 
+    const userWallet=await Wallet.findOne({userId})
+    if(!userWallet){
+      userWallet=await Wallet.create({userId})
+    }
+
     let grandTotal = 0;
 
     // Fetch addresses
@@ -156,7 +162,8 @@ const loadCheckoutPage = async (req, res) => {
         userCart: null,
         cartLength: 0,
         grandTotal: 0,
-        razorPayKeyId:process.env.RAZORPAY_KEY_ID
+        razorPayKeyId:process.env.RAZORPAY_KEY_ID,
+        userWallet
       });
     }
 
@@ -196,7 +203,8 @@ const loadCheckoutPage = async (req, res) => {
       userCart,
       cartLength: userCart.items.length,
       grandTotal,
-      razorPayKeyId:process.env.RAZORPAY_KEY_ID
+      razorPayKeyId:process.env.RAZORPAY_KEY_ID,
+      userWallet
     });
   } catch (error) {
     console.log("loadCheckoutPage() error:", error);

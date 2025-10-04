@@ -99,6 +99,7 @@ router.post('/create-razorpay-order',userAuth,orderController.createRazorPayOrde
 router.post('/verify-razorpay-payment',userAuth,orderController.verifyRazorpayPayment)
 router.post('/place-online-paid-order',userAuth,orderController.placeOnlinePaidOrder)
 router.post('/place-cod-order',userAuth,orderController.place_cod_order);
+router.post('/place-wallet-paid-order',userAuth,orderController.placeWalletPaidOrder)
 router.get('/orders',userAuth,orderController.showOrders);
 router.get('/order-success/:orderId',userAuth,orderController.showOrderSuccessPage);
 router.get('/user-profile/orders',userAuth,orderController.showOrders);
@@ -111,4 +112,7 @@ router.post('/user-profile/orders/order-details/return-item',userAuth,orderContr
 
 //wallet
 router.get('/user-profile/wallet',userAuth,walletController.getWallet);
+router.post('/user-profile/wallet/create-razorpay-order',userAuth,walletController.createRazorPayOrder)
+router.post('/user-profile/wallet/verify-razorpay-payment',userAuth,walletController.verifyRazorpayPayment)
+router.post('/user-profile/wallet/add-money',userAuth,walletController.addMoney)
 module.exports=router;

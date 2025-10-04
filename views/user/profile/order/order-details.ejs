@@ -67,8 +67,8 @@
 
             <p><strong>Placed on:</strong> <%= new Date(order.createdAt).toDateString() %></p>
             <p><strong>Payment:</strong> <%= order.paymentMethod %> ( <%= order.paymentStatus %> )</p>
-            <% if(order.refundStatus==="Refunded"){ %>
-            <p><strong>Refund Status:</strong> <%= order.refundStatus %> </p>
+            <% if(order.refundStatus==="Refunded" || order.refundStatus==="Refunded to your wallet"){ %>
+            <p><strong>Refund Status:</strong> <%= order.refundStatus %></p>
             <% } %>
             <p><strong>Total:</strong><strong style="font-size: x-large;">₹<%= order.totalAmount %></strong></p>
         </div>
