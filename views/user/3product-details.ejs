@@ -190,7 +190,7 @@
     </div>
 
     <div class="product-details">
-        <h1 class="product-title"><%= product.name %></h1>
+        <h1 class="product-title"><%= product.productName %></h1>
         <p class="brand-name">Brand: <%= product.brand?.brandName %></p>
         
         <div class="price-section">
@@ -212,8 +212,12 @@
         </div>
 
         <div class="action-buttons">
-            <% if (product.quantity===0){ %>
+            <% if (product.quantity===0 && product.isBlocked === false){ %>
                 <strong class="text-danger">Out of stock</strong>
+            <% }else if (product.quantity === 0 && product.isBlocked === true){ %>
+                <strong class="text-danger">Unavailable</strong>
+            <% }else if (product.quantity > 0 && product.isBlocked === true){ %>
+                <strong class="text-danger">Unavailable</strong>
             <% }else{ %>
                 <button id="addToCartBtn" onclick="addToCart('<%= product._id %>')" class="btn btn-primary">Add to cart</button>
             <% } %>
@@ -317,13 +321,14 @@
     }
 
 
-    async function addToWishlist(productId) {
+   async function addToWishlist(productId) {
       try {
-        const response=await fetch(`/wishlist/add/${productId}`,{
+        const response=await fetch('/wishlist/add',{
           method:"post",
           headers:{
             'Content-Type':'application/json'
-          }
+          },
+          body:JSON.stringify({productId:productId})
         });
 
         const result=await response.json();

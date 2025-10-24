@@ -18,23 +18,16 @@ const cartSchema=new Schema({
             type:Number,
             default:1
         },
-        // price:{
-        //     type:Number,
-        //     required:true
-        // },
-        // totalPrice:{
-        //     type:Number,
-        //     required:true
-        // },
-        // status:{
-        //     type:String,
-        //     default:'placed'
-        // },
-        // cancellationReason:{
-        //     type:String,
-        //     default:"none"
-        // }
-    }]
+        couponDiscount:{type:Number,default:0}
+    }],
+    appliedCoupons: [
+        {
+            couponId: { type: mongoose.Schema.Types.ObjectId, ref: "Coupon" },
+            code: String,
+            discountAmount: Number,
+        },  
+    ],
+
 })
 
 const Cart=mongoose.model("Cart",cartSchema);

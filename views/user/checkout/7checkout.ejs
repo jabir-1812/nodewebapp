@@ -416,7 +416,7 @@
                                                             '<%= userCart.items[i].productDetails._id %>',
                                                             -1,
                                                             '<%= userCart.items[i].productDetails.salePrice %>',
-                                                            '<%= grandTotal %>'
+                                                            '<%= totalAmount %>'
                                                         )">-</button>
                                                         
                                                         <input class="quantity-input" 
@@ -427,7 +427,7 @@
                                                             '<%= userCart.items[i].productDetails._id %>',
                                                             1,
                                                             '<%= userCart.items[i].productDetails.salePrice %>',
-                                                            '<%= grandTotal %>'
+                                                            '<%= totalAmount %>'
                                                         )">+</button>
                                                     </div>
                                                 <% } else { %>
@@ -482,10 +482,10 @@
                             <i class="fas fa-mobile-alt"></i> Cards/Netbanking/Wallet
                         </label>
                     </div>
-                    <% const grandTotalAmount=grandTotal %>
+                    <% const total_Amount=totalAmount %>
                     <% const walletBalance=userWallet.balance %>
-                    <% console.log(grandTotalAmount) %>
-                    <% if(grandTotalAmount <= walletBalance){ %>
+                    <% console.log(total_Amount) %>
+                    <% if(totalAmount <= walletBalance){ %>
 
                     <div class="payment-option">
                         <input type="radio" name="paymentMethod" id="walletPayment" value="walletPayment"
@@ -507,6 +507,102 @@
             </div>
             
             <div class="right-column">
+                <!-- coupon -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Enter Coupon Code</h3>
+                    </div>
+                    <style>
+                        /* Basic form styling */
+                        #couponForm {
+                            max-width: 400px;
+                            margin: 20px auto;
+                            padding: 20px;
+                            font-family: Arial, sans-serif;
+                        }
+
+                        /* Input field styling */
+                        #couponCode {
+                            width: 100%;
+                            padding: 10px;
+                            margin-bottom: 10px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        }
+
+                        /* Input focus effect */
+                        #couponCode:focus {
+                            outline: none;
+                            border-color: #4CAF50;
+                            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                        }
+
+                        /* Button styling */
+                        .coupon-btn {
+                            background-color: #4CAF50;
+                            color: white;
+                            padding: 10px 20px;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 16px;
+                            margin-top: 10px;
+                        }
+
+                        /* Button hover effect */
+                        .coupon-btn:hover {
+                            background-color: #45a049;
+                        }
+
+                        /* Remove coupon button */
+                        #remove-coupon-btn {
+                            background-color: #f44336;
+                            color: white;
+                            padding: 8px 16px;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            margin-top: 10px;
+                        }
+
+                        #remove-coupon-btn:hover {
+                            background-color: #da190b;
+                        }
+
+                        /* Applied coupon container */
+                        #applied-coupon-container {
+                            margin-top: 15px;
+                            padding: 10px;
+                            background-color: #f9f9f9;
+                            border-radius: 4px;
+                            border-left: 4px solid #4CAF50;
+                        }
+
+                        /* Message spacing */
+                        #coupon-error-message, 
+                        #coupon-success-message {
+                            display: block;
+                            margin: 5px 0;
+                            font-size: 14px;
+                        }
+                    </style>
+                    <form id="couponForm">
+                        <div>
+                            <input type="text" name="couponCode" id="couponCode" placeholder="Enter Coupon Code" required>
+                            <div><small id="coupon-error-message" style="color: red;"></small></div>
+                            <div><small id="coupon-success-message" style="color: green;"></small></div>
+                            <button class="coupon-btn" type="submit">Apply</button>
+                            <div id="applied-coupon-container" style="display: none;">
+                                <div id="applied-coupon-code" data-applied-coupon-code="">
+                                    <button class="remove-coupon-btn" id="remove-coupon-btn" onclick="location.reload()">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
                 <!-- Order Summary -->
                 <div class="card">
                     <div class="card-header">
@@ -514,19 +610,27 @@
                     </div>
                     <table class="summary-table">
                         <tr>
-                            <td>Subtotal</td>
-                            <td class="text-right">--</td>
+                            <td>Price</td>
+                            <td class="text-right">
+                                ₹<span id="totalPrice" data-total-price="<%= totalPrice %>"><%= totalPrice %></span>/-
+                            </td>
                         </tr>
                         <tr>
                             <td>Shipping</td>
                             <td class="text-right">Free</td>
                         </tr>
                         <tr>
+                            <td>Coupon Discount</td>
+                            <td class="text-right">
+                                <span id="couponDiscount" class="text-success" data-coupon-code="">--</span>
+                            </td>
+                        </tr>
+                        <tr>
                             <td>Total</td>
                             <td class="text-right">
-                                ₹<span id="grandTotal" data-grand-total="<%= grandTotal %>">
-                                    <strong><%= grandTotal %></strong>
-                                </span>
+                                ₹<span id="totalAmount" data-total-amount="<%= totalAmount %>">
+                                    <strong><%= totalAmount %></strong>
+                                </span>/-
                             </td>
                         </tr>
                     </table>
@@ -719,13 +823,17 @@
 </script>
 
 <script>
-    async function changeQuantity(productId,count,saleprice,grandTotal){
+    async function changeQuantity(productId,count,saleprice,totalAmount){
         document.getElementById(`outOfStockMessage${productId}`).innerHTML="";
 
         const currentQtyElement=document.getElementById(`cartProductQuantity${productId}`);
         let currentQty=currentQtyElement.value;
         const subtotalElement=document.getElementById(`subTotal${productId}`);
-        const grandTotalElement=document.getElementById('grandTotal');
+        const totalPriceElement=document.getElementById('totalPrice');
+        const totalAmountElement=document.getElementById('totalAmount');
+
+        const couponDiscountElement=document.getElementById('couponDiscount');
+        const couponCode=couponDiscountElement.dataset.couponCode;
         
         if(parseInt(currentQty)+count > 3){
             return Swal.fire({
@@ -738,14 +846,15 @@
             return;
         }
 
-        const response=await fetch('/change-cart-quantity',{
+        const response=await fetch('/checkout/change-cart-quantity',{
             method:'post',
             headers:{
                 'Content-Type':'application/json',
             },
             body:JSON.stringify({
                 productId:productId,
-                count:count
+                count:count,
+                couponCode:couponCode
             })
         })
 
@@ -770,8 +879,15 @@
                 })
             }
             // Update grand total from backend
-            grandTotalElement.innerHTML =`<strong>${result.grandTotal}</strong>`;
-            grandTotalElement.dataset.grandTotal=result.grandTotal;
+            totalPriceElement.innerHTML =result.totalPrice;
+            totalPriceElement.dataset.totalPrice=result.totalPrice;
+
+            couponDiscountElement.innerText=`₹ -(${result.couponDiscount}) /-`;
+            couponDiscountElement.dataset.couponCode=couponCode;
+
+            const totalAmount=result.totalPrice-result.couponDiscount;//amount after discount
+            totalAmountElement.innerHTML=totalAmount;
+            totalAmountElement.dataset.totalAmount=totalAmount;
         }
     }     
 
@@ -786,7 +902,7 @@
             confirmButtonText: 'Yes, remove it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch(`/delete-cart-item/${productId}`, {
+                fetch(`/checkout/delete-cart-item/${productId}`, {
                     method: 'DELETE'
                 })
                 .then(res => {
@@ -805,20 +921,61 @@
         })
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
-        const checkouPageLinkElement=document.getElementById('checkoutPageLink');
-        if (checkouPageLinkElement) {
-            checkouPageLinkElement.addEventListener('click',(e)=>{
-                const grandTotalElement=document.getElementById('grandTotal');
-                const grandTotal=parseFloat (grandTotalElement.dataset.grandTotal);
-                if(grandTotal===0){
-                    e.preventDefault();
-                    Swal.fire({
-                        title:"Add products in the cart",
-                        icon:"warning",
-                        timer: 3000
-                    })
-                }
+</script>
+
+<script>
+    document.getElementById('couponForm').addEventListener('submit',async (e)=>{
+        e.preventDefault();
+
+        const couponError=document.getElementById('coupon-error-message');
+        couponError.innerHTML="";
+
+        const couponSuccess=document.getElementById('coupon-success-message');
+        couponSuccess.innerHTML="";
+        const couponCode=document.getElementById('couponCode').value.toUpperCase();
+        console.log(couponCode)
+
+        const response = await fetch('/checkout/apply-coupon',{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify({couponCode})
+        })
+        const result=await response.json();
+        if(response.ok){
+            console.log("response ok")
+            console.log("result",result)
+            if(result.success){
+                console.log('success')
+                const totalPriceElement=document.getElementById('totalPrice')
+                totalPriceElement.innerHTML=result.totalPrice;
+                totalPriceElement.dataset.totalPrice=result.totalPrice;
+
+                const couponDiscountElement=document.getElementById('couponDiscount');
+                couponDiscountElement.innerText=`₹ -(${result.couponDiscount}) /-`;
+                couponDiscountElement.dataset.couponCode=couponCode;
+
+                const totalAmount=result.totalAmount//amount after discount
+                const totalAmountElement=document.getElementById('totalAmount')
+                totalAmountElement.innerHTML=totalAmount;
+                totalAmountElement.dataset.totalAmount=totalAmount;
+                couponSuccess.innerHTML="Coupon discount applied";
+
+                //showing the applied coupon
+                document.getElementById('applied-coupon-container').style.display="block";
+                document.getElementById('applied-coupon-code').prepend(couponCode);
+                document.getElementById('applied-coupon-code').dataset.appliedCouponCode=couponCode;
+
+            }else{
+                couponError.innerHTML=result.message;
+            }
+        }else{
+            Swal.fire({
+                title:result.message,
+                icon:'error',
+                timer:5000,
+                showConfirmButton:true
             })
         }
     })
@@ -826,10 +983,10 @@
 
 <script>
     document.getElementById("placeOrderBtn").addEventListener("click",async () => {
-        const grandTotalElement=document.getElementById('grandTotal');
-        const grandTotal=parseFloat (grandTotalElement.dataset.grandTotal);
+        const totalPriceElement=document.getElementById('totalPrice');
+        const totalPrice=parseFloat (totalPriceElement.dataset.totalPrice);
 
-        if(grandTotal===0){
+        if(totalPrice===0){
             Swal.fire({
                 title:"No products selected",
                 icon:"warning",
@@ -842,6 +999,8 @@
         const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
         console.log("selectedPayment=====>",selectedPayment)
         const cartId = document.getElementById("cartId").value;
+        const appliedCouponCode=document.getElementById('applied-coupon-code').dataset.appliedCouponCode;
+        // console.log("applied coupon code",appliedCouponCode)
 
         if (!selectedAddress) {
             Swal.fire({
@@ -865,7 +1024,8 @@
         const formData={
             cartId:cartId,
             addressId:selectedAddress.value,
-            paymentMethod:selectedPayment.value
+            paymentMethod:selectedPayment.value,
+            couponCode:appliedCouponCode
         }
         if(selectedPayment.value==="COD"){
             try {
@@ -1004,3 +1164,6 @@
         
     });
 </script>
+
+
+

@@ -1,5 +1,6 @@
 const Category=require('../../models/categorySchema');
 const Product =require('../../models/productSchema')
+const Offer = require('../../models/offerSchema')
 
 const 
 categoryInfo = async (req,res)=>{
@@ -118,88 +119,129 @@ const editCategory = async (req,res)=>{
 }
 
 
-const addCategoryOffer=async (req,res)=>{
-    try {
-        const percentage=parseInt(req.body.percentage);
-        const categoryId=req.body.categoryId;
-        const category=await Category.findById(categoryId);
+const addCategoryOffer = async (req, res) => {
+  try {
+    const { categoryId, percentage, startDate, endDate, description } = req.body;
 
-        if(!category){
-            return res.status(404).json({status:false,message:"Category not found"});
-        }
-        const products=await Product.find({category:category._id});
-        if(products.length>0){
-            for(const product of products){
-                if(percentage > product.productOffer && percentage > product.brandOffer){
-                    product.salePrice=product.regularPrice*(1-percentage/100);
-                }
-                product.categoryOffer=percentage;
-                await product.save();
-            }
-        }
-        
-        await Category.updateOne({_id:categoryId},{$set:{offer:percentage}});
-
-        // Apply category offer ONLY to products with lesser existing offer
-        //if a product has less offer % than new offer %, those product will be updated to new offer %.
-        //if a product has higher offer than new offer, it stays like that.it won't be updated.
-        // await Product.updateMany(
-        //     {category:category._id,productOffer:{$lt:percentage}},
-        //     [
-        //         {$set:{productOffer:percentage,salePrice:{$multiply:["$regularPrice",(1-percentage/100)]}}}
-        //     ]
-        // );
-
-        res.json({status:true});
-    } catch (error) {
-        res.status(500).json({status:false,message:"Internal Server Error"})
+    // 1️⃣ Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ status: false, message: "Category not found" });
     }
+
+    // 2️⃣ Find products in this category
+    const products = await Product.find({ category: category._id });
+
+    // 3️⃣ Update each product's categoryOffer & salePrice if needed
+    if (products.length > 0) {
+      const bulkOps = products.map((product) => {
+        const update = { categoryOffer: percentage };
+        if (percentage > product.productOffer && percentage > product.brandOffer) {
+          update.salePrice = product.regularPrice * (1 - percentage / 100);
+        }
+        return {
+          updateOne: {
+            filter: { _id: product._id },
+            update: { $set: update },
+          },
+        };
+      });
+
+      if (bulkOps.length > 0) {
+        await Product.bulkWrite(bulkOps);
+      }
+    }
+
+    // 4️⃣ Update category with offer info
+    await Category.updateOne(
+      { _id: categoryId },
+      {
+        $set: {
+          offer: percentage,
+          offerStartDate: startDate || null,
+          offerEndDate: endDate || null,
+          offerDescription: description || "",
+        },
+      }
+    );
+
+    // 5️⃣ Sync to Offer collection (centralized)
+    await Offer.findOneAndUpdate(
+      { refId: category._id, type: "category" },
+      {
+        name: category.name,
+        type: "category",
+        refId: category._id,
+        percentage,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        description: description || "",
+        active: true,
+      },
+      { upsert: true } // create if not exists
+    );
+
+    // 6️⃣ Send response
+    res.json({ status: true, message: "Category offer added successfully" });
+  } catch (error) {
+    console.error("Error adding category offer:", error);
+    res.status(500).json({ status: false, message: "Internal Server Error" });
+  }
 }
 
 
-const removeCategoryOffer=async (req,res)=>{
-    try {
-        console.log("remove category offer has started")
-        const categoryId=req.body.categoryId;
-        const category=await Category.findById(categoryId);
 
-        if(!category){
-            return res.status(404).json({status:false,message:"Category not found"})
-        }
-        category.offer=0;
-        await category.save();
+const removeCategoryOffer = async (req, res) => {
+  try {
+    const categoryId = req.body.categoryId;
 
-        // const percentage=category.offer;
-        const products= await Product.find({category:category._id});
-
-        if(products.length>0){
-            for(const product of products){
-                product.categoryOffer=0;
-                if(product.productOffer > product.brandOffer){
-                    product.salePrice=product.regularPrice*(1-product.productOffer/100);
-                    // product.categoryOffer=0;
-                    // product.productOffer=product.productOffer;
-                    // await product.save();                    
-                }
-                if(product.brandOffer > product.productOffer){
-                    product.salePrice=product.regularPrice*(1-product.brandOffer/100);
-                    // product.categoryOffer=0;
-                    // product.productOffer=product.brandOffer;
-                    // await product.save();
-                }
-                if(product.brandOffer === 0 && product.productOffer === 0){
-                    product.salePrice=product.regularPrice;
-                    // product.categoryOffer=0;
-                    // product.productOffer=0;
-                    // await product.save();
-                }
-            }
-        }
-        res.json({status:true});
-    } catch (error) {
-        res.status(500).json({status:false,message:"Internal Server Error"})
+    // Step 1: Find the category
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Category not found" });
     }
-}
+
+    // Step 2: Reset category offer
+    category.offer = 0;
+    await category.save();
+
+    // Step 3: Find all products in this category
+    const products = await Product.find({ category: category._id });
+
+    if (products.length > 0) {
+      for (const product of products) {
+        // Reset category offer
+        product.categoryOffer = 0;
+
+        // Recalculate salePrice based on other active offers
+        const maxOffer = Math.max(product.productOffer || 0, product.brandOffer || 0);
+
+        if (maxOffer > 0) {
+          product.salePrice = product.regularPrice * (1 - maxOffer / 100);
+        } else {
+          product.salePrice = product.regularPrice;
+        }
+
+        await product.save();
+      }
+    }
+
+    // Step 4: Deactivate the Offer document (if any)
+    await Offer.deleteMany(
+      { type: "category", refId: category._id, isActive: true },
+      { $set: { isActive: false } }
+    );
+
+    // Step 5: Respond to client
+    res.json({ status: true, message: "Category offer removed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: false, message: "Internal Server Error" });
+  }
+};
+
 
 
 const listCategory = async (req,res)=>{
@@ -237,182 +279,3 @@ module.exports={
     listCategory,
     unlistCategory,
 }
-// const categoryInfo=async (req,res)=>{
-//     try {
-//         let search="";
-//         if(req.query.search){
-//             search=req.query.search;
-//         }
-
-//         const page=parseInt(req.query.page) || 1;
-//         const limit=5;
-//         const skip=(page-1)*limit;
-
-//         const categoryData=await Category.find({name:{$regex:".*"+search+".*",$options:"i"}})
-//         .sort({createdAt:-1})
-//         .skip(skip)
-//         .limit(limit);
-
-//         const totalCategories =await Category.countDocuments({name:{$regex:".*"+search+".*",$options:"i"}});
-//         const totalPages=Math.ceil(totalCategories/limit);
-//         res.render('./admin/category',{
-//             title:"Category",
-//             cat:categoryData,
-//             currentPage:page,
-//             totalPages:totalPages,
-//             totalCategories:totalCategories,
-//             search:search
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.redirect('/admin/page-error')
-//     }
-// }
-
-
-// const addCategory=async (req,res)=>{
-//     const {name,description}=req.body;
-//     try {
-//         const existingCategory=await Category.findOne({name});
-//         if(existingCategory){
-//             return res.status(404).json({error:"Category already exists"})
-//         }
-//         const newCategory=new Category({
-//             name,
-//             description
-//         })
-
-//         await newCategory.save();
-//         return res.json({message:"Category added successfully"})
-//     } catch (error) {
-//         return res.status(500).json({error:"Internal Server Error"})            
-//     }
-// }
-
-// const addCategoryOffer=async (req,res)=>{
-//     try {
-//         const percentage=parseInt(req.body.percentage);
-//         const categoryId=req.body.categoryId;
-//         const category=await Category.findById(categoryId);
-
-//         if(!category){
-//             return res.status(404).json({status:false,message:"Category not found"});
-//         }
-//         const products=await Product.find({category:category._id});
-//         const hasProductOffer=products.some((product)=>product.productOffer > percentage);
-//         if(hasProductOffer){
-//             return res.json({status:false,message:"Products within this category already have product offers"})
-//         }
-//         await Category.updateOne({_id:categoryId},{$set:{categoryOffer:percentage}});
-
-//         for(const product of products){
-//             product.productOffer=0;
-//             product.salePrice=product.regularPrice;
-//             await product.save();
-//         }
-//         res.json({status:true});
-//     } catch (error) {
-//         res.status(500).json({status:false,message:"Internal Server Error"})
-//     }
-// }
-
-
-// const removeCategoryOffer=async (req,res)=>{
-//     try {
-//         console.log("remove category offer has started")
-//         const categoryId=req.body.categoryId;
-//         const category=await Category.findById(categoryId);
-
-//         if(!category){
-//             return res.status(404).json({status:false,message:"Category not found"})
-//         }
-
-//         const percentage=category.categoryOffer;
-//         const products= await Product.find({category:category._id});
-
-//         if(products.length>0){
-//             for(const product of products){
-//                 product.salePrice+=Math.floor(product.regularPrice*(percentage/100));
-//                 product.productOffer=0;
-//                 await product.save();
-//             }
-//         }
-//         category.categoryOffer=0;
-//         await category.save();
-//         res.json({status:true});
-//     } catch (error) {
-//         res.status(500).json({status:false,message:"Internal Server Error"})
-//     }
-// }
-
-
-// const getListCategory=async (req,res)=>{
-//     try {
-//         let id=req.query.id;
-//         await Category.updateOne({_id:id},{$set:{isListed:false}});
-//         res.redirect("/admin/category");
-//     } catch (error) {
-//         res.redirect('/admin/page-error')
-//     }
-// }
-
-
-// const getUnlistCategory=async (req,res)=>{
-//     try {
-//         let id=req.query.id;
-//         await Category.updateOne({_id:id},{$set:{isListed:true}});
-//         res.redirect('/admin/category');
-//     } catch (error) {
-//         res.redirect('/admin/page-error')
-//     }
-// }
-
-// const getEditCategory=async (req,res)=>{
-//     try {
-//         console.log('getEditCategory has started')
-//         const id=req.query.id;
-//         console.log("id:",id)
-//         const category=await Category.findOne({_id:id});
-//         console.log("category:",category)
-//         res.render('./admin/edit-category',{title:"Edit category",category:category})
-//     } catch (error) {
-//         res.redirect('/admin/page-error')
-//     }
-// }
-
-// const editCategory=async (req,res)=>{
-//     try {
-//         console.log("edit category has started")
-//         const id=req.params.id;
-//         console.log("id:",id)
-//         const {categoryName,description}=req.body;
-//         const existingCategory=await Category.findOne({name:categoryName});
-
-//         if(existingCategory){
-//             return res.status(400).json({error:"Category exists, Please choose another name"})
-//         }
-//         const updateCategory =await Category.findByIdAndUpdate(id,{
-//             name:categoryName,
-//             description:description,
-//         },{new:true});
-
-//         if(updateCategory){
-//             res.redirect("/admin/category");
-//         }else{
-//             res.status(404).json({error:"Category not found"})
-//         }
-//     } catch (error) {
-//         res.status(500).json({error:"Internal sever error"})
-//     }
-// }
-
-// module.exports={
-//     categoryInfo,
-//     addCategory,
-//     addCategoryOffer,
-//     removeCategoryOffer,
-//     getListCategory,
-//     getUnlistCategory,
-//     getEditCategory,
-//     editCategory
-// }

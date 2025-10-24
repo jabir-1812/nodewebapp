@@ -32,7 +32,10 @@ const brandSchema =new Schema({
     offer:{
         type:Number,
         default:0
-    }
+    },
+    offerStartDate:{type:Date},
+    offerEndDate:{type:Date},
+    offerDescription:{type:String}
 })
 
 const Brand=mongoose.model("Brand",brandSchema);

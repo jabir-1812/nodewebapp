@@ -548,7 +548,7 @@
                     <div class="product-brand"><%= products[i].brand?.brandName %></div>
                     <h3 class="product-name"><%= products[i].productName %></h3>
                     <div class="product-pricing">
-                      <span class="sale-price">Rs. <%= products[i].salePrice %></span>
+                      <span class="sale-price">Rs. <%= products[i].salePrice.toFixed(1) %></span>
                       <% if(products[i].regularPrice > products[i].salePrice) { %>
                         <span class="regular-price">Rs. <%= products[i].regularPrice %></span>
                       <% } %>
@@ -640,11 +640,12 @@
 
     async function addToWishlist(productId) {
       try {
-        const response=await fetch(`/wishlist/add/${productId}`,{
+        const response=await fetch('/wishlist/add',{
           method:"post",
           headers:{
             'Content-Type':'application/json'
-          }
+          },
+          body:JSON.stringify({productId:productId})
         });
 
         const result=await response.json();

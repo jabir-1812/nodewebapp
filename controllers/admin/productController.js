@@ -146,50 +146,6 @@ const loadAllProductsPage = async (req, res) => {
 };
 
 
-// const loadAllProductsPage2=async (req,res)=>{
-//     try {
-//         const search=req.query.search || "";
-//         const page=req.query.page || 1;
-//         const limit=4;
-//         console.log("2")
-//         const productData=await Product.find({
-//             $or:[
-//                 {productName:{$regex:new RegExp(".*"+search+".*","i")}},
-//                 {brand:{$regex:new RegExp(".*"+search+".*","i")}}
-//             ]
-//         }).limit(limit*1)
-//         .skip((page-1)*limit)
-//         .populate('category')
-//         .exec();
-//         console.log("productData:",productData)
-
-//         const count=await Product.find({
-//             $or:[
-//                 {productName:{$regex:new RegExp(".*"+search+".*","i")}},
-//                 {brand:{$regex:new RegExp(".*"+search+".*","i")}}
-//             ],
-//         }).countDocuments();
-
-//         const category=await Category.find({isListed:true});
-//         const brand=await Brand.find({isBlocked:false});
-
-//         if(category && brand){
-//             res.render('./admin/products',{
-//                 title:"Products",
-//                 data:productData,
-//                 currentPage:page,
-//                 totalPages:page,
-//                 totalPages:Math.ceil(count/limit),
-//                 cat:category,
-//                 brand:brand,
-//             })
-//         }else{
-//             res.render("./admin/page-error");
-//         }
-//     } catch (error) {
-//         res.redirect("/admin/page-error");
-//     }
-// }
 
 
 const addProductOffer=async (req,res)=>{
@@ -227,44 +183,35 @@ const addProductOffer=async (req,res)=>{
 }
 
 
-const removeProductOffer=async (req,res)=>{
-    try {
-        const productId=req.body.productId;
-        const product=await Product.findById(productId);
+const removeProductOffer = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const product = await Product.findById(productId);
 
-        if(!product){
-            return res.status(404).json({status:false,message:"Product not found"})
-        }
-
-        const percentage=product.productOffer;
-        // const products= await Product.find({_id:product._id,productOffer:{$lte:percentage}});
-
-        if(product){
-                if(product.brandOffer > product.categoryOffer){
-                    product.salePrice=product.regularPrice*(1-product.brandOffer/100);
-                    product.productOffer=0;
-                    // product.productOffer=product.categoryOffer;
-                    await product.save();
-                }
-                if(product.categoryOffer > product.productOffer){
-                    product.salePrice=product.regularPrice*(1-product.categoryOffer/100);
-                    product.productOffer=0;
-                    // product.productOffer=product.categoryOffer;
-                    await product.save();
-                }
-                if(product.brandOffer === 0 && product.categoryOffer === 0){
-                    product.salePrice=product.regularPrice;
-                    // product.brandOffer=0;
-                    product.productOffer=0;
-                    await product.save();
-                }
-                
-            }
-        res.json({status:true,salePrice:product.salePrice});
-    } catch (error) {
-        res.status(500).json({status:false,message:"Internal Server Error"})
+    if (!product) {
+      return res.status(404).json({ status: false, message: "Product not found" });
     }
-}
+
+    // Remove the product offer
+    product.productOffer = 0;
+
+    // Find which offer (brand/category) is higher
+    const highestOffer = Math.max(product.brandOffer, product.categoryOffer);
+
+    if (highestOffer > 0) {
+      product.salePrice = product.regularPrice * (1 - highestOffer / 100);
+    } else {
+      product.salePrice = product.regularPrice;
+    }
+
+    await product.save();
+
+    res.json({ status: true, salePrice: product.salePrice });
+  } catch (error) {
+    res.status(500).json({ status: false, message: "Internal Server Error" });
+  }
+};
+
 
 const blockUnblockProduct= async (req,res)=>{
     try {
@@ -289,7 +236,7 @@ const blockUnblockProduct= async (req,res)=>{
 const unblockProduct = async (req,res)=>{
     try {
         const {productId}=req.body;
-        await Product.updateOne({_id:productId},{$set:{isBlocked:false}});
+        await Product.updateOne({_id:productId},{$set:{isBlocked:false,status:"Available"}});
         res.json({success:true,message:"Product unblocked successfully"});
     } catch (error) {
         res.status(500).json({success:false,message:"Error unblocking the product"})
@@ -301,7 +248,7 @@ const unblockProduct = async (req,res)=>{
 const blockProduct = async (req,res)=>{
     try {
         const {productId}=req.body;
-        await Product.updateOne({_id:productId},{$set:{isBlocked:true}});
+        await Product.updateOne({_id:productId},{$set:{isBlocked:true,status:"Unavailable"}});
         res.json({success:true,message:"Product blocked successfully"});
     } catch (error) {
         res.status(500).json({success:false,message:"Error blocking the product"})

@@ -158,7 +158,7 @@ tr:hover {
 
                         <td id="status-<%= index %>"
                             class="<%= product.isBlocked ? 'text-danger' : 'text-success' %>">
-                            <%= product.isBlocked ? 'Blocked' : 'Active' %>
+                            <%= product.status %>
                         </td>
                         <td>
                             <a href="/admin/edit-product/<%= product._id %>" class="edit-btn btn btn-outline-dark">Edit</a>
@@ -211,7 +211,8 @@ tr:hover {
                 title:"Offer in percentage",
                 input:"number",
                 inputLabel:"Percentage",
-                inputPlaceholder:"%"
+                inputPlaceholder:"%",
+                showCancelButton:true
             });
 
             if(percentage){
@@ -229,38 +230,26 @@ tr:hover {
 
                     const responseJson=await response.json();
                     if(response.ok && responseJson.status===true){
-                        Swal.fire(
-                            "Offer Added",
-                            `The offer has been added.<br><strong>${responseJson.message}</strong>`,
-                            "success"
-                        ).then(()=>{
-                            // Update the UI after adding offer
-                            const button = document.querySelector(`button[onclick="addOffer('${productId}')"]`);
-                            if (button) {
-                                button.textContent = "Remove Offer";
-                                button.classList.remove("btn-outline-primary");
-                                button.classList.add("btn-outline-danger");
-                                button.setAttribute("onclick", `removeOffer('${productId}')`);
-                                // Update the offer% text in the row
-                                const row = button.closest("tr");
-                                if (row) {
-                                    row.querySelector("td:nth-child(5) div:nth-child(1)").textContent = `Category Offer:${responseJson.categoryOffer} %`;
-                                    row.querySelector("td:nth-child(5) div:nth-child(2)").textContent = `Brand Offer:${responseJson.brandOffer} %`;
-                                    row.querySelector("td:nth-child(5) div:nth-child(3)").textContent = `Product Offer:${percentage} %`;
-
-                                    row.querySelector("td:nth-child(7)").textContent = responseJson.salePrice.toFixed();
-                                }
-                            }
+                        Swal.fire({
+                            title:"Offer Added",
+                            html:`The offer has been added.<br><strong>${responseJson.message}</strong>`,
+                            icon:"success",
+                            timer:10000,
+                            showConfirmButton:true
+                        }).then(()=>{
+                            location.reload();
                         })
                     }else{
                         Swal.fire("Failed",responseJson.message || "Adding offer failed","error");
                     }
                 } catch (error) {
-                    Swal.fire(
-                        "Error",
-                        "An error occured while adding the offer",
-                        "error"
-                    );
+                    Swal.fire({
+                        title:"Error",
+                        text:"An error occured while adding the offer",
+                        icon:"error",
+                        timer:5000,
+                        showConfirmButton:true
+                    });
 
                     console.log('Error Adding offer:',error)
                 }
@@ -292,27 +281,14 @@ tr:hover {
                     const responseJson=await response.json();
 
                     if(response.ok && responseJson.status===true){
-                     Swal.fire(
-                        "Offer removed",
-                        "The offer has been removed",
-                        "success"
-                        ).then(()=>{
-                            // Update the UI after removing offer
-                            const button = document.querySelector(`button[onclick="removeOffer('${productId}')"]`);
-                            if (button) {
-                                button.textContent = "Add Offer";
-                                button.classList.remove("btn-outline-danger");
-                                button.classList.add("btn-outline-primary");
-                                button.setAttribute("onclick", `addOffer('${productId}')`);
-                                // Update the offer% text in the row
-                                const row = button.closest("tr");
-                                if (row) {
-                                    row.querySelector("td:nth-child(5) div:nth-child(3)").textContent = `Product Offer: 0 %`;
-
-                                    row.querySelector("td:nth-child(7)").textContent = responseJson.salePrice;
-                                    console.log("responseJson salePrice:",responseJson.salePrice);
-                                }
-                            }
+                     await Swal.fire({
+                        title:"Offer removed",
+                        text:"The offer has been removed",
+                        icon:"success",
+                        timer:5000,
+                        showConfirmButton:true
+                        }).then(()=>{
+                            location.reload();
                         })
                     }else{
                         Swal.fire("Failed",responseJson.message || "Removing offer failed","error");
@@ -356,18 +332,10 @@ tr:hover {
           });
 
           const data=await response.json();
-          await Swal.fire("Done",data.message);
+          
           if(data.success){
-            const blockToggleButton=document.getElementById(`product-${productId}`);
-            blockToggleButton.textContent="Unblock";
-            blockToggleButton.className="";
-            blockToggleButton.classList.add('btn','btn-success')
-            blockToggleButton.dataset.isBlocked="true";
-
-            const status=document.getElementById(`status-${index}`);
-            status.innerText="Blocked";
-            status.className="";
-            status.classList.add('text-danger');
+            await Swal.fire("Done",data.message,"success");
+            location.reload()
           }
         }
       }
@@ -392,18 +360,9 @@ tr:hover {
           });
 
           const data=await response.json();
-          await Swal.fire("Done",data.message);
           if(data.success){
-            const blockToggleButton=document.getElementById(`product-${productId}`);
-            blockToggleButton.textContent="Block";
-            blockToggleButton.className="";
-            blockToggleButton.classList.add('btn','btn-danger')
-            blockToggleButton.dataset.isBlocked="false";
-
-            const status=document.getElementById(`status-${index}`);
-            status.innerText="Active";
-            status.className="";
-            status.classList.add('text-success');
+            await Swal.fire("Done",data.message,"success");
+            location.reload();    
           }
         }
       }

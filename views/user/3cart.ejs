@@ -1,0 +1,38 @@
+<%- include("../../views/partials/user/header") %>
+`
+<div class="container">
+    <div class="row">
+        <div class="col-9">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <% if (userCart.items.length> 0) { %>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <% }else{ %>
+                        your cart is empty
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-3">
+
+        </div>
+    </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>

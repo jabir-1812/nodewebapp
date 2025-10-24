@@ -299,14 +299,15 @@
         });
 
         const data=await response.json();
-        await Swal.fire("Done!",data.message);
+        await Swal.fire("Done!",data.message,"success");
         if(data.success){
-          console.log("data success unblock")
-          const blockUnblockButton=document.getElementById(`user-${userId}`);
-          blockUnblockButton.textContent="Unblock";
-          blockUnblockButton.dataset.isBlocked=true;
-          blockUnblockButton.className="";
-          blockUnblockButton.classList.add('btn-success')
+          // console.log("data success unblock")
+          // const blockUnblockButton=document.getElementById(`user-${userId}`);
+          // blockUnblockButton.textContent="Unblock";
+          // blockUnblockButton.dataset.isBlocked=true;
+          // blockUnblockButton.className="";
+          // blockUnblockButton.classList.add('btn-success')
+          location.reload()
         }
         
        } 
@@ -329,15 +330,16 @@
           body:JSON.stringify({userId})
         });
         const data=await response.json();
-        await Swal.fire("Done!",data.message);
+        await Swal.fire("Done!",data.message,"success");
 
         if(data.success){
-          console.log("data success block")
-          const blockUnblockButton=document.getElementById(`user-${userId}`);
-          blockUnblockButton.textContent="Block";
-          blockUnblockButton.dataset.isBlocked=false;
-          blockUnblockButton.className="";
-          blockUnblockButton.classList.add('btn-danger');
+          // console.log("data success block")
+          // const blockUnblockButton=document.getElementById(`user-${userId}`);
+          // blockUnblockButton.textContent="Block";
+          // blockUnblockButton.dataset.isBlocked=false;
+          // blockUnblockButton.className="";
+          // blockUnblockButton.classList.add('btn-danger');
+          location.reload()
         }
 
        }

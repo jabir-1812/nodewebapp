@@ -43,7 +43,7 @@ const productSchema = new Schema(
     },
     quantity: {
       type: Number,
-      default: true,
+      default: 0,
     },
     color: {
       type: String,
@@ -59,7 +59,7 @@ const productSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["Available", "out of stock", "Discontinued"],
+      enum: ["Available", "Unavailable", "out of stock", "Discontinued"],
       required: true,
       default: "Available",
     },

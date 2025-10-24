@@ -1,37 +1,54 @@
 const User=require('../../models/userSchema')
 const Wishlist=require('../../models/wishlistSchema')
 const Cart=require('../../models/cartSchema')
+const mongoose = require("mongoose");
+
 
 const showWishlist = async (req, res) => {
   try {
     const userId = req.session.user || req.session.passport?.user;
+    const user = await User.findById(userId);
 
-    const userData = await User.findById(userId);
-    const userCart = await Cart.findOne({ userId });
-
-    // ✅ Pagination setup
-    const page = parseInt(req.query.page) || 1; // current page
-    const limit = 5; // items per page
+    // Get pagination params (default: page=1, limit=6)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
 
-    // Count total items
-    const totalItems = await Wishlist.countDocuments({ userId });
+    // Find wishlist
+    const wishlist = await Wishlist.findOne({ userId })
+      .populate({
+        path: "items.productId",
+        select: "productName productImage regularPrice salePrice brand",
+        populate: {
+          path: "brand",
+          select: "brandName",
+        },
+      })
+      .lean();
 
-    // Fetch with pagination
-    const wishlistData = await Wishlist.find({ userId })
-      .populate("productId")
-      .skip(skip)
-      .limit(limit);
+    if (!wishlist || !wishlist.items || wishlist.items.length === 0) {
+      return res.render("user/wishlist/2wishlist", {
+        title: "Wishlist",
+        wishlist: [],
+        user,
+        cartLength: "",
+        currentPage: page,
+        totalPages: 0,
+      });
+    }
 
+    // Apply pagination manually on the populated items
+    const totalItems = wishlist.items.length;
+    const paginatedItems = wishlist.items.slice(skip, skip + limit);
     const totalPages = Math.ceil(totalItems / limit);
 
-    res.render("user/wishlist/wishlist", {
+    res.render("user/wishlist/2wishlist", {
       title: "Wishlist",
-      cartLength: userCart ? userCart.items.length : 0,
-      user: userData,
-      wishlistData,
+      wishlist: paginatedItems,
+      user,
+      cartLength: "",
       currentPage: page,
-      totalPages
+      totalPages,
     });
   } catch (error) {
     console.log("showWishlist() error:", error);
@@ -41,22 +58,41 @@ const showWishlist = async (req, res) => {
 
 
 
-const addToWishlist=async (req,res)=>{
-    try {
-        const userId=req.session.user || req.session.passport?.user;
-        const productId=req.params.id;
 
-        await Wishlist.create({ userId, productId });
+const addToWishlist = async (req, res) => {
+  try {
+    const userId = req.session.user || req.session.passport?.user;
+    const productId = new mongoose.Types.ObjectId(req.body.productId);
 
-        res.status(200).json({success:true,message:"Added to Wishlist"});
-  } catch (err) {
-    if (err.code === 11000) {
-      // duplicate entry
+    // Find the user's wishlist
+    let wishlist = await Wishlist.findOne({ userId });
+
+    // Create wishlist if it doesn't exist
+    if (!wishlist) {
+      wishlist = new Wishlist({ userId, items: [] });
+    }
+
+    // Check if product already exists
+    const alreadyExists = wishlist.items.some(
+      (item) => item.productId.toString() === productId.toString()
+    );
+
+    if (alreadyExists) {
       return res.status(400).json({ success: false, message: "Already in wishlist" });
     }
+
+    // Add new product
+    wishlist.items.push({ productId });
+    await wishlist.save();
+
+    res.status(200).json({ success: true, message: "Added to Wishlist" });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Error adding to wishlist" });
   }
-}
+};
+
+
 
 
 const removeFromWishlist=async (req,res)=>{
@@ -64,11 +100,11 @@ const removeFromWishlist=async (req,res)=>{
         const userId=req.session.user || req.session.passport?.user;
         const productId=req.params.id;
 
-        const result = await Wishlist.findOneAndDelete({ userId, productId });
-
-        if (!result) {
-            return res.status(404).json({ success: false, message: "Item not found in wishlist" });
-        }
+         const updatedWishlist = await Wishlist.findOneAndUpdate(
+            { userId },
+            { $pull: { items: { productId } } },
+            { new: true }
+        );
         return res.json({ success: true, message: "Removed from wishlist" });
     } catch (error) {
         console.log("removeFromWishlist() error:",error);

@@ -78,8 +78,9 @@ router.get('/product-details',userAuth,productController.productDetails);
 
 //wishlist
 router.get('/wishlist',userAuth,wishlistController.showWishlist);
-router.post('/wishlist/add/:id',userAuth,wishlistController.addToWishlist)
+router.post('/wishlist/add',userAuth,wishlistController.addToWishlist)
 router.delete('/wishlist/remove/:id',userAuth,wishlistController.removeFromWishlist);
+router.post('/wishlist/add-to-cart',userAuth,cartController.addToCart);
 
 //cart
 router.get('/cart',userAuth,cartController.loadCart);
@@ -92,12 +93,17 @@ router.delete("/delete-cart-item/:id", userAuth, cartController.deleteCartItem)
 router.get('/checkout',userAuth,checkoutController.loadCheckoutPage);
 router.post('/edit-address-in-checkout',userAuth,checkoutController.editAddress);
 router.post('/add-address-in-checkout',userAuth,checkoutController.addNewAddress);
+router.post('/checkout/change-cart-quantity',userAuth,checkoutController.changeCartQuantity)
+router.delete('/checkout/delete-cart-item/:id',userAuth,checkoutController.deleteCartItem)
+router.post('/checkout/apply-coupon',userAuth,checkoutController.applyCoupon)
+router.delete('/checkout/remove-coupon',userAuth,checkoutController.removeCoupon)
+
 
 
 //order
 router.post('/create-razorpay-order',userAuth,orderController.createRazorPayOrder);
 router.post('/verify-razorpay-payment',userAuth,orderController.verifyRazorpayPayment)
-router.post('/place-online-paid-order',userAuth,orderController.placeOnlinePaidOrder)
+// router.post('/place-online-paid-order',userAuth,orderController.placeOnlinePaidOrder)
 router.post('/place-cod-order',userAuth,orderController.place_cod_order);
 router.post('/place-wallet-paid-order',userAuth,orderController.placeWalletPaidOrder)
 router.get('/orders',userAuth,orderController.showOrders);

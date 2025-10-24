@@ -8,6 +8,7 @@ const brandController=require('../controllers/admin/brandController');
 const productController=require('../controllers/admin/productController');
 const bannerController=require('../controllers/admin/bannerController');
 const orderController=require('../controllers/admin/adminOrderController');
+const couponController=require('../controllers/admin/couponController');
 const multer=require('multer');
 const storage=require('../helpers/multer');
 const uploads=multer({storage:storage});
@@ -72,6 +73,7 @@ router.get('/edit-product/:id',adminAuth,productController.loadEditProductPage);
 router.post('/edit-product/:id',adminAuth,uploads.array('images',4),productController.editProduct);
 
 
+
 //Banner Management
 router.get('/banners',adminAuth,bannerController.getBannerPage);
 router.get('/add-banner',adminAuth,bannerController.loadAddBannerPage);
@@ -88,5 +90,17 @@ router.get('/orders/order-details/:orderId',adminAuth,orderController.getOrderDe
 router.post('/orders/order-details/update-item-status',adminAuth,orderController.updateItemStatus)
 router.post('/orders/:orderId/return/:itemId/:action',adminAuth,orderController.manageReturnRequest)
 router.post('/orders/return/update-status',adminAuth,orderController.updateReturnStatus);
+
+
+
+//coupon management
+router.get('/coupons',adminAuth,couponController.getCouponsPage);
+router.get("/coupons/add-new-coupon",adminAuth,couponController.getAddNewCouponPage)
+router.post('/coupons/add-new-coupon',adminAuth,couponController.addNewCoupon)
+router.get('/coupons/edit-coupon/:couponId',adminAuth,couponController.getEditCouponPage)
+router.put('/coupons/edit-coupon/:couponId',adminAuth,couponController.editCoupon)
+router.delete('/coupons/delete-coupon/:couponId',adminAuth,couponController.deleteCoupon)
+router.put('/coupons/de-activate/:couponId',adminAuth,couponController.deActivateCoupon)
+router.put('/coupons/activate/:couponId',adminAuth,couponController.activateCoupon)
 
 module.exports=router; 

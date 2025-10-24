@@ -8,6 +8,8 @@ const Brand=require('../../models/brandSchema');
 const nodemailer=require('nodemailer');
 const env=require('dotenv').config();
 const bcrypt=require('bcrypt');
+const Offer=require('../../models/offerSchema')
+const Coupon=require('../../models/couponSchema')
 
 
 
@@ -221,18 +223,26 @@ const login=async (req,res)=>{
 
 const loadHomepage=async (req,res)=>{ 
     try {
+        //banner
         const today=new Date().toISOString();
         const findBanner=await Banner.find({
             startDate:{$lt:new Date(today)},
             endDate:{$gt:new Date(today)}
         })
 
+        //offers carousel
+        const categoryOffers=await Offer.find({type:"category"})
+        const brandOffers=await Offer.find({type:"brand"})
+        const coupons=await Coupon.find({startDate:{$lt:new Date(today)},expiryDate:{$gt:new Date(today)},isActive:true})
+
+
         const userId=req.session.user || req.session.passport?.user;
 
         const categories=await Category.find({isDeleted:false});//listing unblocked categories
         let productData=await Product.find(
-            {isBlocked:false,           //listing unblocked products 
-            category:{$in:categories.map(category=>category._id)},quantity:{$gt:0} //it is like==> find({category:{in:[categoryId1, categoryId2,....]
+            {
+                isBlocked:false,//listing unblocked products 
+                category:{$in:categories.map(category=>category._id)} //it is like==> find({category:{in:[categoryId1, categoryId2,....]
             }
         )
 
@@ -244,32 +254,41 @@ const loadHomepage=async (req,res)=>{
             const userData=await User.findOne({_id:userId});
             const userCart=await Cart.findOne({userId:userId});
             // console.log("userCart======>",userCart)
-            if(userData.isBlocked) return res.render('./user/2home',{
+            if(userData.isBlocked) return res.render('./user/3home',{
                 title:"Home",
                 user:"",
                 products:productData,
                 cartLength:'',
                 banner:findBanner || [],
+                categoryOffers,
+                brandOffers,
+                coupons
             });
-            res.render('./user/2home',{
+            res.render('./user/3home',{
                 title:"Home",
                 user:userData,
                 products:productData,
                 banner:findBanner || [],
-                cartLength: userCart ? userCart.items.length : 0
+                cartLength: userCart ? userCart.items.length : 0,
+                categoryOffers,
+                brandOffers,
+                coupons
             })
         }else{
-            return res.render('./user/2home',{
+            return res.render('./user/3home',{
                 title:"Home",
                 user:"",
                 products:productData,
                 banner:findBanner || [],
-                cartLength:""
+                cartLength:"",
+                categoryOffers,
+                brandOffers,
+                coupons
             });
         }
     } catch (error) {
         console.log('loadHomepage() error:',error)
-        res.status(500).send("Server error")
+        res.redirect('/page-not-found')
     }
 }
 

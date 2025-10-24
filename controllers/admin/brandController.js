@@ -2,6 +2,7 @@ const path=require('path')
 const fs=require('fs')
 const Brand=require('../../models/brandSchema');
 const Product=require('../../models/productSchema');
+const Offer = require('../../models/offerSchema')
 
 
 
@@ -67,91 +68,169 @@ const addBrand=async (req,res)=>{
     }
 }
 
-const addBrandOffer=async (req,res)=>{
-    try {
-        //percentage means offer percentage of new adding offer
-        const percentage=parseInt(req.body.percentage);
-        const brandId=req.body.brandId;
-        const brand=await Brand.findById(brandId);
+// const addBrandOffer=async (req,res)=>{
+//     try {
+//         //percentage means offer percentage of new adding offer
+//         const percentage=parseInt(req.body.percentage);
+//         const brandId=req.body.brandId;
+//         const brand=await Brand.findById(brandId);
 
-        if(!brand){
-            return res.status(404).json({status:false,message:"Brand not found"});
-        }
-        const products=await Product.find({brand:brand._id});
+//         if(!brand){
+//             return res.status(404).json({status:false,message:"Brand not found"});
+//         }
+//         const products=await Product.find({brand:brand._id});
 
-        if(products.length>0){
-            for(const product of products){
-                if(percentage > product.productOffer && percentage > product.categoryOffer){
-                    product.salePrice=product.regularPrice*(1-percentage/100)
-                }
-                product.brandOffer=percentage;
-                await product.save()
+//         if(products.length>0){
+//             for(const product of products){
+//                 if(percentage > product.productOffer && percentage > product.categoryOffer){
+//                     product.salePrice=product.regularPrice*(1-percentage/100)
+//                 }
+//                 product.brandOffer=percentage;
+//                 await product.save()
                 
+//             }
+//         }
+        
+//         await Brand.updateOne({_id:brandId},{$set:{offer:percentage}});
+
+//         // // Apply brand offer ONLY to products with lesser existing offer
+//         // //if a product has less offer % than new offer %, those product will be updated to new offer %.
+//         // //if a product has higher offer than new offer, it stays like that.it won't be updated.
+//         // await Product.updateMany(
+//         //     {brand:brand._id,productOffer:{$lt:percentage}},
+//         //     [
+//         //         {$set:{productOffer:percentage,salePrice:{$multiply:["$regularPrice",(1-percentage/100)]}}}
+//         //     ]
+//         // );
+
+
+//         res.json({status:true});
+//     } catch (error) {
+//         res.status(500).json({status:false,message:"Internal Server Error"})
+//     }
+// }
+
+const addBrandOffer = async(req,res)=>{
+    try{
+        const { brandId, percentage, startDate, endDate, description } = req.body;
+
+        // 1️⃣ Check if brand exists
+        const brand = await Brand.findById(brandId);
+        if (!brand) {
+        return res.status(404).json({ status: false, message: "Brand not found" });
+        }
+
+        // 2️⃣ Find products in this brand
+        const products = await Product.find({ brand: brand._id });
+
+        // 3️⃣ Update each product's brandOffer & salePrice if needed
+        if (products.length > 0) {
+            const bulkOps = products.map((product) => {
+                const update = { brandOffer: percentage };
+                if (percentage > product.productOffer && percentage > product.categoryOffer) {
+                update.salePrice = product.regularPrice * (1 - percentage / 100);
+                }
+                return {
+                    updateOne: {
+                        filter: { _id: product._id },
+                        update: { $set: update },
+                    },
+                };
+            });
+
+            if (bulkOps.length > 0) {
+                await Product.bulkWrite(bulkOps);
             }
         }
-        
-        await Brand.updateOne({_id:brandId},{$set:{offer:percentage}});
 
-        // // Apply brand offer ONLY to products with lesser existing offer
-        // //if a product has less offer % than new offer %, those product will be updated to new offer %.
-        // //if a product has higher offer than new offer, it stays like that.it won't be updated.
-        // await Product.updateMany(
-        //     {brand:brand._id,productOffer:{$lt:percentage}},
-        //     [
-        //         {$set:{productOffer:percentage,salePrice:{$multiply:["$regularPrice",(1-percentage/100)]}}}
-        //     ]
-        // );
+        // 4️⃣ Update category with offer info
+        await Brand.updateOne(
+            { _id: brandId },
+            {
+                $set: {
+                offer: percentage,
+                offerStartDate: startDate || null,
+                offerEndDate: endDate || null,
+                offerDescription: description || "",
+                },
+            }
+        );
 
+        // 5️⃣ Sync to Offer collection (centralized)
+        await Offer.findOneAndUpdate(
+            { refId: brand._id, type: "brand" },
+            {
+                name: brand.brandName,
+                type: "brand",
+                refId: brand._id,
+                percentage,
+                startDate: startDate || null,
+                endDate: endDate || null,
+                description: description || "",
+                active: true,
+            },
+            { upsert: true } // create if not exists
+        );
 
-        res.json({status:true});
-    } catch (error) {
-        res.status(500).json({status:false,message:"Internal Server Error"})
-    }
+        // 6️⃣ Send response
+        res.json({ status: true, message: "Brand offer added successfully" });
+  } catch (error) {
+        console.error("Error adding brand offer:", error);
+        res.status(500).json({ status: false, message: "Internal Server Error" });
+  }
 }
+
+
 
 const removeBrandOffer=async(req,res)=>{
      try {
-        console.log("remove brand offer has started")
-        const brandId=req.body.brandId;
-        const brand=await Brand.findById(brandId);
+    const brandId = req.body.brandId;
 
-        if(!brand){
-            return res.status(404).json({status:false,message:"Brand not found"})
-        }
-        brand.offer=0;
-        await brand.save();
-
-        // const percentage=brand.offer;
-        const products= await Product.find({brand:brand._id});
-
-        if(products.length>0){
-            for(const product of products){
-                product.brandOffer=0;
-                if(product.productOffer > product.categoryOffer){
-                    product.salePrice=product.regularPrice*(1-product.productOffer/100);
-                    // product.brandOffer=0;
-                    // product.productOffer=product.categoryOffer;
-                    // await product.save();
-                }
-                if(product.categoryOffer > product.productOffer){
-                    product.salePrice=product.regularPrice*(1-product.categoryOffer/100);
-                    // product.brandOffer=0;
-                    // product.productOffer=product.categoryOffer;
-                    // await product.save();
-                }
-                if(product.productOffer === 0 && product.categoryOffer === 0){
-                    product.salePrice=product.regularPrice;
-                    // product.brandOffer=0;
-                    // product.productOffer=0;
-                    // await product.save();
-                }
-                await product.save();
-            }
-        }
-        res.json({status:true});
-    } catch (error) {
-        res.status(500).json({status:false,message:"Internal Server Error"})
+    // Step 1: Find the category
+    const brand = await Brand.findById(brandId);
+    if (!brand) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Brand not found" });
     }
+
+    // Step 2: Reset category offer
+    brand.offer = 0;
+    await brand.save();
+
+    // Step 3: Find all products in this category
+    const products = await Product.find({ brand: brand._id });
+
+    if (products.length > 0) {
+      for (const product of products) {
+        // Reset category offer
+        product.brandOffer = 0;
+
+        // Recalculate salePrice based on other active offers
+        const maxOffer = Math.max(product.productOffer || 0, product.categoryOffer || 0);
+
+        if (maxOffer > 0) {
+          product.salePrice = product.regularPrice * (1 - maxOffer / 100);
+        } else {
+          product.salePrice = product.regularPrice;
+        }
+
+        await product.save();
+      }
+    }
+
+    // Step 4: Deactivate the Offer document (if any)
+    await Offer.deleteMany(
+      { type: "brand", refId: brand._id, isActive: true },
+      { $set: { isActive: false } }
+    );
+
+    // Step 5: Respond to client
+    res.json({ status: true, message: "Brand offer removed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: false, message: "Internal Server Error" });
+  }
 }
 
 

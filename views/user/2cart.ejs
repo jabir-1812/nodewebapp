@@ -225,13 +225,13 @@ body {
                                 <div class="quantity-control">
 
 
-                                <% if(userCart.items[i].productId.quantity !==0 ){ %>
+                                <% if(userCart.items[i].productId.quantity > 0 && userCart.items[i].productId.isBlocked === false){ %>
                                   <button class="btn btn-sm increment-button"
                                     onclick="changeQuantity(
                                         '<%= userCart.items[i].productId._id %>',
                                         1,
                                         '<%= userCart.items[i].productId.salePrice %>',
-                                        '<%= grandTotal %>'
+                                        '<%= totalAmount %>'
                                     )">+</button>
 
 
@@ -244,10 +244,20 @@ body {
                                         '<%= userCart.items[i].productId._id %>',
                                         -1,
                                         '<%= userCart.items[i].productId.salePrice %>',
-                                        '<%= grandTotal %>'
+                                        '<%= totalAmount %>'
                                     )">-</button>
-                                    <% }else{ %>
-                                    <h5 class="text-danger">Out Of Stock</h5>
+                                    <%}%>
+
+                                    <% if(userCart.items[i].productId.quantity === 0 && userCart.items[i].productId.isBlocked === false){ %>
+                                        <h5 class="text-danger">Out Of Stock</h5>
+                                    <% } %>
+
+                                    <% if(userCart.items[i].productId.quantity === 0 && userCart.items[i].productId.isBlocked === true){ %>
+                                      <h5 class="text-danger">Unavailable</h5>
+                                    <% } %>
+
+                                    <% if(userCart.items[i].productId.quantity > 0 && userCart.items[i].productId.isBlocked === true){ %>
+                                      <h5 class="text-danger">Unavailable</h5>
                                     <% } %>
 
                                 </div>
@@ -294,10 +304,16 @@ body {
                       </td>
                     </tr>
                     <tr>
-                      <td class="cart_total_label">Total</td>
+                      <td class="cart_total_label">Total Price</td>
+                      <td class="cart_total_amount"> <i class="ti-gift mr-5"></i>₹
+                        <span id="totalPrice" data-total-price="<%= totalPrice %>"> <%= totalPrice %></span>/-
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="cart_total_label">Total Amount</td>
                       <td class="cart_total_amount"><span class="font-lg fw-900 text-brand">₹
-                          <text id="grandTotal" data-grand-total="<%= grandTotal %>">
-                            <%= grandTotal %>
+                          <text id="totalAmount" data-total-amount="<%= totalAmount %>">
+                            <%= totalAmount %>
                           </text>
                         </span></td>
                     </tr>
@@ -319,7 +335,7 @@ body {
   </main>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    async function changeQuantity(productId,count,saleprice,grandTotal){
+    async function changeQuantity(productId,count,saleprice,totalAmount){
         // console.log('changeQuantity() started');
         document.getElementById('outOfStockMessage').innerHTML="";
 
@@ -327,7 +343,8 @@ body {
         const currentQtyElement=document.getElementById(`cartProductQuantity${productId}`);
         let currentQty=currentQtyElement.value;
         const subtotalElement=document.getElementById(`subTotal${productId}`);
-        const grandTotalElement=document.getElementById('grandTotal');
+        const totalPriceElement=document.getElementById('totalPrice');
+        const totalAmountElement=document.getElementById('totalAmount');
         // console.log('current Qty====>',currentQty);
         if(parseInt(currentQty)+count > 3){
             return Swal.fire({
@@ -384,8 +401,11 @@ body {
                 })
             }
             // Update grand total from backend
-            grandTotalElement.innerHTML = result.grandTotal;
-            grandTotalElement.dataset.grandTotal=result.grandTotal;
+            totalPriceElement.innerHTML = result.totalPrice;
+            totalPriceElement.dataset.totalPrice=result.totalPrice;
+            totalAmountElement.innerHTML = result.totalAmount;
+            totalAmountElement.dataset.totalAmount=result.totalAmount;
+
             
         }
 
@@ -419,10 +439,10 @@ body {
     document.addEventListener('DOMContentLoaded',()=>{
       const checkouPageLinkElement=document.getElementById('checkouPageLink');
       checkouPageLinkElement.addEventListener('click',(e)=>{
-        const grandTotalElement=document.getElementById('grandTotal');
-        const grandTotal=parseFloat (grandTotalElement.dataset.grandTotal);
-        console.log("grandTotal======>",grandTotal);
-        if(grandTotal===0){
+        const totalAmountElement=document.getElementById('totalAmount');
+        const totalAmount=parseFloat (totalAmountElement.dataset.totalAmount);
+        console.log("totalAmount======>",totalAmount);
+        if(totalAmount===0){
           e.preventDefault();
           Swal.fire({
             title:"Add products in the cart",

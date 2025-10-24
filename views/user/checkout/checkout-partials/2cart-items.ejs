@@ -1,0 +1,97 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if (userCart && userCart.items.length> 0) { %>
+            <% for (let i=0; i < userCart.items.length;i++) { %>
+                <tr>
+                    <td>
+                        <div>
+                            <img src="/uploads/resized-images/<%= userCart.items[i].productId?.productImage[0] %>"
+                                class="img-thumbnail" width="100px">
+                        </div>
+                        <div>
+                            <%= userCart.items[i].productId.productName %>
+                        </div>
+                        <div>
+                            <%= userCart.items[i].productId.brand?.brandName %>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            ₹<%= userCart.items[i].productId.salePrice %>/- ₹<strike>
+                                    <%= userCart.items[i].productId.regularPrice %>
+                                </strike> / per item
+                        </div>
+                    </td>
+                    <td>
+                        <% if(userCart.items[i].productId.quantity > 0 && userCart.items[i].productId.isBlocked === false){ %>
+
+                            <div>
+                                <button onclick="changeQuantity('<%= userCart.items[i].productId._id %>',-1)">-</button>
+
+                                <input id="cartProductQuantity<%= userCart.items[i].productId._id %>"
+                                    value="<%=userCart.items[i].quantity %>" type="number" readonly>
+
+                                <button onclick="changeQuantity('<%= userCart.items[i].productId._id %>',1)">+</button>
+                            </div>
+                            <% } %>
+                            <!--to show the out of stock message when updating the cart quantity by ajax, if the product is out of stock,   -->
+                            <div>
+                                <strong id="outOfStockMessage<%= userCart.items[i].productId._id %>"
+                                    class="text-danger"></strong>
+                            </div>
+
+                            <% if(userCart.items[i].productId.quantity === 0 && userCart.items[i].productId.isBlocked === false){ %>
+                                <span class="text-danger">Out of Stock</span>
+                            <% } %>
+                            <% if(userCart.items[i].productId.quantity === 0 && userCart.items[i].productId.isBlocked === true){ %>
+                                <span class="text-danger">Unavailable</span>
+                            <% } %>
+                            <% if(userCart.items[i].productId.quantity > 0 && userCart.items[i].productId.isBlocked === true){ %>
+                                <span class="text-danger">Unavailable</span>
+                            <% } %>
+
+                    </td>
+                    <td>
+                        <!-- if product is in stock and available showing the discount amount with price-->
+                        <% if(userCart.items[i].productId.quantity > 0 && userCart.items[i].productId.isBlocked === false){ %>
+                            <% if(userCart.items[i].couponDiscount){ %>
+                                ₹<div id="subTotal<%= userCart.items[i].productId._id %>">
+                                    <%= ((userCart.items[i].productId.salePrice * userCart.items[i].quantity) - userCart.items[i].couponDiscount).toFixed(2) %>
+
+                                </div>
+                                <div class="text-success">
+                                    Coupon Discount ₹(-<%= userCart.items[i].couponDiscount.toFixed(2) %>)/-
+                                </div>
+                            <%}else{%>
+                                <div id="subTotal<%= userCart.items[i].productId._id %>">
+                                    ₹ <%= userCart.items[i].productId.salePrice * userCart.items[i].quantity %>/-
+                                </div>
+                            <% } %>
+                        <% }else if(userCart.items[i].productId.quantity === 0 || userCart.items[i].productId.isBlocked === true){ %> 
+                            <!-- if prouduct is out of stock or blocked not showing the discount amount with price-->
+                            <div id="subTotal<%= userCart.items[i].productId._id %>">
+                                ₹ <%= userCart.items[i].productId.salePrice * userCart.items[i].quantity %>/-
+                            </div>
+                        <% } %>
+                    </td>
+                    <td>
+                        <button onclick="removeItem('<%= userCart.items[i].productId._id %>')">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+                <%}%>
+                    <%}else{%>
+                        <tr>No items in your cart</tr>
+                        <%}%>
+    </tbody>
+</table>

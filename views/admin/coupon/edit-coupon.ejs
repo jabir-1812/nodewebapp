@@ -1,0 +1,468 @@
+<style>
+    .main-content {
+        margin-left: 250px;
+        margin-top: 70px;
+        padding: 2rem;
+        min-height: calc(100vh - 120px);
+        background-color: #f8f9fa;
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-size: 2rem;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Header Actions */
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    /* Form Container */
+    #couponForm {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    /* Full-width form sections */
+    #couponForm > div {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    /* Make specific sections full width */
+    #couponForm > div:first-child,
+    #couponForm > div:nth-child(2),
+    #couponForm > div:last-child {
+        grid-column: 1 / -1;
+    }
+
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    /* Labels */
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+
+    /* Input Fields */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"] {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Radio Buttons */
+    .radio-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    input[type="radio"] {
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .radio-option label {
+        margin: 0;
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    /* Buttons */
+    .form-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ecf0f1;
+    }
+
+    button {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        min-width: 120px;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    button a {
+        color: white;
+        text-decoration: none;
+        display: block;
+    }
+
+    button[type="submit"] {
+        background-color: #27ae60;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #219a52;
+    }
+
+    /* Cancel button */
+    .cancel-btn {
+        background-color: #95a5a6;
+    }
+
+    .cancel-btn:hover {
+        background-color: #7f8c8d;
+    }
+
+    /* Back button */
+    .back-btn {
+        background-color: #34495e;
+    }
+
+    .back-btn:hover {
+        background-color: #2c3e50;
+    }
+
+    /* Validation Styles */
+    .is-invalid {
+        border: 2px solid #e74c3c !important;
+        background-color: #fdf2f2;
+    }
+
+    .error-message {
+        color: #e74c3c;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: block;
+        min-height: 1rem;
+    }
+
+    .is-valid {
+        border: 2px solid #27ae60 !important;
+        background-color: #f2fdf2;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        #couponForm {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        #couponForm > div {
+            grid-column: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+            padding: 1rem;
+        }
+        
+        #couponForm {
+            padding: 1rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        button {
+            width: 100%;
+        }
+        
+        .header-actions {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    /* Form Section Styling */
+    .form-section {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid #3498db;
+    }
+
+    /* Input group for better alignment */
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+</style>
+
+<%-include ('../../../views/partials/admin/header')%>
+
+<div class="main-content">
+    <div class="header-actions">
+        <h1>Edit Coupon</h1>
+        <button class="back-btn"><a href="/admin/coupons">← Back to coupons</a></button>
+    </div>
+    
+    <form id="couponForm">
+        <!-- Full width sections -->
+        <div class="input-group">
+            <label for="couponCode">Coupon Code</label>
+            <input type="text" name="couponCode" id="couponCode" data-rule="required|couponCode" value="<%= coupon.couponCode %>" placeholder="e.g., SUMMER25">
+            <small class="error-message"></small>
+            <script>
+                document.getElementById("couponCode").addEventListener("input", (e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+            </script>
+        </div>
+        
+        <div class="input-group">
+            <label for="discountType">Discount Type</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" name="discountType" value="percentage" <%= coupon.discountType === "percentage" ? "checked" : "" %> data-rule="required|discountType" id="percentage">
+                    <label for="percentage">Percentage (%)</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="discountType" value="fixed" <%= coupon.discountType === "fixed" ? "checked" : "" %> data-rule="required|discountType" id="fixed">
+                    <label for="fixed">Fixed Amount</label>
+                </div>
+            </div>
+            <small class="error-message"></small>
+        </div>
+
+        <!-- Two-column sections -->
+        <div class="input-group">
+            <label for="discountValue">Discount Value</label>
+            <input type="number" name="discountValue" data-rule="required|discountValue" value="<%= coupon.discountValue %>" placeholder="e.g., 10">
+            <small class="error-message"></small>
+        </div>
+        
+        <div class="input-group">
+            <label for="minPurchase">Minimum Purchase Amount</label>
+            <input type="number" id="minPurchase" name="minPurchase" value="<%= coupon.minPurchase %>" data-rule="minPurchase" placeholder="e.g., 50">
+            <small class="error-message"></small>
+        </div>
+
+        <div class="input-group">
+            <label for="maxDiscount">Maximum Discount Amount</label>
+            <input type="number" id="maxDiscount" name="maxDiscountAmount" value="<%= coupon.maxDiscountAmount %>" data-rule="maxDiscountAmount" placeholder="e.g., 100">
+            <small class="error-message"></small>
+        </div>
+        
+        <div class="input-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" value="<%= coupon.startDate ? coupon.startDate.toISOString().split('T')[0] : '' %>" name="startDate" data-rule="required|startDate">
+            <small class="error-message"></small>
+            <script>
+
+                const today = new Date().toISOString().split('T')[0];
+                const startDateInput = document.getElementById('startDate');
+
+                // Only set the default value if there isn't one already
+                if (!startDateInput.value) {
+
+                    // Always set the minimum date to today
+                    startDateInput.min = today;
+                    startDateInput.value = today;
+                }
+
+            </script>
+        </div>
+
+        <div class="input-group">
+            <label for="expiryDate">Expiration Date</label>
+            <input type="date" id="expiryDate" value="<%= coupon.expiryDate ? coupon.expiryDate.toISOString().split('T')[0] : '' %>" name="expiryDate" data-rule="required|expiryDate">
+            <small class="error-message"></small>
+        </div>
+        
+        <div class="input-group">
+            <label for="maxUses">Maximum Uses</label>
+            <input type="number" id="maxUses" value="<%= coupon.maxUses %>" name="maxUses" data-rule="required|maxUses" placeholder="e.g., 100">
+            <small class="error-message"></small>
+        </div>
+
+        <!-- Full width section -->
+        <div class="input-group">
+            <label for="description">Description</label>
+            <input type="text" name="description" value="<%= coupon.description %>" id="description" data-rule="description" placeholder="e.g., Summer sale discount">
+            <small class="error-message"></small>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit">Update Coupon</button>
+            <button class="cancel-btn"><a href="/admin/coupons">Cancel</a></button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('couponForm').addEventListener('submit',async (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    if (validateForm(form)) {
+        // Swal.fire("Valid", "", "success");
+        let formData=new FormData(form);
+        const data=Object.fromEntries(formData.entries())
+        // Manually handle multiple checkbox values
+        data.applicableCategoryIds = formData.getAll('categories');
+
+        const response=await fetch('/admin/coupons/edit-coupon/<%= coupon._id %>',{
+            method:"PUT",
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify(data)
+        })
+
+        const result=await response.json()
+        if(response.ok){
+            Swal.fire({
+                title:"Coupon has been updated successfully",
+                icon:"success",
+                showConfirmButton:true,
+                timer:5000
+            }).then(()=>{
+                window.location.href='/admin/coupons'
+            })
+        }else{
+            Swal.fire("Error",`${result.message}`,"error")
+        }
+    }
+});
+
+function validateForm(form) {
+    let isValid = true;
+    const errorMap = {}; // to handle radio groups cleanly
+
+    form.querySelectorAll('input').forEach((input) => {
+        const rules = input.dataset.rule?.split("|") || [];
+        let errorElement = input.nextElementSibling;
+
+        // ✅ For radio buttons, pick a shared <small> error element once
+        if (input.type === "radio") {
+            // Find the shared small element for this radio group
+            const groupContainer = input.closest('div');
+            errorElement = groupContainer?.querySelector('small.error-message');
+        }
+
+        let value = input.value.trim();
+        let error = "";
+
+        // Skip if we already validated this radio group
+        if (input.type === "radio" && errorMap[input.name]) return;
+
+        for (let rule of rules) {
+            if (rule === "required") {
+                if (input.type === "radio") {
+                    const checked = form.querySelector(`input[name="${input.name}"]:checked`);
+                    if (!checked) {
+                        error = "Please select an option";
+                    }
+                } else if (!value) {
+                    error = "This field is required";
+                }
+            }
+            // ✅ Coupon Code Validation
+            if (rule === "couponCode" && !error) {
+                const codeRegex = /^[A-Z0-9]{3,15}$/; // Only uppercase letters and numbers, length 3-15
+                if (!codeRegex.test(value)) {
+                error = "Coupon code must be 3–15 characters, only letters and numbers.";
+                }
+            }
+
+            if (rule === "discountValue") {
+                const discountType = form.querySelector('input[name="discountType"]:checked')?.value;
+                const num = parseFloat(value);
+                console.log("num========>",num)
+                if (isNaN(num) || num <= 0) {
+                    error = "Discount must be a positive number";
+                } else if (discountType === "percentage" && num >= 100) {
+                    error = "Percentage discount cannot exceed 100%";
+                }
+            }
+
+        }
+
+        const start = new Date(form.startDate.value);
+        const expiry = new Date(form.expiryDate.value);
+        if (expiry <= start) {
+            isValid = false;
+            const expiryError = form.querySelector("#expiryDate + .error-message");
+            expiryError.textContent = "Expiry date must be after start date";
+            form.expiryDate.classList.add("is-invalid");
+        }
+
+
+        if (error) {
+            isValid = false;
+            if (errorElement) errorElement.textContent = error;
+            input.classList.add("is-invalid");
+        } else {
+            if (errorElement) errorElement.textContent = "";
+            input.classList.remove("is-invalid");
+            input.classList.add("is-valid");
+        }
+
+        // Mark radio group as handled
+        if (input.type === "radio") {
+            errorMap[input.name] = true;
+        }
+    });
+
+    return isValid;
+}
+</script>
+
+
+<%-include ('../../../views/partials/admin/footer')%>

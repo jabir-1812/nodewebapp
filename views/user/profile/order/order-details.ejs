@@ -70,7 +70,7 @@
             <% if(order.refundStatus==="Refunded" || order.refundStatus==="Refunded to your wallet"){ %>
             <p><strong>Refund Status:</strong> <%= order.refundStatus %></p>
             <% } %>
-            <p><strong>Total:</strong><strong style="font-size: x-large;">₹<%= order.totalAmount %></strong></p>
+            <p><strong>Total:</strong><strong style="font-size: x-large;">₹<%= order.totalAmount %>/-</strong></p>
         </div>
 
         <h3>Shipping Address</h3>
@@ -95,7 +95,7 @@
                 <img src="/uploads/product-images/<%= item.productImage %>" alt="<%= item.productName %>">
                 <div class="item-info">
                     <h4><%= item.productName %></h4>
-                    <p>₹<%= item.price %> | Qty: <%= item.quantity %></p>
+                    <p>₹<%= item.price.toFixed(2) %>/- | Qty: <%= item.quantity %></p>
                     <p>
                         <strong>Delivery Status:</strong>
                         <span class="<%= 

@@ -501,7 +501,6 @@ const editAddress=async (req,res)=>{
       {'address._id':addressId},
       {$set:{
         "address.$":{
-          _id:addressId,
           addressType:addressType,
           name:name,
           city:city,

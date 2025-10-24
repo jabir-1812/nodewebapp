@@ -1,0 +1,533 @@
+<%-include ('../../../views/partials/user/header') %>
+    
+
+    <div class="container">
+        <div class="row">
+
+            <div class="col-8">
+                <!-- addresses -->
+                <div class="container border my-5">
+                    <div class="row">
+                        <div id="addressesContainer">
+                            <%-include ('../../user/checkout/checkout-partials/4address-forms') %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- cart items -->
+                <div class="container border my-5">
+                    <div class="row">
+                        <div id="cartItemsContainer">
+                            <%-include ('../../user/checkout/checkout-partials/2cart-items') %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container border my-5">
+                    <div class="row border">
+                        <h1 class="h1">payment methods</h1>
+                    </div>
+
+                    <div class="row border my-2">
+                        <div class="col-1">
+                            <input type="radio" name="paymentMethod" id="COD" value="COD" required>
+                        </div>
+                        <div class="col-11">
+                            <label for="COD">Cash On Delivery</label>
+                        </div>
+                    </div>
+
+                    <div class="row border my-2">
+                        <div class="col-1">
+                            <input type="radio" name="paymentMethod" id="onlinePayment" value="onlinePayment" required>
+                        </div>
+                        <div class="col-11">
+                            <label for="onlinePayment">Cards/Netbanking/Wallet</label>
+                        </div>
+                    </div>                    
+                    
+                    <div class="row border my-2">
+                        <div class="col-1">
+                            <input type="radio" name="paymentMethod" id="walletPayment" value="walletPayment" required>
+                        </div>
+                        <div class="col-11">
+                            <label for="walletPayment">TeeSpace Wallet</label>
+                            <div>(Avaiable Balance: Rs.<%= userWallet.balance %>/-)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- right side of the checkout page -->
+            <div class="col-4">
+                <!-- coupon form -->
+                <div class="container border my-5 p-5" id="couponContainer">
+                    <%- include('../../user/checkout/checkout-partials/coupon-forms.ejs')%>
+                </div>
+
+                <!-- price details -->
+                <div class="container border my-5">
+                    <div id="priceDetailsContainer">
+                        <%-include ('../../user/checkout/checkout-partials/price details.ejs') %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+<%-include ('../../../views/partials/user/footer') %>
+
+<!--when loading this page for the first time, if there any cart updation, it will work -->
+ <script>
+    const isCartUpdated='<%= isCartUpdated %>';
+    if(isCartUpdated===true){
+        Swal.fire({
+            title:"Cart quantity is decreased",
+            text:"Some products are only few left",
+            timer:5000,
+            showConfirmButton:true,
+            icon:"warning"
+        })
+    }
+ </script>
+
+
+<!-- address script -->
+<script>
+// Show/hide the "add new address" form
+    function showAddAddressForm() {
+        document.getElementById("addNewAddressFormContainer").style.display = "block";
+    }
+
+    function hideAddAddressForm() {
+        document.getElementById("addNewAddressFormContainer").style.display = "none";
+        // optionally clear form fields
+        const form = document.getElementById("addAddressForm");
+        if (form) form.reset();
+    }
+
+    // Event delegation for ALL forms inside addressesContainer
+    document.getElementById("addressesContainer").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const form = e.target;
+
+        // --- Add New Address Form ---
+        if (form.id === "addAddressForm") {
+            clearErrorMessages();
+            const formData = Object.fromEntries(new FormData(form));
+            const { addressType, name, city, landMark, state, pincode, phone, altPhone } = formData;
+
+            let isValid = true;
+            const namePattern = /^[A-Za-z\s]+$/;
+            const pincodePattern = /^\d{6}$/;
+            const phonePattern = /^\d{10}$/;
+
+            if (!namePattern.test(addressType)) {
+                document.getElementById('addressType-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(name)) {
+                document.getElementById('addressName-error').innerHTML = "Name should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(city)) {
+                document.getElementById('addressCity-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(landMark)) {
+                document.getElementById('addressLandmark-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(state)) {
+                document.getElementById('addressState-error').innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!pincodePattern.test(pincode)) {
+                document.getElementById('addressPincode-error').innerHTML = "Pincode should be a 6-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(phone)) {
+                document.getElementById('addressPhone-error').innerHTML = "Phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(altPhone)) {
+                document.getElementById('addressAltPhone-error').innerHTML = "Alternate phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (phone === altPhone) {
+                document.getElementById('addressAltPhone-error').innerHTML = "Phone number and alternate phone number should be different.";
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            const response = await fetch('/add-address-in-checkout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                let html = await response.text();
+                document.getElementById('addressesContainer').innerHTML = html;
+            }else{
+                const result=await response.json()
+                Swal.fire(result.message,"","error")
+            }
+        }
+
+        // --- Edit Address Form ---
+        if (form.id.startsWith("editAddressForm")) {
+            const index = form.id.replace("editAddressForm", "");
+            // every edit-form has id like:
+            // editAddressForm0
+            // editAddressForm1
+            // editAddressForm2
+            // so the replace() replace the "editAddressForm" with "" (empty string)
+            // the result will be "1".
+            //eg:
+            // "editAddressForm0".replace("editAddressForm", "");
+            // result → "0"
+            // "editAddressForm12".replace("editAddressForm", "");
+            // result → "12"
+
+            //we need form's index number to show the error message for that specific form, thats why we using replace()
+            // if we don't have the index number, it may always show the error message in the first form.
+            clearErrorMessages();
+
+            const formData = Object.fromEntries(new FormData(form));
+            const { addressType, name, city, landMark, state, pincode, phone, altPhone } = formData;
+
+            let isValid = true;
+            const namePattern = /^[A-Za-z\s]+$/;
+            const pincodePattern = /^\d{6}$/;
+            const phonePattern = /^\d{10}$/;
+
+            if (!namePattern.test(addressType)) {
+                document.getElementById('addressType-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(name)) {
+                document.getElementById('addressName-error' + index).innerHTML = "Name should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(city)) {
+                document.getElementById('addressCity-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(landMark)) {
+                document.getElementById('addressLandmark-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!namePattern.test(state)) {
+                document.getElementById('addressState-error' + index).innerHTML = "should contain alphabets only.";
+                isValid = false;
+            }
+            if (!pincodePattern.test(pincode)) {
+                document.getElementById('addressPincode-error' + index).innerHTML = "Pincode should be a 6-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(phone)) {
+                document.getElementById('addressPhone-error' + index).innerHTML = "Phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (!phonePattern.test(altPhone)) {
+                document.getElementById('addressAltPhone-error' + index).innerHTML = "Alternate phone number should be a 10-digit number.";
+                isValid = false;
+            }
+            if (phone === altPhone) {
+                document.getElementById('addressAltPhone-error' + index).innerHTML = "Phone number and alternate phone number should be different.";
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            const response = await fetch('/edit-address-in-checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                let html = await response.text();
+                document.getElementById('addressesContainer').innerHTML = html;
+            }else{
+                const result=await response.json()
+                Swal.fire(result.message,"","error")
+            }
+        }
+    });
+
+    function clearErrorMessages() {
+        const errorElements = document.getElementsByClassName('error-message');
+        Array.from(errorElements).forEach(el => el.innerHTML = "");
+    }
+
+    // Keep show/hide logic for Edit button
+    function showEditAddressForm(index) {
+        const container = document.getElementById(`editAddressFormContainer${index}`);
+        const btn = document.getElementById(`editFormBtn${index}`);
+
+        if (container.style.display === 'block') {
+            container.style.display = 'none';
+            btn.innerHTML = "Edit";
+        } else {
+            container.style.display = 'block';
+            btn.innerHTML = "Cancel";
+        }
+    }
+</script>
+
+
+<!-- cart items script -->
+<script>
+    async function changeQuantity(productId,count){
+        document.getElementById(`outOfStockMessage${productId}`).innerHTML="";
+
+        const currentQtyElement=document.getElementById(`cartProductQuantity${productId}`);
+        let currentQty=currentQtyElement.value;
+        
+        if(parseInt(currentQty)+count > 3){
+            return Swal.fire({
+                title:"Maximum limit is 3",
+                icon:'warning',
+                timer:3000
+            })
+        }
+        if(parseInt(currentQty)+count <1 || parseInt(currentQty)+count <0){
+            return;
+        }
+
+        const response=await fetch('/checkout/change-cart-quantity',{
+            method:'post',
+            headers:{
+                'Content-Type':'application/json',
+            },
+            body:JSON.stringify({
+                productId:productId,
+                count:count
+            })
+        })
+
+        const data=await response.json()
+
+        if(data.success){
+            if(data.success && data.reload){
+                Swal.fire({
+                    title:data.message,
+                    icon:"success",
+                    timer:5000,
+                    showConfirmButton:true
+                }).then(()=>{
+                    location.reload();
+                })
+            }
+            if(data.success && !data.reload){
+                Swal.fire({
+                    title:data.message,
+                    icon:"success",
+                    timer:5000,
+                    showConfirmButton:true
+                })
+            }
+        }else{
+            if(data.message && data.reload){
+                Swal.fire({
+                    title:data.message,
+                    icon:"error",
+                    timer:5000,
+                    showConfirmButton:true
+                }).then(()=>{
+                    location.reload();
+                })
+            }
+            if(data.message && !data.reload){
+                Swal.fire({
+                    title:data.message,
+                    icon:"error",
+                    timer:5000,
+                    showConfirmButton:true
+                })
+            }
+        }
+    }     
+
+    async function removeItem(productId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This item will be removed from your cart",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, remove it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/checkout/delete-cart-item/${productId}`, {
+                    method: 'DELETE'
+                })
+                .then(res => {
+                    if (res.ok) {
+                        Swal.fire({
+                            title: 'Removed!',
+                            text: 'Item has been removed from your cart.',
+                            icon: 'success',
+                            timer: 2000
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    }
+                });
+            }
+        })
+    }
+</script>
+
+
+<!-- coupon script -->
+<script>
+    document.getElementById('couponContainer').addEventListener('submit',async (e)=>{
+       try {
+         e.preventDefault();
+         if(Number('<%= totalPrice %>')===0){
+            return Swal.fire({
+                title:"Add products to the cart",
+                icon:"warning",
+                timer:5000,
+                showConfirmButton:true
+            })
+         }
+
+        const couponForm=e.target;
+        
+        const couponCode=document.getElementById('couponCode').value.toUpperCase();
+        const couponCodeError=document.getElementById('coupon-error-message')
+        const couponCodeSuccess=document.getElementById('coupon-success-message')
+
+        couponCodeError.innerHTML="";
+        couponCodeSuccess.innerHTML="";
+
+
+        if(!couponCode || couponCode.trim()==="" || couponCode.length<4){
+            couponCodeError.innerHTML="Enter a valid coupon code";
+            return;
+        }
+
+        const response=await fetch('/checkout/apply-coupon',{
+            method:"POST",
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify({couponCode})
+        })
+
+        const data=await response.json();
+        console.log("data=======",data)
+        console.log("userCart==========",data.userCart)
+
+        if(data.success){
+            if(data.html?.cartItems){
+                document.getElementById('cartItemsContainer').innerHTML=data.html.cartItems;
+            }
+            if(data.html?.priceDetails){
+                document.getElementById('priceDetailsContainer').innerHTML=data.html.priceDetails;
+            }
+            if(data.html?.couponForm){
+                document.getElementById('couponContainer').innerHTML=data.html.couponForm;
+            }
+            if(data.html?.totalAmount){
+                document.getElementById('totalAmountContainer').innerHTML=data.html.totalAmount;
+            }
+            const couponCodeSuccess=document.getElementById('coupon-success-message')
+            couponCodeSuccess.innerHTML=data.message;
+            
+
+            if(data.reload){
+                Swal.fire({
+                    text:data.message,
+                    icon:"error",
+                    timer:5000,
+                    showConfirmButton:true
+                }).then(()=>{
+                    location.reload();
+                })
+            }
+        }else{
+            if(data.html){
+                //if any error, re-render the: cart, coupon, price details sections.
+                document.getElementById('cartItemsContainer').innerHTML=data.html.cartItems;
+                document.getElementById('priceDetailsContainer').innerHTML=data.html.priceDetails;
+                document.getElementById('couponContainer').innerHTML=data.html.couponForm;
+                Swal.fire({
+                    title:data.message,
+                    text:data.text || "",
+                    icon:"error"
+                });
+            }else if(data.message){
+                couponCodeError.innerHTML=data.message;
+            }
+            if(data.reload){
+                Swal.fire({
+                    title:data.message,
+                    text:data.text || "",
+                    icon:"error",
+                    timer:5000,
+                    showConfirmButton:true
+                }).then(()=>{
+                    location.reload();
+                })
+            }
+        }
+       } catch (error) {
+        console.error("coupon script error:",error)
+       }
+    })
+
+    async function  removeCoupon(couponCode,couponId) {
+        try {
+            console.log("couponCode",couponCode)
+            console.log("couponId",couponId)
+
+            const response=await fetch('/checkout/remove-coupon',{
+                method:"DELETE",
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({couponCode:couponCode,couponId:couponId})
+            })
+
+            const data=await response.json();
+            if(data.success){
+                Swal.fire({
+                    title:data.message,
+                    icon:'success',
+                    timer:5000,
+                    showConfirmButton:true
+                }).then(()=>{
+                    location.reload()
+                })
+            }else{
+                Swal.fire({
+                    title:data.message,
+                    icon:'error',
+                    timer:5000,
+                    showConfirmButton:true
+                }).then(()=>{
+                    location.reload()
+                })
+            }
+        } catch (error) {
+            console.error("removeCoupon() error:",error)
+        }
+    }
+</script>
+
+
+<!-- order placement script -->
+ <script>
+    
+ </script>
+

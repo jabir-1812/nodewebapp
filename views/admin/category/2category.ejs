@@ -249,12 +249,12 @@ tr:hover {
                         <td>
                             <%if(category.offer===0){%>
                                 <a href="#">
-                                    <button class="btn btn-outline-primary" onclick="addOffer('<%=category._id%>')">Add Offer</button>
+                                    <button class="btn btn-outline-primary" onclick="addOffer('<%=category._id%>','<%= category.name %>')">Add Offer</button>
                                 </a>
                             </button>
                             <%}else{%>
                             <a href="#">
-                                    <button class="btn btn-outline-danger" onclick="removeOffer('<%=category._id%>')">Remove Offer</button>
+                                    <button class="btn btn-outline-danger" onclick="removeOffer('<%=category._id%>','<%= category.name %>')">Remove Offer</button>
                                 </a>
                             <%}%>
                         </td>
@@ -270,7 +270,7 @@ tr:hover {
                                     id="category-<%= category._id %>"
                                     data-category-id="<%= category._id %>"
                                     data-is-deleted="<%= category.isDeleted %>"
-                                    onclick="toggleListCategory(this,<%= index %>)">
+                                    onclick="toggleListCategory(this,'<%= index %>')">
                                 <%= category.isDeleted ? "List" : "Unlist" %>        
                             </button>
                         </td>
@@ -303,69 +303,98 @@ tr:hover {
     <% } %>
 </section>
     <%-include ('../../../views/partials/admin/footer')%>
-       <script>
+<script>
 
-        async function addOffer(categoryId) {
-            const {value:percentage}=await Swal.fire({
-                title:"Offer in percentage",
-                input:"number",
-                inputLabel:"Percentage",
-                inputPlaceholder:"%"
+    async function addOffer(categoryId,categoryName) {
+        const { value: formValues } = await Swal.fire({
+            title: `Add Offer to :${categoryName}`,
+            html: `
+            <div style="text-align:left;">
+                <div>
+                    <label for="percentage"><b>Offer Percentage (%)</b></label>
+                    <input id="percentage" type="number" class="swal2-input" placeholder="e.g. 20" min="1" max="100">
+                </div>
+
+                <div>
+                    <label for="startDate"><b>Start Date</b></label>
+                    <input id="startDate" type="date" class="swal2-input" required>
+                </div>
+
+                <div>
+                    <label for="endDate"><b>End Date</b></label>
+                    <input id="endDate" type="date" class="swal2-input" required>
+                </div>
+
+                <div>
+                    <label for="description"><b>Description</b></label>
+                    <input id="description" type="text" class="swal2-input" placeholder="e.g. Diwali Mega Sale">
+                </div>        
+            </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: "Add Offer",
+            width: "600px",
+            preConfirm: () => {
+            const percentage = document.getElementById("percentage").value;
+            const startDate = document.getElementById("startDate").value;
+            const endDate = document.getElementById("endDate").value;
+            const description = document.getElementById("description").value;
+
+            if (!percentage || percentage <= 0 || percentage > 100) {
+                Swal.showValidationMessage("Please enter a valid percentage (1–100)");
+                return false;
+            }
+
+            if (new Date(endDate) < new Date(startDate)) {
+                Swal.showValidationMessage("End date cannot be earlier than start date");
+                return false;
+            }
+
+            return { percentage, startDate, endDate, description };
+            }
+        });
+
+        if (formValues) {
+            try {
+            const response = await fetch("/admin/add-category-offer", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                categoryId,
+                percentage: formValues.percentage,
+                startDate: formValues.startDate,
+                endDate: formValues.endDate,
+                description: formValues.description,
+                }),
             });
 
-            if(percentage){
-                try {
-                    const response=await fetch('/admin/add-category-offer',{
-                        method:'POST',
-                        headers:{
-                            'content-type':'application/json'
-                        },
-                        body:JSON.stringify({
-                            percentage:percentage,
-                            categoryId:categoryId
-                        })
-                    })
+            const data = await response.json();
 
-                    const responseJson=await response.json();
-                    if(response.ok && responseJson.status===true){
-                        Swal.fire(
-                            "Offer Added",
-                            "The offer has been added",
-                            "success"
-                        ).then(()=>{
-                            // Update the UI after adding offer
-                            const button = document.querySelector(`button[onclick="addOffer('${categoryId}')"]`);
-                            if (button) {
-                                button.textContent = "Remove Offer";
-                                button.classList.remove("btn-outline-primary");
-                                button.classList.add("btn-outline-danger");
-                                button.setAttribute("onclick", `removeOffer('${categoryId}')`);
-                                // Update the offer% text in the row
-                                const row = button.closest("tr");
-                                if (row) {
-                                    row.querySelector("td:nth-child(4)").textContent = `${percentage} %`;
-                                }
-                            }
-                        })
-                    }else{
-                        Swal.fire("Failed",responseJson.message || "Adding offer failed","error");
-                    }
-                } catch (error) {
-                    Swal.fire(
-                        "Error",
-                        "An error occured while adding the offer",
-                        "error"
-                    );
-
-                    console.log('Error Adding offer:',error)
-                }
+            if (response.ok && data.status === true) {
+                Swal.fire({
+                title: "Offer Added",
+                text: "The offer has been added successfully!",
+                icon: "success",
+                timer: 4000,
+                showConfirmButton: true,
+                }).then(() => location.reload());
+            } else {
+                Swal.fire("Failed", data.message || "Adding offer failed", "error");
+            }
+            } catch (error) {
+            Swal.fire("Error", "An error occurred while adding the offer", "error");
+            console.error("Error Adding offer:", error);
             }
         }
+    }
 
-        async function removeOffer(categoryId) {
+
+
+        async function removeOffer(categoryId,categoryName) {
             try {
                 const result =await Swal.fire({
-                    title:`Remove this offer?`,
+                    title:`Remove offer of : ${categoryName}?`,
                     icon:'warning',
                     showCancelButton:true,
                     confirmButtonText:'Yes',
@@ -390,19 +419,7 @@ tr:hover {
                         "The offer has been removed",
                         "success"
                         ).then(()=>{
-                            // Update the UI after removing offer
-                            const button = document.querySelector(`button[onclick="removeOffer('${categoryId}')"]`);
-                            if (button) {
-                                button.textContent = "Add Offer";
-                                button.classList.remove("btn-outline-danger");
-                                button.classList.add("btn-outline-primary");
-                                button.setAttribute("onclick", `addOffer('${categoryId}')`);
-                                // Update the offer% text in the row
-                                const row = button.closest("tr");
-                                if (row) {
-                                    row.querySelector("td:nth-child(4)").textContent = `0 %`;
-                                }
-                            }
+                            location.reload();
                         })
                     }else{
                         Swal.fire("Failed",responseJson.message || "Removing offer failed","error");
@@ -445,17 +462,9 @@ tr:hover {
                         });
 
                         const data=await response.json();
-                        await Swal.fire("Done!",data.message);
+                        await Swal.fire("Done!",data.message,"success");
                         if(data.success){
-                            const listToggleBtn=document.getElementById(`category-${categoryId}`);
-                            listToggleBtn.textContent="List";
-                            listToggleBtn.dataset.isDeleted="true";
-
-                            const status=document.getElementById(`status-${index}`);
-                            status.innerText="Unlisted";
-                            status.className='';
-                            status.classList.add('text-danger')
-
+                            location.reload()
                         }
                     }
                 }
@@ -479,16 +488,9 @@ tr:hover {
                         });
 
                         const data=await response.json();
-                        await Swal.fire("Done!",data.message);
+                        await Swal.fire("Done!",data.message,"success");
                         if(data.success){
-                            const listToggleBtn=document.getElementById(`category-${categoryId}`);
-                            listToggleBtn.textContent="Unlist";
-                            listToggleBtn.dataset.isDeleted="false";
-
-                            const status=document.getElementById(`status-${index}`);
-                            status.innerText="Listed";
-                            status.className='';
-                            status.classList.add('text-success')
+                            location.reload()
                         }
                     }
                 }
