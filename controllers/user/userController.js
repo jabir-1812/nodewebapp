@@ -10,6 +10,7 @@ const env=require('dotenv').config();
 const bcrypt=require('bcrypt');
 const Offer=require('../../models/offerSchema')
 const Coupon=require('../../models/couponSchema')
+const crypto=require('crypto')
 
 
 
@@ -79,7 +80,8 @@ async function sendVerificationEmail(email, otp) {
 
 const signup =async(req,res)=>{
     try {
-        const {name,email,phone,password} =req.body;
+        const {name,email,phone,password,ref} =req.body;
+        console.log("ref",ref)
         const user=await User.findOne({email});
 
         if(user){
@@ -106,7 +108,7 @@ const signup =async(req,res)=>{
         //we can use these data to save user,
         //if we don't save it temporarly, we may lose these data after otp verification
         req.session.userOtp=otp;
-        req.session.userData={name,email,phone,password};
+        req.session.userData={name,email,phone,password,ref};
 
         res.render('./user/otp-verification',{title:"OTP Verification"});
         console.log("OTP Sent:",otp)
@@ -131,16 +133,64 @@ const verifyOtp=async(req,res)=>{
 
         if(otp === req.session.userOtp){
             const user=req.session.userData;
+            console.log("user verifyOtp()",user)
             const passwordHash=await securePassword(user.password);
+
+            // Check if referred by someone
+            let referredByUser = null;
+            if (user.ref) {
+            referredByUser = await User.findOne({ referralToken: user.ref });
+            }
+
+            // Create new referral token for this new user
+            const referralToken = crypto.randomBytes(8).toString("hex");
 
             const saveUserData=new User({
                 name:user.name,
                 email:user.email,
                 phone:user.phone,
-                password:passwordHash
+                password:passwordHash,
+                referralToken,
+                referredBy:referredByUser?._id || null
+
             })
 
             await saveUserData.save();
+
+            // If user was referred → reward the referrer
+            if (referredByUser) {
+            console.log(`🎁 Reward given to: ${referredByUser.email}`);
+            giveReferralCoupon(referredByUser._id)
+            }
+
+            async function giveReferralCoupon(userId) {
+                // Example: generate a random coupon code
+                const couponCode = "REF" + Math.floor(100000 + Math.random() * 900000);
+                
+                const now=new Date();
+                const oneYearFromNow=new Date(now);
+                oneYearFromNow.setFullYear(oneYearFromNow.getFullYear()+1);
+                oneYearFromNow.setHours(0,0,0,0)
+
+                // Save to your Coupon model (not shown here)
+                await Coupon.create({
+                    userId,
+                    type:"referral",
+                    couponCode: couponCode,
+                    discountType:"percentage",
+                    discountValue:10,
+                    startDate:now,
+                    expiryDate:oneYearFromNow,
+                    maxUses:1,
+                    maxDiscountAmount:1000,
+                    description:"10% OFF on all orders"
+                    
+                });
+
+                console.log(`✅ Coupon ${couponCode} given to user ${userId}`);
+            }
+
+
             req.session.user=saveUserData._id; //saving the user id in the session
             //because after successfull registration,user details must be in the session
             // then only we let the user to go to the home page
@@ -233,7 +283,12 @@ const loadHomepage=async (req,res)=>{
         //offers carousel
         const categoryOffers=await Offer.find({type:"category"})
         const brandOffers=await Offer.find({type:"brand"})
-        const coupons=await Coupon.find({startDate:{$lt:new Date(today)},expiryDate:{$gt:new Date(today)},isActive:true})
+        const coupons=await Coupon.find({
+            startDate:{$lt:new Date(today)},
+            expiryDate:{$gt:new Date(today)},
+            isActive:true,
+            type:{$ne:"referral"}
+        })
 
 
         const userId=req.session.user || req.session.passport?.user;

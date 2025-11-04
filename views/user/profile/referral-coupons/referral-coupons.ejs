@@ -1,0 +1,225 @@
+<%-include ('../../../../views/partials/user/header')%>
+
+<%-include ('../../../../views/user/profile/profile-partials/sidebar')%>
+
+<style>
+    .main-content {
+        margin-left: 220px;
+        padding: 90px 40px 40px;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    /* Page Title */
+    .page-title {
+        color: #2c3e50;
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    /* Coupon Card */
+    .coupon-card {
+        background: white;
+        border: 2px solid #e8f5e9;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .coupon-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        border-color: #4caf50;
+    }
+
+    /* Coupon Code Section */
+    .coupon-code-label {
+        font-size: 0.875rem;
+        color: #666;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .coupon-code-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .coupon-code {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #4caf50;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        padding: 0.5rem 1rem;
+        background: #e8f5e9;
+        border-radius: 8px;
+        flex: 1;
+    }
+
+    .copy-btn {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .copy-btn:hover {
+        background: #45a049;
+        transform: scale(1.05);
+    }
+
+    .copy-btn:active {
+        transform: scale(0.95);
+    }
+
+    .copy-btn.copied {
+        background: #2196f3;
+    }
+
+    /* Description */
+    .coupon-description {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        padding: 0.75rem 0;
+    }
+
+    /* Expiry Date */
+    .expiry-date {
+        font-size: 0.9rem;
+        color: #ff6b6b;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        background: #fff5f5;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .expiry-label {
+        color: #999;
+        font-weight: normal;
+    }
+
+    /* No Rewards Message */
+    .no-rewards {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .no-rewards-icon {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 1rem;
+    }
+
+    .no-rewards-text {
+        font-size: 1.25rem;
+        color: #999;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+            padding: 20px;
+        }
+
+        .coupon-card {
+            margin: 0.5rem 0;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    function copyToClipboard(code, button) {
+        // Copy to clipboard
+        navigator.clipboard.writeText(code).then(function() {
+            // Change button text and style
+            const originalText = button.innerHTML;
+            button.innerHTML = '✓ Copied!';
+            button.classList.add('copied');
+            
+            // Reset after 2 seconds
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.classList.remove('copied');
+            }, 2000);
+        }).catch(function(err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            button.innerHTML = '✓ Copied!';
+            button.classList.add('copied');
+            setTimeout(function() {
+                button.innerHTML = '📋 Copy';
+                button.classList.remove('copied');
+            }, 2000);
+        });
+    }
+</script>
+
+<div class="main-content">
+    <div class="container">
+         <h1 class="page-title">🎁 Referral Rewards</h1>
+         <div class="row">
+             <% if(referralCoupons && referralCoupons.length>0){ %>
+                <% referralCoupons.forEach((coupon)=>{ %>
+                <div class="col-md-5 col-12">
+                    <div class="coupon-card">
+                        <div class="coupon-code-label">YOUR COUPON CODE</div>
+                        <div class="coupon-code-wrapper">
+                            <div class="coupon-code"><%= coupon.couponCode %></div>
+                            <button class="copy-btn" onclick="copyToClipboard('<%= coupon.couponCode %>', this)">
+                                📋 Copy
+                            </button>
+                        </div>
+                        <div class="coupon-description">
+                            <%= coupon.description %>
+                        </div>
+                        <div class="expiry-date">
+                            <span class="expiry-label">Valid until:</span> <%= new Date(coupon.expiryDate).toDateString().slice(4) %>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+            <% }else{%>
+                <div class="col-12">
+                    <div class="no-rewards">
+                        <div class="no-rewards-icon">🎟️</div>
+                        <div class="no-rewards-text">No referral rewards yet.</div>
+                        <p style="color: #bbb; margin-top: 1rem;">Share your referral link to earn rewards!</p>
+                    </div>
+                </div>
+            <% } %>
+         </div>
+    </div>
+</div>
+
+<%-include ('../../../../views/partials/user/footer')%>

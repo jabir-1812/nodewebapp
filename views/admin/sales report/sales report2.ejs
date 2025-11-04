@@ -1,0 +1,174 @@
+<%-include ('../../../views/partials/admin/header')%>
+
+
+<style>
+    .main-content {
+        margin-left: 250px;
+        margin-top: 70px;
+        padding: 2rem;
+        min-height: calc(100vh - 120px);
+        background-color: #f8f9fa;
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+</style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .controls input, .controls button {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #reportTable {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    #reportTable th, #reportTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    #reportTable th {
+      background-color: #007bff;
+      color: white;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+  </style>
+ <div class="main-content">
+     <h1>📊 Sales Report Dashboard</h1>
+
+  <div class="controls">
+    <a href="/admin/sales-report?type=daily"><button>Daily</button></a>
+    <a href="/admin/sales-report?type=weekly"><button>Weekly</button></a>
+    <a href="/admin/sales-report?type=yearly"><button>Yearly</button></a>
+
+    <form action="customDateForm">
+        <input type="date" id="startDate">
+        <input type="date" id="endDate">
+        <button type="submit">Get Range</button>
+    </form>
+  </div>
+
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>Date / Period</th>
+        <th>Total Sales (₹)</th>
+        <th>Total Orders</th>
+        <th>Avg Order Value (₹)</th>
+      </tr>
+    </thead>
+    <tbody id="reportBody"></tbody>
+  </table>
+
+  <canvas id="salesChart" height="100"></canvas>
+ </div>
+
+  <script>
+    let chartInstance;
+
+    async function fetchReport(type) {
+        console.log("started working")
+      const res = await fetch(`/admin/sales-report?type=${type}`);
+      const data = await res.json();
+      console.log("data",data)
+      renderReport(data.report, type);
+    }
+
+    async function fetchCustomReport() {
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+      if (!start || !end) return alert("Select both start and end dates!");
+      const res = await fetch(`/admin/sales-report?start=${start}&end=${end}`);
+      const data = await res.json();
+      renderReport(data.report, "custom");
+    }
+
+    function renderReport(report, type) {
+      const tbody = document.getElementById("reportBody");
+      tbody.innerHTML = "";
+
+      const labels = [];
+      const sales = [];
+
+      report.forEach(r => {
+        let label = "";
+
+        if (type === "daily") {
+          label = `${r._id.day}-${r._id.month}-${r._id.year}`;
+        } else if (type === "weekly") {
+          label = `Week ${r._id.week}, ${r._id.year}`;
+        } else if (type === "yearly") {
+          label = `${r._id.year}`;
+        } else {
+          label = `${document.getElementById("startDate").value} to ${document.getElementById("endDate").value}`;
+        }
+
+        labels.push(label);
+        sales.push(r.totalSales);
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${label}</td>
+            <td>${r.totalSales.toFixed(2)}</td>
+            <td>${r.totalOrders}</td>
+            <td>${r.avgOrderValue ? r.avgOrderValue.toFixed(2) : "-"}</td>
+          </tr>
+        `;
+      });
+
+      renderChart(labels, sales);
+    }
+
+    function renderChart(labels, data) {
+      const ctx = document.getElementById("salesChart").getContext("2d");
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Total Sales (₹)",
+            data,
+            backgroundColor: "rgba(54, 162, 235, 0.6)",
+            borderColor: "rgba(54, 162, 235, 1)",
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Load daily report by default
+    // fetchReport('daily');
+  </script>
+
+
+
+<%-include ('../../../views/partials/admin/footer')%>

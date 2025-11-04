@@ -36,7 +36,12 @@ const { Schema } = mongoose;
 //   }
 // });
 
+
 const userSchema = new Schema({
+    profilePicture:{
+        url:String,
+        public_id:String
+    },
    name : {
        type:String,
        required : true
@@ -68,6 +73,13 @@ const userSchema = new Schema({
    isAdmin : {
        type: Boolean,
        default:false
+   },
+   referralToken:{
+    type:String,unique:true
+   },
+   referredBy:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"User"
    },
    cart: {
        type : Array

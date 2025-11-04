@@ -9,9 +9,10 @@ const productController=require('../controllers/admin/productController');
 const bannerController=require('../controllers/admin/bannerController');
 const orderController=require('../controllers/admin/adminOrderController');
 const couponController=require('../controllers/admin/couponController');
+const salesReportController=require('../controllers/admin/salesReportController')
 const multer=require('multer');
-const storage=require('../helpers/multer');
-const uploads=multer({storage:storage});
+const {productStorage}=require('../config/cloudinaryProduct');
+const uploads=multer({storage:productStorage});
 
 
 //404
@@ -70,7 +71,7 @@ router.post('/block-unblock-product/:id',adminAuth,productController.blockUnbloc
 router.post('/block-product',adminAuth,productController.blockProduct);
 router.post('/unblock-product',adminAuth,productController.unblockProduct);
 router.get('/edit-product/:id',adminAuth,productController.loadEditProductPage);
-router.post('/edit-product/:id',adminAuth,uploads.array('images',4),productController.editProduct);
+router.post('/edit-product/:id',adminAuth,uploads.array('newImages'),productController.editProduct);
 
 
 
@@ -102,5 +103,16 @@ router.put('/coupons/edit-coupon/:couponId',adminAuth,couponController.editCoupo
 router.delete('/coupons/delete-coupon/:couponId',adminAuth,couponController.deleteCoupon)
 router.put('/coupons/de-activate/:couponId',adminAuth,couponController.deActivateCoupon)
 router.put('/coupons/activate/:couponId',adminAuth,couponController.activateCoupon)
+
+
+//sales report
+router.get('/sales-report-page',adminAuth,salesReportController.getSalesReportPage)
+router.get('/sales-report',adminAuth,salesReportController.getSalesReport)
+router.get('/sales-report/download/pdf',adminAuth,salesReportController.getSalesReportPDF)
+router.get('/sales-report/download/excel',adminAuth,salesReportController.getSalesReportExcel)
+
+
+
+
 
 module.exports=router; 

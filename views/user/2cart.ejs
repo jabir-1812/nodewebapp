@@ -191,7 +191,7 @@ body {
                           <td class="image product-thumbnail">
                             <a href="/product-details?id=<%= userCart.items[i].productId._id %>">
                               <img style="width: 40%;"
-                                src="/uploads/resized-images/<%= userCart.items[i].productId.productImage[0] %>" alt="#" />
+                                src="<%= userCart.items[i].productId.productImage[0].url %>" alt="#" />
                             </a>
 
                           </td>

@@ -99,10 +99,9 @@
         <div class="container">
             <div class="carousel-container">
                 <div class="carousel-slide">
-                    
-                    <% for(let i=0;i< banner.length;i++){ %>
-                    <img src="/uploads/resized-images/<%= banner[i].image %>" alt="<%= banner[i].title %>">
-                        <% } %>
+                    <img src="/uploads/banner/banner 1.jpg" alt="banner">
+                    <img src="/uploads/banner/banner 2.webp" alt="banner">
+                    <img src="/uploads/banner/banner 3.webp" alt="banner">
                 </div>
 
                 <button id="prevBtn">&#10094;</button>
@@ -351,7 +350,7 @@
             <div class="product-card">
                 <a href="/product-details?id=<%= products[i]._id %>" class="product-link">
                     <div class="product-image">
-                        <img src="/uploads/product-images/<%= products[i].productImage[0] %>"
+                        <img src="<%= products[i].productImage[0]?.url %>"
                             alt="<%= products[i].productName %>">
                     </div>
                     <div class="product-info">
@@ -428,7 +427,8 @@
                     showConfirmButton:false
                 })
                 // update cart icon
-                document.getElementById('cartCount').textContent = responseJson.cartLength;
+                // document.getElementById('cartCount').textContent = responseJson.cartLength;
+                location.reload();
             }else{
                 throw new Error(responseJson.message || 'Failed to add to cart');
             }

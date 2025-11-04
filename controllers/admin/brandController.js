@@ -50,8 +50,8 @@ const loadAddBrandPage=async (req,res)=>{
 const addBrand=async (req,res)=>{
     try {
         const {name}=req.body;
-        const image=req.file.filename;
-        const brand = new Brand({brandName:name,brandImage:image});
+        // const image=req.file.filename;
+        const brand = new Brand({brandName:name,brandImage:req.file.path});
         await brand.save();
         
         res.status(200).json({ message: "Brand added successfully" });
@@ -277,7 +277,7 @@ const editBrand = async (req, res) => {
         }
 
         // Handle new image upload
-        if (req.file) {
+        if (req.file.path) {
             const uploadedFile = req.file.filename;
 
             // Optional: remove old images if replacing (but user didn’t click remove)
@@ -292,7 +292,7 @@ const editBrand = async (req, res) => {
             }
 
             // Add the new image
-            brand.brandImage.push(uploadedFile);
+            brand.brandImage.push(req.file.path);
         }
 
         await brand.save();

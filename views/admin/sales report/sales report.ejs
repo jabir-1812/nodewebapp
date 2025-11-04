@@ -1,0 +1,217 @@
+<%-include ('../../../views/partials/admin/header')%>
+
+
+<style>
+    .main-content {
+        margin-left: 250px;
+        margin-top: 70px;
+        padding: 2rem;
+        min-height: calc(100vh - 120px);
+        background-color: #f8f9fa;
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+</style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .controls input, .controls button {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #reportTable {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    #reportTable th, #reportTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    #reportTable th {
+      background-color: #007bff;
+      color: white;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+  </style>
+ <div class="main-content">
+     <h1>📊 Sales Report Dashboard</h1>
+
+  <div class="controls">
+    <button onclick="fetchReport('daily')">Daily</button>
+    <button onclick="fetchReport('weekly')">Weekly</button>
+    <button onclick="fetchReport('yearly')">Yearly</button>
+
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
+    <button onclick="fetchCustomReport()">Get Range</button>
+
+    <button onclick="downloadFile('pdf')">⬇️ PDF</button>
+    <button onclick="downloadFile('excel')">⬇️ Excel</button>
+  </div>
+
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>Date / Period</th>
+        <th>Total Sales (₹)</th>
+        <th>Total Offer Discounts (₹)</th>
+        <th>Total Coupon Discounts (₹)</th>
+        <th>Total Orders</th>
+        <th>Avg Order Value (₹)</th>
+      </tr>
+    </thead>
+    <tbody id="reportBody"></tbody>
+  </table>
+
+  <canvas id="salesChart" height="100"></canvas>
+ </div>
+
+  <script>
+    let currentReportType = "daily"; // default
+    let chartInstance;
+
+    async function fetchReport(type) {
+        currentReportType = type; // 🟢 save the selected report type
+        const res = await fetch(`/admin/sales-report?type=${type}`);
+        const data = await res.json();
+        console.log("data.report",data.report)
+        renderReport(data.report, type);  
+    }
+
+    async function fetchCustomReport() {
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+      if (!start || !end) return Swal.fire("Select both start and end dates!","","warning");
+      currentReportType = "custom"; // 🟢 mark as custom range
+      const res = await fetch(`/admin/sales-report?start=${start}&end=${end}`);
+      const data = await res.json();
+      renderReport(data.report, "custom");
+    }
+
+    function renderReport(report, type) {
+      const tbody = document.getElementById("reportBody");
+      tbody.innerHTML = "";
+
+      const labels = [];
+      const sales = [];
+      const offerDiscounts=[];
+      const couponDiscounts=[];
+
+      report.forEach(r => {
+        let label = "";
+
+        if (type === "daily") {
+          label = `${r._id.day}-${r._id.month}-${r._id.year}`;
+        } else if (type === "weekly") {
+          label = `Week ${r._id.week}, ${r._id.year}`;
+        } else if (type === "yearly") {
+          label = `${r._id.year}`;
+        } else {
+          label = `${document.getElementById("startDate").value} to ${document.getElementById("endDate").value}`;
+        }
+
+        labels.push(label);
+        sales.push(r.totalSales);
+        offerDiscounts.push(r.totalOfferDiscount)
+        couponDiscounts.push(r.totalCouponDiscount)
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${label}</td>
+            <td>${r.totalSales.toFixed(2)}</td>
+            <td>${r.totalOfferDiscount.toFixed(2)}</td>
+            <td>${r.totalCouponDiscount.toFixed(2)}</td>
+            <td>${r.totalOrders}</td>
+            <td>${r.avgOrderValue ? r.avgOrderValue.toFixed(2) : "-"}</td>
+          </tr>
+        `;
+      });
+
+      renderChart(labels, sales, offerDiscounts, couponDiscounts);
+    }
+
+    function renderChart(labels, sales, offerDiscounts, couponDiscounts) {
+      const ctx = document.getElementById("salesChart").getContext("2d");
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,//names that appear under each bar (on the X-axis).
+          datasets: [
+            {
+              label: "Total Sales (₹)",
+              data:sales,
+              backgroundColor: "lightblue",
+            },
+            {
+              label: "Total Offer Discounts (₹)",
+              data:offerDiscounts,
+              backgroundColor:"gold"
+            },
+            {
+              label: "Total Coupon Discounts (₹)",
+              data:couponDiscounts,
+              backgroundColor:"lightgreen"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x:{
+              stacked:false
+            },
+            y: {
+              stacked:false,
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Load daily report by default
+    fetchReport('daily');
+
+
+    function downloadFile(format) {
+        const start = document.getElementById("startDate").value;
+        const end = document.getElementById("endDate").value;
+        const currentType = currentReportType || "daily"; // optional tracking
+
+        let url = `/admin/sales-report/download/${format}?`;
+
+        if (start && end) {
+            url += `start=${start}&end=${end}`;
+        } else {
+            url += `type=${currentType}`;
+        }
+
+        window.open(url, "_blank"); // opens in new tab, triggers download
+    }
+
+  </script>
+
+
+
+<%-include ('../../../views/partials/admin/footer')%>

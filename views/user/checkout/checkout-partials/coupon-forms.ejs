@@ -1,19 +1,22 @@
 <form id="couponForm">
-    <div class="row py-3 align-items-center">
+    <div class="row">
+        <span class="h4">Coupon</span>
+    </div>
+    <div class="row align-items-center">
         <div class="col-8">
             <input type="text" name="couponCode" id="couponCode" placeholder="Enter Coupon Code" class="form-control">
             <small id="coupon-error-message" class="text-danger"></small>
             <small id="coupon-success-message" class="text-success"></small>
         </div>
         <div class="col-4">
-            <button type="submit" class="btn btn-secondary">Apply Coupon</button>
+            <button type="submit">Apply</button>
         </div>
     </div>
     <% if(appliedCoupons.length>0){ %>
         <% appliedCoupons.forEach((coupon)=>{ %>
-        <div class="row border border-dark-subtle">
-            <div class="col-8 d-flex justify-content-center align-items-center applied-coupon" data-coupon-code="<%= coupon.code %>" data-coupon-id="<%= coupon.couponId %>"><%= coupon.code %></div>
-            <div class="col-4"><button type="button" onclick="removeCoupon('<%= coupon.code %>','<%= coupon.couponId %>')">Remove</button></div>
+        <div class="row border-dark-subtle m-1">
+            <div class="col-6 d-flex justify-content-center align-items-center applied-coupon" data-coupon-code="<%= coupon.code %>" data-coupon-id="<%= coupon.couponId %>"><%= coupon.code %></div>
+            <div class="col"><button type="button" onclick="removeCoupon('<%= coupon.code %>','<%= coupon.couponId %>')">Remove</button></div>
         </div>
         <% }) %>
     <% }else{ %>

@@ -1,3 +1,6 @@
+
+
+
 <% if(addresses && addresses.length> 0){ %>
     <div class="container">
     <% addresses.forEach((address,index)=>{ %>
@@ -72,7 +75,7 @@
 
                                 <div class="col-4 ">
                                     <label for="pincode">Pincode</label>
-                                    <input type="number" class="form-control" id="pincode" name="pincode" value="<%= address.pincode %>" required>
+                                    <input type="tel" class="form-control" id="pincode" name="pincode" value="<%= address.pincode %>" required>
                                     <div id="addressPincode-error<%= index %>" class="error-message"></div>
                                 </div>
 
@@ -82,13 +85,13 @@
 
                                 <div class="col-4">
                                     <label for="phone">Phone</label>
-                                    <input type="number" class="form-control" id="phone" name="phone" value="<%= address.phone %>" required>
+                                    <input type="tel" class="form-control" id="phone" name="phone" value="<%= address.phone %>" required>
                                     <div id="addressPhone-error<%= index %>" class="error-message"></div>
                                 </div>
 
                                 <div class="col-4">
                                     <label for="altPhone">Alternate Phone</label>
-                                    <input type="number" class="form-control" id="altPhone" name="altPhone" value="<%= address.altPhone %>" required>
+                                    <input type="tel" class="form-control" id="altPhone" name="altPhone" value="<%= address.altPhone %>" required>
                                     <div id="addressAltPhone-error<%= index %>" class="error-message"></div>
                                 </div>
 
@@ -165,7 +168,7 @@
 
                                 <div class="col-4 ">
                                     <label for="pincode">Pincode</label>
-                                    <input type="number" class="form-control" id="pincode" name="pincode" required>
+                                    <input type="tel" class="form-control" id="pincode" name="pincode" required>
                                     <div id="addressPincode-error" class="error-message"></div>
                                 </div>
 
@@ -175,13 +178,13 @@
 
                                 <div class="col-4">
                                     <label for="phone">Phone</label>
-                                    <input type="number" class="form-control" id="phone" name="phone" required>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required>
                                     <div id="addressPhone-error" class="error-message"></div>
                                 </div>
 
                                 <div class="col-4">
                                     <label for="altPhone">Alternate Phone</label>
-                                    <input type="number" class="form-control" id="altPhone" name="altPhone" required>
+                                    <input type="tel" class="form-control" id="altPhone" name="altPhone" required>
                                     <div id="addressAltPhone-error" class="error-message"></div>
                                 </div>
 
@@ -258,7 +261,7 @@
 
                                 <div class="col-4 ">
                                     <label for="pincode">Pincode</label>
-                                    <input type="number" class="form-control" id="pincode" name="pincode" required>
+                                    <input type="tel" class="form-control" id="pincode" name="pincode" required>
                                     <div id="addressPincode-error" class="error-message"></div>
                                 </div>
 
@@ -268,13 +271,13 @@
 
                                 <div class="col-4">
                                     <label for="phone">Phone</label>
-                                    <input type="number" class="form-control" id="phone" name="phone" required>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required>
                                     <div id="addressPhone-error" class="error-message"></div>
                                 </div>
 
                                 <div class="col-4">
                                     <label for="altPhone">Alternate Phone</label>
-                                    <input type="number" class="form-control" id="altPhone" name="altPhone" required>
+                                    <input type="tel" class="form-control" id="altPhone" name="altPhone" required>
                                     <div id="addressAltPhone-error" class="error-message"></div>
                                 </div>
 

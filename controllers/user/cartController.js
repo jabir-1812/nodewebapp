@@ -22,7 +22,7 @@ const loadCart = async (req, res) => {
       });
 
     if (!userCart) {
-      return res.render("user/2cart", { title: "Cart", user, userCart: null, totalAmount: 0, cartLength: 0 });
+      return res.render("user/2cart", { title: "Cart", user, userCart: null, totalAmount: 0, cartLength: 0 ,totalPrice:0});
     }
 
     let totalPrice=0;

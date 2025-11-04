@@ -21,128 +21,19 @@ class AppError extends Error {
 }
 
 
+
+
+
 const razorpay=new Razorpay({
   key_id:process.env.RAZORPAY_KEY_ID,
   key_secret:process.env.RAZORPAY_KEY_SECRET
 })
 
-async function prepareCartForOrder(userId, cartId) {
-    if (!cartId) throw new AppError("Cart not found");
-
-    const cart = await Cart.findById(cartId).populate('items.productId');
-    if (!cart) throw new AppError("Cart not found",404);
-
-    // Check each item against product stock
-    for (let item of cart.items) {
-        const product = await Product.findById(item.productId._id);
-        if (!product) throw new AppError(`Product not found for cart item ${item._id}`);
-
-        //if stock is zero, don't allow order
-        if (product.quantity <= 0) throw new AppError(`${product.productName} is out of stock`);
-        if (item.quantity > product.quantity) {
-            throw new AppError(`Not enough stock for ${product.productName}. Available: ${product.quantity}, Requested: ${item.quantity}`);
-        }
-    }
-
-    // Prepare order items with itemStatus
-    const orderItems = cart.items.map(item => ({
-        productId: item.productId._id,
-        productName: item.productId.productName,
-        productImage: item.productId.productImage[0],
-        quantity: item.quantity,
-        price: item.productId.salePrice,
-        itemStatus: "Pending" // 👈 every product starts as "Pending"
-    }));
-
-  //   const totalPrice = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-	// console.log("totalAmout======>",totalPrice)
-
-  //   return { cart, orderItems, totalPrice };
-  const totalAmount = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-	console.log("totalAmout======>",totalAmount)
-
-    return { cart, orderItems, totalAmount };
-}
 
 
 
 
 
-// const createRazorPayOrder = async(req,res)=>{
-// 	try {
-// 		const userId=req.session.user || req.session.passport?.user;
-// 		const {cartId}=req.body;
-// 		if(!cartId) return res.status(400).json({message:"Cart not found"})
-
-// 		// const cart=await Cart.findById(cartId).populate('items.productId');
-// 		// if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
-
-		
-// 		//   // 2. Check each item against product stock
-// 		// for (let item of cart.items) {
-// 		//     const product = await Product.findById(item.productId._id);
-
-// 		//     if (!product) {
-// 		//         return res.status(400).json({
-// 		//         success: false,
-// 		//         message: `Product not found for cart item ${item._id}`,
-// 		//         });
-// 		//     }
-
-// 		//     // ❌ if stock is zero, don’t allow order
-// 		//     if (product.quantity <= 0) {
-// 		//         return res.status(400).json({
-// 		//             success: false,
-// 		//             message: `${product.productName} is out of stock`,
-// 		//             productId: product._id,
-// 		//         });
-// 		//     }
-
-// 		//     if (item.quantity > product.quantity) {
-
-// 		//         return res.status(400).json({
-// 		//         success: false,
-// 		//         message: `Not enough stock for ${product.productName}. Available: ${product.quantity}, Requested: ${item.quantity}`,
-// 		//         productId: product._id,
-// 		//         });
-// 		//     }
-// 		// }
-
-// 		// // 4. Prepare order items with itemStatus
-// 		// const orderItems = cart.items.map((item) => ({
-// 		//     quantity: item.quantity,
-// 		//     price: item.productId.salePrice,
-// 		// }));
-
-// 		// const totalAmount = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-// 		const {orderItems,totalAmount} = await prepareCartForOrder(userId,cartId)
-		
-// 		// 🔑 Generate custom order ID
-// 		const customOrderId = await getNextOrderId();
-
-// 		const options={
-// 			amount:totalAmount*100,
-// 			currency:"INR",
-// 			receipt:customOrderId
-// 		}
-// 		console.log("option.amount=====>",options.amount)
-// 		const order =await razorpay.orders.create(options);
-// 		res.json({order,teeSpaceOrderId:customOrderId});
-// 	} catch (error) {
-// 		console.log("createRazorPayOrder() error=====>",error);
-// 		if(error.isOperational){
-// 		// ❌ Known error, safe to show to user
-// 		return res.status(error.statusCode).json({ success: false, message: error.message });
-// 		}
-
-// 		// ❌ Unknown/internal error
-// 		return res.status(500).json({
-// 		success: false,
-// 		message: "Something went wrong. Please try again later."
-// 		});
-// 	}
-// }
 
 const createRazorPayOrder = async(req,res)=>{
 	try {
@@ -292,8 +183,9 @@ const createRazorPayOrder = async(req,res)=>{
 
         //all set
         //calculate coupon discount
-        const itemPriceDetails=[] //to store every products total amount and total discount
+        const itemPriceDetails=[] //to store every product's total amount and total discount
         for(const item of userCart.items){
+          const itemTotalMrp=item.productId.regularPrice * item.quantity;
           const itemTotalPrice=item.productId.salePrice * item.quantity;
           let itemTotalCouponDiscount=0;
           for(const coupon of coupons){
@@ -339,6 +231,7 @@ const createRazorPayOrder = async(req,res)=>{
           }
           itemPriceDetails.push({
             productId:item.productId._id.toString(),
+            itemTotalMrp:itemTotalMrp,
             itemTotalPrice:itemTotalPrice,
             itemTotalCouponDiscount:itemTotalCouponDiscount,
             itemTotalAmount:itemTotalPrice-itemTotalCouponDiscount
@@ -350,7 +243,7 @@ const createRazorPayOrder = async(req,res)=>{
           return {
             productId:item.productId._id.toString(),
             productName:item.productId.productName,
-            productImage:item.productId.productImage[0],
+            productImage:item.productId.productImage[0].url,
             quantity:item.quantity,
             itemStatus:"Pending"
           }
@@ -360,12 +253,31 @@ const createRazorPayOrder = async(req,res)=>{
 
         orderItems.forEach((o)=>{
           const itemPrices=itemPriceDetails.find((i)=>{ return i.productId === o.productId})
-          o.price=itemPrices.itemTotalAmount
+          o.mrp=itemPrices.itemTotalMrp;
+          o.couponDiscount=itemPrices.itemTotalCouponDiscount;
+          o.offerDiscount=itemPrices.itemTotalMrp-itemPrices.itemTotalPrice;
+          o.price=itemPrices.itemTotalAmount;
+
         })
+
+
+        const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
+          return sum+curr.itemTotalMrp
+        },0)
+
+        const totalCouponDiscount=itemPriceDetails.reduce((sum,curr)=>{
+          return sum+curr.itemTotalCouponDiscount
+        },0)
+
+        // const totalPrice=itemPriceDetails.reduce((sum,curr)=>{
+        //   return sum+curr.itemTotalPrice
+        // },0)
 
         const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
           return sum+curr.itemTotalAmount
         },0)
+
+        const totalOfferDiscount=totalMrp-totalPrice;
 
         //generate custom order ID
         const customOrderId = await getNextOrderId();
@@ -379,6 +291,10 @@ const createRazorPayOrder = async(req,res)=>{
             paymentStatus: "Pending", // update after payment success
             orderStatus: "Pending",
             orderItems,
+            totalMrp,
+            totalOfferDiscount,
+            totalCouponDiscount,
+            totalPrice,
             totalAmount
         });
 
@@ -408,11 +324,23 @@ const createRazorPayOrder = async(req,res)=>{
       const orderItems = userCart.items.map(item => ({
         productId: item.productId._id,
         productName: item.productId.productName,
-        productImage: item.productId.productImage[0],
+        productImage: item.productId.productImage[0].url,
         quantity: item.quantity,
+        mrp:item.productId.regularPrice * item.quantity,
         price: item.productId.salePrice*item.quantity,
+        offerDiscount:(item.productId.regularPrice * item.quantity)-(item.productId.salePrice * item.quantity),
         itemStatus: "Pending" // 👈 every product starts as "Pending"
       }));
+
+
+      const totalMrp=userCart.items.reduce((sum,item)=>{
+        return sum+item.productId.regularPrice*item.quantity
+      },0)
+
+      const totalOfferDiscount=totalMrp-totalPrice;
+
+
+
 
 		
       // 🔑 Generate custom order ID
@@ -427,7 +355,10 @@ const createRazorPayOrder = async(req,res)=>{
           paymentStatus: "Pending", // update after payment success
           orderStatus: "Pending",
           orderItems,
-          totalAmount
+          totalMrp,
+          totalPrice,
+          totalOfferDiscount,
+          totalAmount,
       });
 
       await newOrder.save();
@@ -461,6 +392,11 @@ const createRazorPayOrder = async(req,res)=>{
 		});
 	}
 }
+
+
+
+
+
 
 
 const verifyRazorpayPayment = async (req,res)=>{
@@ -500,7 +436,23 @@ const verifyRazorpayPayment = async (req,res)=>{
     order.paymentStatus = "Paid";
     await order.save();
 
-    // 7. Clear cart
+    const userCart=await Cart.findOne({userId})
+
+    //check if any referral coupons
+    //if yes, it should be removed, referral coupons are one time usable
+    const allReferralCoupons=await Coupon.find({userId})
+    const appliedRefCoupons=allReferralCoupons.filter((allC)=>{
+      return userCart.appliedCoupons.some((uc)=>{
+        return allC._id.toString()===uc.couponId.toString()
+      })
+    })
+
+    const appliedRefCouponIds=appliedRefCoupons.map((c)=>{return c._id.toString()})
+
+    await Coupon.deleteMany({userId,_id:{$in:appliedRefCouponIds}})
+    
+
+    //  Clear cart
     await Cart.updateOne({userId}, { $set: { items: [] ,appliedCoupons:[]} });
 
     return res.json({ success: true, message: "Payment verified successfully." ,orderId:teeSpaceOrderId});
@@ -513,272 +465,13 @@ const verifyRazorpayPayment = async (req,res)=>{
 	}
 }
 
-// const placeOnlinePaidOrder = async(req,res)=>{
-// 	try {
-// 		const userId=req.session.user || req.session.passport?.user;
-//     const {addressId,appliedCoupons=[]}=req.body;
 
 
-// 		const cart = await Cart.findOne({userId}).populate('items.productId');
-
-// 		// Prepare order items with itemStatus
-// 		const orderItems = cart.items.map(item => ({
-// 			productId: item.productId._id,
-// 			productName: item.productId.productName,
-// 			productImage: item.productId.productImage[0],
-// 			quantity: item.quantity,
-// 			price: item.productId.salePrice,
-// 			itemStatus: "Pending" // 👈 every product starts as "Pending"
-// 		}));
-
-// 		const totalAmount = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-// 		const userAddressDoc = await Address.findOne(
-//             { userId, "address._id": addressId },
-//             { "address.$": 1 }
-//         );
-
-// 		if (!userAddressDoc || userAddressDoc.address.length === 0) {
-//             return res.status(404).json({ success: false, message: "Address not found" });
-//         }
-//         const selectedAddress = userAddressDoc.address[0];
-
-// 		// 5. Create order
-//         const newOrder = new Order({
-//             orderId: orderId,
-//             userId,
-//             shippingAddress: selectedAddress.toObject(),
-//             paymentMethod:"Online Payment",
-//             paymentStatus: "Paid", // update after payment success
-//             orderStatus: "Pending",
-//             orderItems,
-//             totalAmount
-//         });
-
-//         await newOrder.save();
-
-// 		// 6. Reduce stock
-//         for (let item of cart.items) {
-//             await Product.findByIdAndUpdate(item.productId._id, {
-//                 $inc: { quantity: -item.quantity }
-//             });
-//         }
-// 		 // 7. Clear cart
-//         await Cart.findByIdAndUpdate(cartId, { $set: { items: [] } });
-// 		res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
-
-// 	} catch (error) {
-// 		console.log("placeOnlinePaidOrder() error====>",error);
-// 		res.json({success:false,message:"Something went wrong"})
-// 	}
-// }
 
 
-// const placeOnlinePaidOrder = async(req,res)=>{
-// 	try {
-// 		const userId=req.session.user || req.session.passport?.user;
-//     const {addressId,appliedCoupons=[]}=req.body;
-
-//     //  Fetch address and copy it
-//     const userAddressDoc = await Address.findOne(
-//         { userId, "address._id": addressId },
-//         { "address.$": 1 }
-//     );
-//     if (!userAddressDoc || userAddressDoc.address.length === 0) {
-//         return res.status(404).json({ success: false, message: "Address not found, Add a new address" });
-//     }
-//     const selectedAddress = userAddressDoc.address[0];
 
 
-// 		// const cart = await Cart.findOne({userId}).populate('items.productId');
 
-// 		// // Prepare order items with itemStatus
-// 		// const orderItems = cart.items.map(item => ({
-// 		// 	productId: item.productId._id,
-// 		// 	productName: item.productId.productName,
-// 		// 	productImage: item.productId.productImage[0],
-// 		// 	quantity: item.quantity,
-// 		// 	price: item.productId.salePrice,
-// 		// 	itemStatus: "Pending" // 👈 every product starts as "Pending"
-// 		// }));
-
-// 		// const totalAmount = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-// 		// const userAddressDoc = await Address.findOne(
-//     //         { userId, "address._id": addressId },
-//     //         { "address.$": 1 }
-//     //     );
-
-// 		// if (!userAddressDoc || userAddressDoc.address.length === 0) {
-//     //         return res.status(404).json({ success: false, message: "Address not found" });
-//     //     }
-//     //     const selectedAddress = userAddressDoc.address[0];
-
-// 		// // 5. Create order
-//     //     const newOrder = new Order({
-//     //         orderId: orderId,
-//     //         userId,
-//     //         shippingAddress: selectedAddress.toObject(),
-//     //         paymentMethod:"Online Payment",
-//     //         paymentStatus: "Paid", // update after payment success
-//     //         orderStatus: "Pending",
-//     //         orderItems,
-//     //         totalAmount
-//     //     });
-
-//     //     await newOrder.save();
-
-// 		// // 6. Reduce stock
-//     //     for (let item of cart.items) {
-//     //         await Product.findByIdAndUpdate(item.productId._id, {
-//     //             $inc: { quantity: -item.quantity }
-//     //         });
-//     //     }
-// 		//  // 7. Clear cart
-//     //     await Cart.findByIdAndUpdate(cartId, { $set: { items: [] } });
-// 		// res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
-
-// 	} catch (error) {
-// 		console.log("placeOnlinePaidOrder() error====>",error);
-// 		res.json({success:false,message:"Something went wrong"})
-// 	}
-// }
-
-// const place_cod_order=async (req,res)=>{
-//     try {
-//         const userId=req.session.user || req.session.passport?.user;
-//         const {addressId}=req.body;
-        
-//         if(!userId)return res.status(400).json({message:"session expired"})
-    
-//         const userCart=await Cart.findOne({userId:userId}).populate('items.productId')
-//         if(!userCart || userCart.items.length===0) return res.status(400).json({status:false,message:"Cart is empty"})
-        
-//           // Fetch all products in cart
-//         const productIds = userCart.items.map(item => item.productId);
-//         const products = await Product.find({ _id: { $in: productIds }, isBlocked: false })
-//           .select("productName quantity salePrice status");
-
-//         //  Validate stock for each item
-//         for (let item of userCart.items) {
-//           const product = products.find(p => p._id.toString() === item.productId?._id.toString());
-          
-//           if (!product) {
-//             return res.status(400).json({ status: false, message: "Product not found or blocked" });
-//           }
-
-//           if (product.status !== "Available") {
-//             return res.status(400).json({
-//               status: false,
-//               message: `${product.productName} is not available`,
-//             });
-//           }
-
-//           if (item.quantity > product.quantity) {
-//             return res.status(400).json({
-//               status: false,
-//               message: `${product.productName} has only ${product.quantity} left in stock.`,
-//             });
-//           }
-//         }
-
-//         //  Calculate total and discount
-//         const totalPrice = userCart.items.reduce((sum, item) => {
-//           const product = products.find(p => p._id.toString() === item.productId?._id.toString());
-//           return sum + (product.salePrice * item.quantity);
-//         }, 0);
-
-//         // 2. Fetch address and copy it
-//         const userAddressDoc = await Address.findOne(
-//             { userId, "address._id": addressId },
-//             { "address.$": 1 }
-//         );
-//         if (!userAddressDoc || userAddressDoc.address.length === 0) {
-//             return res.status(404).json({ success: false, message: "Address not found" });
-//         }
-//         const selectedAddress = userAddressDoc.address[0];
-
-
-//         let couponDiscount=0,couponDiscountValue=0;
-//         if(couponCode){
-//           const coupon=await Coupon.findOne({couponCode:couponCode})
-//           if (!coupon) return res.json({success:false,message:"Invalid coupon code"});
-//           if (!coupon.isActive)return res.json({success:false,message:"Coupon is not active"})
-//           if (coupon.expiryDate < new Date()) return res.json({ success: false, message: "Coupon expired" });
-//           if (totalPrice < coupon.minPurchase) return res.json({ success: false, message: `Minimum purchase ₹${coupon.minPurchase}` });
-
-//           //calculate discount
-//           if(coupon.discountType==='percentage'){
-//             couponDiscountValue=coupon.discountValue;
-//             couponDiscount=(totalPrice*coupon.discountValue)/100;
-//           }else{
-//             couponDiscount=coupon.discountValue;
-//             couponDiscountValue=coupon.discountValue
-//           }
-
-//           //set maximum discount
-//           if(couponDiscount>coupon.maxDiscountAmount){
-//             couponDiscount=coupon.maxDiscountAmount;
-//           }
-//         }
-
-//         const totalAmount=totalPrice-couponDiscount;
-
-//         // Prepare order items with itemStatus
-//         const orderItems = userCart.items.map(item => ({
-//           productId: item.productId._id,
-//           productName: item.productId.productName,
-//           productImage: item.productId.productImage[0],
-//           quantity: item.quantity,
-//           price: item.productId.salePrice-((item.productId.salePrice*couponDiscountValue)/100),
-//           itemStatus: "Pending" // 👈 every product starts as "Pending"
-//         }));
-        
-
-//         // 🔑 Generate custom order ID
-//         const customOrderId = await getNextOrderId();
-
-//         // 5. Create order
-//         const newOrder = new Order({
-//             orderId: customOrderId,
-//             userId,
-//             shippingAddress: selectedAddress.toObject(),
-//             paymentMethod:"Cash on Delivery",
-//             paymentStatus: "Pending", // update after payment success
-//             orderStatus: "Pending",
-//             orderItems,
-//             totalAmount
-//         });
-
-//         await newOrder.save();
-
-//         // 6. Reduce stock
-//         for (let item of userCart.items) {
-//             await Product.findByIdAndUpdate(item.productId._id, {
-//                 $inc: { quantity: -item.quantity }
-//             });
-//         }
-
-//         // 7. Clear cart
-//         await Cart.findByIdAndUpdate(cartId, { $set: { items: [] } });
-//         console.log("newOrder===>orderId====>",newOrder);
-
-//         res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
-//     } catch (error) {
-//         console.error("orderController / placeOrder() error:",error);
-//         if(error.isOperational){
-//           // ❌ Known error, safe to show to user
-//           return res.status(error.statusCode).json({ success: false, message: error.message });
-//         }
-
-//         // ❌ Unknown/internal error
-//         return res.status(500).json({
-//           success: false,
-//           message: "Something went wrong. Please try again later."
-//         });
-
-//     }
-// }
 
 const place_cod_order=async (req,res)=>{
     try {
@@ -861,186 +554,225 @@ const place_cod_order=async (req,res)=>{
         }
         
         if(userCart.appliedCoupons.length > 0){
-          if(appliedCoupons.length === userCart.appliedCoupons.length){
-            //we have
-            //appliedCoupon=[{},{}] from req.body
-            //userCart.appliedCoupon=[{},{}]
-            //checking both are matching and same
-              const areCouponsMatch=userCart.appliedCoupons.every((userCartCoupon)=>{
-                return appliedCoupons.some((formDataCoupon)=>{
-                  return (userCartCoupon.couponId.toString()===formDataCoupon.couponId &&
-                  userCartCoupon.code===formDataCoupon.couponCode)
+            if(appliedCoupons.length === userCart.appliedCoupons.length){
+              //we have
+              //appliedCoupon=[{},{}] from req.body
+              //userCart.appliedCoupon=[{},{}]
+              //checking both are matching and same
+                const areCouponsMatch=userCart.appliedCoupons.every((userCartCoupon)=>{
+                  return appliedCoupons.some((formDataCoupon)=>{
+                    return (userCartCoupon.couponId.toString()===formDataCoupon.couponId &&
+                    userCartCoupon.code===formDataCoupon.couponCode)
+                  })
+                })
+                if(!areCouponsMatch){
+                  userCart.appliedCoupons=[];
+                  await userCart.save()
+                  return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+                }
+            }else{
+              userCart.appliedCoupons=[];
+              await userCart.save()
+              return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+            }
+          
+            //checking coupons are valid, and available
+            const appliedCouponIds=userCart.appliedCoupons.map((appliedCoupon)=>{
+                return appliedCoupon.couponId;
+            })
+
+            //fetching all applied coupon's original doc with the coupon ids
+            const now = new Date();
+            const coupons = await Coupon.find({
+                _id: { $in: appliedCouponIds },
+                isActive: true,
+                expiryDate: { $gt: now },
+                startDate: { $lt: now }
+            });
+            if(appliedCouponIds.length !== coupons.length){
+              return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
+            }
+
+            //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
+            const areCouponsMeetMinPurchase=coupons.every((coupon)=>{
+              return coupon.minPurchase <= totalPrice
+            })
+            if(!areCouponsMeetMinPurchase){
+              userCart.appliedCoupons=[];
+              userCart.save()
+              return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
+            }
+
+            //check if the product is valid category
+            for(const coupon of coupons){
+                if(coupon.isCategoryBased){
+                const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
+                const hasApplicableProduct=userCart.items.some((item)=>{
+                  return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
+                })
+                //if there is no applicable products, remove the coupon from user's cart
+                    if(!hasApplicableProduct){
+                      userCart.appliedCoupons=[]
+                      await userCart.save();
+                      return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
+                    }
+                }
+            }
+
+            //calculate coupon discount
+            const itemPriceDetails=[] //to store every products total amount and total discount
+            for(const item of userCart.items){
+              const itemTotalMrp=item.productId.regularPrice * item.quantity;
+              const itemTotalPrice=item.productId.salePrice * item.quantity;
+              let itemTotalCouponDiscount=0;
+              for(const coupon of coupons){
+                if(coupon.isCategoryBased){
+                  //if the product is other category, skip this coupon application for that product
+                  if(
+                    !coupon.applicableCategories
+                      .some((catId)=>{return catId.toString()=== item.productId.category._id.toString()})
+                    ){
+                      continue;
+                    }
+
+                    let discount=0;
+                    if(coupon.discountType==="percentage"){
+                      discount=(itemTotalPrice*coupon.discountValue)/100
+                    }else{
+                      //if fixed discount
+                      discount=(itemTotalPrice/totalPrice)*coupon.discountValue
+                    }
+
+                    //cap max discount
+                    if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
+                      discount=coupon.maxDiscountAmount;
+                    }
+
+                    itemTotalCouponDiscount+=discount;
+                }else{//if coupon is not category based
+                    let discount=0;
+                  
+                    if(coupon.discountType==="percentage"){
+                      discount=(itemTotalPrice*coupon.discountValue)/100
+                    }else{
+                      //if fixed discount
+                      discount=(itemTotalPrice/totalPrice)*coupon.discountValue
+                    }
+
+                    //cap max discount
+                    if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
+                      discount=coupon.maxDiscountAmount;
+                    }
+                    itemTotalCouponDiscount+=discount;
+                }
+              }
+              itemPriceDetails.push({
+                productId:item.productId._id.toString(),
+                itemTotalMrp:itemTotalMrp,
+                itemTotalPrice:itemTotalPrice,
+                itemTotalCouponDiscount:itemTotalCouponDiscount,
+                itemTotalAmount:itemTotalPrice-itemTotalCouponDiscount
+              })
+            }
+
+            //prepare order items obj with coupon discount
+            const orderItems=userCart.items.map((item)=>{
+              return {
+                productId:item.productId._id.toString(),
+                productName:item.productId.productName,
+                productImage:item.productId.productImage[0].url,
+                quantity:item.quantity,
+                itemStatus:"Pending"
+              }
+            })
+
+            // console.log("orderItems BEFORE===========>",orderItems)
+
+            orderItems.forEach((o)=>{
+              const itemPrices=itemPriceDetails.find((i)=>{ return i.productId === o.productId})
+              o.mrp=itemPrices.itemTotalMrp;
+              o.couponDiscount=itemPrices.itemTotalCouponDiscount;
+              o.offerDiscount=itemPrices.itemTotalMrp-itemPrices.itemTotalPrice;
+              o.price=itemPrices.itemTotalAmount
+            })
+
+            // const totalPrice=itemPriceDetails.reduce((sum,curr)=>{
+            //   return sum+curr.itemTotalPrice
+            // },0)
+
+            const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
+              return sum+curr.itemTotalAmount
+            },0)
+
+            const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
+              return sum+curr.itemTotalMrp
+            },0)
+
+            const totalCouponDiscount=itemPriceDetails.reduce((sum,curr)=>{
+              return sum+curr.itemTotalCouponDiscount
+            },0)
+
+
+            const totalOfferDiscount=totalMrp-totalPrice;
+
+
+            //generate custom order ID
+            const customOrderId = await getNextOrderId();
+
+            // 5. Create order
+            const newOrder = new Order({
+                orderId: customOrderId,
+                userId,
+                shippingAddress: selectedAddress.toObject(),
+                paymentMethod:"Cash on Delivery",
+                paymentStatus: "Pending", // update after payment success
+                orderStatus: "Pending",
+                orderItems,
+                totalMrp,
+                totalOfferDiscount,
+                totalCouponDiscount,
+                totalPrice,
+                totalAmount
+            });
+
+            // console.log("orderItems AFTER===========>",orderItems)
+            // console.log("newOrder==========>",newOrder)
+            await newOrder.save();
+
+
+            // Reduce stock
+            for (let item of userCart.items) {
+                await Product.findByIdAndUpdate(item.productId._id, {
+                    $inc: { quantity: -item.quantity }
+                });
+            }
+
+            //check if any referral coupons
+              //if yes, it should be removed, referral coupons are one time usable
+              const allReferralCoupons=await Coupon.find({userId})
+              const appliedRefCoupons=allReferralCoupons.filter((allC)=>{
+                return userCart.appliedCoupons.some((uc)=>{
+                  return allC._id.toString()===uc.couponId.toString()
                 })
               })
-              if(!areCouponsMatch){
-                userCart.appliedCoupons=[];
-                await userCart.save()
-                return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
-              }
-          }else{
-            userCart.appliedCoupons=[];
-            await userCart.save()
-            return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
-          }
-          
-          //checking coupons are valid, and available
-          const appliedCouponIds=userCart.appliedCoupons.map((appliedCoupon)=>{
-              return appliedCoupon.couponId;
-          })
 
-          //fetching all applied coupon's original doc with the coupon ids
-          const now = new Date();
-          const coupons = await Coupon.find({
-              _id: { $in: appliedCouponIds },
-              isActive: true,
-              expiryDate: { $gt: now },
-              startDate: { $lt: now }
-          });
-          if(appliedCouponIds.length !== coupons.length){
-            return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
-          }
+              const appliedRefCouponIds=appliedRefCoupons.map((c)=>{return c._id.toString()})
 
-          //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
-          const areCouponsMeetMinPurchase=coupons.every((coupon)=>{
-            return coupon.minPurchase <= totalPrice
-          })
-          if(!areCouponsMeetMinPurchase){
-            userCart.appliedCoupons=[];
-            userCart.save()
-            return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
-          }
-
-          //check if the product is valid category
-          for(const coupon of coupons){
-            if(coupon.isCategoryBased){
-            const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
-            const hasApplicableProduct=userCart.items.some((item)=>{
-              return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
-            })
-            //if there is no applicable products, remove the coupon from user's cart
-            if(!hasApplicableProduct){
-              userCart.appliedCoupons=[]
-              await userCart.save();
-              return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
-            }
-            }
-          }
-
-          //calculate coupon discount
-          const itemPriceDetails=[] //to store every products total amount and total discount
-          for(const item of userCart.items){
-            const itemTotalPrice=item.productId.salePrice * item.quantity;
-            let itemTotalCouponDiscount=0;
-            for(const coupon of coupons){
-              if(coupon.isCategoryBased){
-                //if the product is other category, skip this coupon application for that product
-                if(
-                  !coupon.applicableCategories
-                    .some((catId)=>{return catId.toString()=== item.productId.category._id.toString()})
-                  ){
-                    continue;
-                  }
-
-                  let discount=0;
-                  if(coupon.discountType==="percentage"){
-                    discount=(itemTotalPrice*coupon.discountValue)/100
-                  }else{
-                    //if fixed discount
-                    discount=(itemTotalPrice/totalPrice)*coupon.discountValue
-                  }
-
-                  //cap max discount
-                  if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
-                    discount=coupon.maxDiscountAmount;
-                  }
-
-                  itemTotalCouponDiscount+=discount;
-              }else{//if coupon is not category based
-                  let discount=0;
-                
-                  if(coupon.discountType==="percentage"){
-                    discount=(itemTotalPrice*coupon.discountValue)/100
-                  }else{
-                    //if fixed discount
-                    discount=(itemTotalPrice/totalPrice)*coupon.discountValue
-                  }
-
-                  //cap max discount
-                  if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
-                    discount=coupon.maxDiscountAmount;
-                  }
-                  itemTotalCouponDiscount+=discount;
-              }
-            }
-            itemPriceDetails.push({
-              productId:item.productId._id.toString(),
-              itemTotalPrice:itemTotalPrice,
-              itemTotalCouponDiscount:itemTotalCouponDiscount,
-              itemTotalAmount:itemTotalPrice-itemTotalCouponDiscount
-            })
-          }
-
-          //prepare order items obj with coupon discount
-          const orderItems=userCart.items.map((item)=>{
-            return {
-              productId:item.productId._id.toString(),
-              productName:item.productId.productName,
-              productImage:item.productId.productImage[0],
-              quantity:item.quantity,
-              itemStatus:"Pending"
-            }
-          })
-
-          // console.log("orderItems BEFORE===========>",orderItems)
-
-          orderItems.forEach((o)=>{
-            const itemPrices=itemPriceDetails.find((i)=>{ return i.productId === o.productId})
-            o.price=itemPrices.itemTotalAmount
-          })
-
-          const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
-            return sum+curr.itemTotalAmount
-          },0)
-
-          //generate custom order ID
-          const customOrderId = await getNextOrderId();
-
-          // 5. Create order
-          const newOrder = new Order({
-              orderId: customOrderId,
-              userId,
-              shippingAddress: selectedAddress.toObject(),
-              paymentMethod:"Cash on Delivery",
-              paymentStatus: "Pending", // update after payment success
-              orderStatus: "Pending",
-              orderItems,
-              totalAmount
-          });
-
-          // console.log("orderItems AFTER===========>",orderItems)
-          // console.log("newOrder==========>",newOrder)
-          await newOrder.save();
+              await Coupon.deleteMany({userId,_id:{$in:appliedRefCouponIds}})
 
 
-          // Reduce stock
-          for (let item of userCart.items) {
-              await Product.findByIdAndUpdate(item.productId._id, {
-                  $inc: { quantity: -item.quantity }
-              });
-          }
+            //  Clear cart
+            const result = await Cart.updateOne({userId}, { $set: { items: [],appliedCoupons:[] } });
+            // if (result.matchedCount === 0) {
+            //   console.log("No document found to update");
+            // } else if (result.modifiedCount === 0) {
+            //   console.log("Document found but nothing was changed");
+            // } else {
+            //   console.log("Document updated successfully");
+            // }
+            // console.log("newOrder===>orderId====>",newOrder);
 
-          //  Clear cart
-          const result = await Cart.updateOne({userId}, { $set: { items: [],appliedCoupons:[] } });
-          // if (result.matchedCount === 0) {
-          //   console.log("No document found to update");
-          // } else if (result.modifiedCount === 0) {
-          //   console.log("Document found but nothing was changed");
-          // } else {
-          //   console.log("Document updated successfully");
-          // }
-          // console.log("newOrder===>orderId====>",newOrder);
-
-        return res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
+          return res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
 
         }
 
@@ -1048,11 +780,19 @@ const place_cod_order=async (req,res)=>{
         const orderItems = userCart.items.map(item => ({
           productId: item.productId._id,
           productName: item.productId.productName,
-          productImage: item.productId.productImage[0],
+          productImage: item.productId.productImage[0].url,
           quantity: item.quantity,
+          mrp:item.productId.regularPrice * item.quantity,
           price: item.productId.salePrice*item.quantity,
+          offerDiscount:(item.productId.regularPrice * item.quantity)-(item.productId.salePrice * item.quantity),
           itemStatus: "Pending" // 👈 every product starts as "Pending"
         }));
+
+        const totalMrp=userCart.items.reduce((sum,item)=>{
+          return sum+item.productId.regularPrice*item.quantity
+        },0)
+
+        const totalOfferDiscount=totalMrp-totalPrice;
         
 
         // 🔑 Generate custom order ID
@@ -1067,6 +807,9 @@ const place_cod_order=async (req,res)=>{
             paymentStatus: "Pending", // update after payment success
             orderStatus: "Pending",
             orderItems,
+            totalMrp,
+            totalPrice,
+            totalOfferDiscount,
             totalAmount
         });
 
@@ -1086,7 +829,7 @@ const place_cod_order=async (req,res)=>{
         res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
 
     } catch (error) {
-        console.error("orderController / placeOrder() error:",error);
+        console.error("orderController / place_cod_order() error:",error);
 
         return res.status(500).json({
           success: false,
@@ -1096,6 +839,11 @@ const place_cod_order=async (req,res)=>{
 
     }
 }
+
+
+
+
+
 
 const placeWalletPaidOrder = async (req,res)=>{
   try {
@@ -1180,201 +928,244 @@ const placeWalletPaidOrder = async (req,res)=>{
       }
 
       if(userCart.appliedCoupons.length > 0){
-          if(appliedCoupons.length === userCart.appliedCoupons.length){
-            //we have
-            //appliedCoupon=[{},{}] from req.body
-            //userCart.appliedCoupon=[{},{}]
-            //checking both are matching and same
-              const areCouponsMatch=userCart.appliedCoupons.every((userCartCoupon)=>{
-                return appliedCoupons.some((formDataCoupon)=>{
-                  return (userCartCoupon.couponId.toString()===formDataCoupon.couponId &&
-                  userCartCoupon.code===formDataCoupon.couponCode)
+            if(appliedCoupons.length === userCart.appliedCoupons.length){
+              //we have
+              //appliedCoupon=[{},{}] from req.body
+              //userCart.appliedCoupon=[{},{}]
+              //checking both are matching and same
+                const areCouponsMatch=userCart.appliedCoupons.every((userCartCoupon)=>{
+                  return appliedCoupons.some((formDataCoupon)=>{
+                    return (userCartCoupon.couponId.toString()===formDataCoupon.couponId &&
+                    userCartCoupon.code===formDataCoupon.couponCode)
+                  })
                 })
-              })
-              if(!areCouponsMatch){
-                userCart.appliedCoupons=[];
-                await userCart.save()
-                return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
-              }
-          }else{
-            userCart.appliedCoupons=[];
-            await userCart.save()
-            return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
-          }
-          
-          //checking coupons are valid, and available
-          const appliedCouponIds=userCart.appliedCoupons.map((appliedCoupon)=>{
-              return appliedCoupon.couponId;
-          })
-
-          //fetching all applied coupon's original doc with the coupon ids
-          const now = new Date();
-          const coupons = await Coupon.find({
-              _id: { $in: appliedCouponIds },
-              isActive: true,
-              expiryDate: { $gt: now },
-              startDate: { $lt: now }
-          });
-          if(appliedCouponIds.length !== coupons.length){
-            return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
-          }
-
-          //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
-          const areCouponsMeetMinPurchase=coupons.every((coupon)=>{
-            return coupon.minPurchase <= totalPrice
-          })
-          if(!areCouponsMeetMinPurchase){
-            userCart.appliedCoupons=[];
-            userCart.save()
-            return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
-          }
-
-          //this only work if the coupon is category based
-          //check if the product is valid category
-          for(const coupon of coupons){
-            if(coupon.isCategoryBased){
-            const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
-            const hasApplicableProduct=userCart.items.some((item)=>{
-              return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
+                if(!areCouponsMatch){
+                  userCart.appliedCoupons=[];
+                  await userCart.save()
+                  return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+                }
+            }else{
+              userCart.appliedCoupons=[];
+              await userCart.save()
+              return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+            }
+            
+            //checking coupons are valid, and available
+            const appliedCouponIds=userCart.appliedCoupons.map((appliedCoupon)=>{
+                return appliedCoupon.couponId;
             })
-            //if there is no applicable products, remove the coupon from user's cart
-            if(!hasApplicableProduct){
-              userCart.appliedCoupons=[]
-              await userCart.save();
-              return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
-            }
-            }
-          }
 
-          //calculate coupon discount
-          const itemPriceDetails=[] //to store every products total amount and total discount
-          for(const item of userCart.items){
-            const itemTotalPrice=item.productId.salePrice * item.quantity;
-            let itemTotalCouponDiscount=0;
+            //fetching all applied coupon's original doc with the coupon ids
+            const now = new Date();
+            const coupons = await Coupon.find({
+                _id: { $in: appliedCouponIds },
+                isActive: true,
+                expiryDate: { $gt: now },
+                startDate: { $lt: now }
+            });
+            if(appliedCouponIds.length !== coupons.length){
+              return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
+            }
+
+            //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
+            const areCouponsMeetMinPurchase=coupons.every((coupon)=>{
+              return coupon.minPurchase <= totalPrice
+            })
+            if(!areCouponsMeetMinPurchase){
+              userCart.appliedCoupons=[];
+              userCart.save()
+              return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
+            }
+
+            //this only work if the coupon is category based
+            //check if the product is valid category
             for(const coupon of coupons){
               if(coupon.isCategoryBased){
-                //if the product is other category, skip this coupon application for that product
-                if(
-                  !coupon.applicableCategories
-                    .some((catId)=>{return catId.toString()=== item.productId.category._id.toString()})
-                  ){
-                    continue;
-                  }
-
-                  let discount=0;
-                  if(coupon.discountType==="percentage"){
-                    discount=(itemTotalPrice*coupon.discountValue)/100
-                  }else{
-                    //if fixed discount
-                    discount=(itemTotalPrice/totalPrice)*coupon.discountValue
-                  }
-
-                  //cap max discount
-                  if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
-                    discount=coupon.maxDiscountAmount;
-                  }
-
-                  itemTotalCouponDiscount+=discount;
-              }else{//if coupon is not category based
-                  let discount=0;
-                
-                  if(coupon.discountType==="percentage"){
-                    discount=(itemTotalPrice*coupon.discountValue)/100
-                  }else{
-                    //if fixed discount
-                    discount=(itemTotalPrice/totalPrice)*coupon.discountValue
-                  }
-
-                  //cap max discount
-                  if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
-                    discount=coupon.maxDiscountAmount;
-                  }
-                  itemTotalCouponDiscount+=discount;
+              const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
+              const hasApplicableProduct=userCart.items.some((item)=>{
+                return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
+              })
+              //if there is no applicable products, remove the coupon from user's cart
+              if(!hasApplicableProduct){
+                userCart.appliedCoupons=[]
+                await userCart.save();
+                return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
+              }
               }
             }
-            itemPriceDetails.push({
-              productId:item.productId._id.toString(),
-              itemTotalPrice:itemTotalPrice,
-              itemTotalCouponDiscount:itemTotalCouponDiscount,
-              itemTotalAmount:itemTotalPrice-itemTotalCouponDiscount
-            })
-          }
 
-          //prepare order items obj with coupon discount
-          const orderItems=userCart.items.map((item)=>{
-            return {
-              productId:item.productId._id.toString(),
-              productName:item.productId.productName,
-              productImage:item.productId.productImage[0],
-              quantity:item.quantity,
-              itemStatus:"Pending"
+            //calculate coupon discount
+            const itemPriceDetails=[] //to store every products total amount and total discount
+            for(const item of userCart.items){
+              const itemTotalMrp=item.productId.regularPrice * item.quantity;
+              const itemTotalPrice=item.productId.salePrice * item.quantity;
+
+              let itemTotalCouponDiscount=0;
+
+              for(const coupon of coupons){
+                if(coupon.isCategoryBased){
+                  //if the product is other category, skip this coupon application for that product
+                  if(
+                    !coupon.applicableCategories
+                      .some((catId)=>{return catId.toString()=== item.productId.category._id.toString()})
+                    ){
+                      continue;
+                    }
+
+                    let discount=0;
+                    if(coupon.discountType==="percentage"){
+                      discount=(itemTotalPrice*coupon.discountValue)/100
+                    }else{
+                      //if fixed discount
+                      discount=(itemTotalPrice/totalPrice)*coupon.discountValue
+                    }
+
+                    //cap max discount
+                    if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
+                      discount=coupon.maxDiscountAmount;
+                    }
+
+                    itemTotalCouponDiscount+=discount;
+                }else{//if coupon is not category based
+                    let discount=0;
+                  
+                    if(coupon.discountType==="percentage"){
+                      discount=(itemTotalPrice*coupon.discountValue)/100
+                    }else{
+                      //if fixed discount
+                      discount=(itemTotalPrice/totalPrice)*coupon.discountValue
+                    }
+
+                    //cap max discount
+                    if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
+                      discount=coupon.maxDiscountAmount;
+                    }
+                    itemTotalCouponDiscount+=discount;
+                }
+              }
+              itemPriceDetails.push({
+                productId:item.productId._id.toString(),
+                itemTotalMrp:itemTotalMrp,
+                itemTotalPrice:itemTotalPrice,
+                itemTotalCouponDiscount:itemTotalCouponDiscount,
+                itemTotalAmount:itemTotalPrice-itemTotalCouponDiscount
+              })
             }
-          })
 
-          // console.log("orderItems BEFORE===========>",orderItems)
+            //prepare order items obj with coupon discount
+            const orderItems=userCart.items.map((item)=>{
+              return {
+                productId:item.productId._id.toString(),
+                productName:item.productId.productName,
+                productImage:item.productId.productImage[0].url,
+                quantity:item.quantity,
+                itemStatus:"Pending"
+              }
+            })
 
-          orderItems.forEach((o)=>{
-            const itemPrices=itemPriceDetails.find((i)=>{ return i.productId === o.productId})
-            o.price=itemPrices.itemTotalAmount
-          })
+            // console.log("orderItems BEFORE===========>",orderItems)
 
-          const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
-            return sum+curr.itemTotalAmount
-          },0)
+            orderItems.forEach((o)=>{
+              const itemPrices=itemPriceDetails.find((i)=>{ return i.productId === o.productId})
+              o.mrp=itemPrices.itemTotalMrp;
+              o.couponDiscount=itemPrices.itemTotalCouponDiscount;
+              o.offerDiscount=itemPrices.itemTotalMrp-itemPrices.itemTotalPrice;
+              o.price=itemPrices.itemTotalAmount;
+            })
 
-          if(totalAmount>userWallet.balance){
-            return res.status(400).json({message:"Not enough balance in your wallet",reload:true})
-          }
+            const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
+              return sum+curr.itemTotalAmount
+            },0)
 
-          //generate custom order ID
-          const customOrderId = await getNextOrderId();
+            if(totalAmount>userWallet.balance){
+              return res.status(400).json({message:"Not enough balance in your wallet",reload:true})
+            }
 
-          userWallet.balance-=totalAmount;
-          userWallet.transactions.push({
-            amount:totalAmount,
-            type:"debit",
-            description:`Paid for ${customOrderId}`
-          })
+            const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
+              return sum+curr.itemTotalMrp
+            },0)
 
-          // 5. Create order
-          const newOrder = new Order({
-              orderId: customOrderId,
-              userId,
-              shippingAddress: selectedAddress.toObject(),
-              paymentMethod:"TeeSpace Wallet",
-              paymentStatus: "Paid",
-              orderStatus: "Pending",
-              orderItems,
-              totalAmount
-          });
+            const totalCouponDiscount=itemPriceDetails.reduce((sum,curr)=>{
+              return sum+curr.itemTotalCouponDiscount
+            },0)
 
-          // console.log("orderItems AFTER===========>",orderItems)
-          // console.log("newOrder==========>",newOrder)
-          await newOrder.save();
-          await userWallet.save();
+            // const totalPrice=itemPriceDetails.reduce((sum,curr)=>{
+            //   return sum+curr.itemTotalPrice
+            // },0)
+
+            const totalOfferDiscount=totalMrp-totalPrice;
 
 
-          // Reduce stock
-          for (let item of userCart.items) {
-              await Product.findByIdAndUpdate(item.productId._id, {
-                  $inc: { quantity: -item.quantity }
-              });
-          }
+            //generate custom order ID
+            const customOrderId = await getNextOrderId();
 
-          //  Clear cart
-          const result = await Cart.updateOne({userId}, { $set: { items: [],appliedCoupons:[] } });
-          // if (result.matchedCount === 0) {
-          //   console.log("No document found to update");
-          // } else if (result.modifiedCount === 0) {
-          //   console.log("Document found but nothing was changed");
-          // } else {
-          //   console.log("Document updated successfully");
-          // }
-          // console.log("newOrder===>orderId====>",newOrder);
+            userWallet.balance-=totalAmount;
+            userWallet.transactions.push({
+              amount:totalAmount,
+              type:"debit",
+              description:`Paid for ${customOrderId}`
+            })
 
-        return res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
+            // 5. Create order
+            const newOrder = new Order({
+                orderId: customOrderId,
+                userId,
+                shippingAddress: selectedAddress.toObject(),
+                paymentMethod:"TeeSpace Wallet",
+                paymentStatus: "Paid",
+                orderStatus: "Pending",
+                orderItems,
+                totalMrp,
+                totalOfferDiscount,
+                totalCouponDiscount,
+                totalPrice,
+                totalAmount
+            });
 
-        }
+            // console.log("orderItems AFTER===========>",orderItems)
+            // console.log("newOrder==========>",newOrder)
+            await newOrder.save();
+            await userWallet.save();
+
+
+            // Reduce stock
+            for (let item of userCart.items) {
+                await Product.findByIdAndUpdate(item.productId._id, {
+                    $inc: { quantity: -item.quantity }
+                });
+            }
+
+            //check if any referral coupons
+              //if yes, it should be removed, referral coupons are one time usable
+              const allReferralCoupons=await Coupon.find({userId})
+              console.log("allReferralCoupons=======",allReferralCoupons)
+              const appliedRefCoupons=allReferralCoupons.filter((allC)=>{
+                return userCart.appliedCoupons.some((uc)=>{
+                  return allC._id.toString()===uc.couponId.toString()
+                })
+              })
+
+              console.log("appliedRefCoupons==============",appliedRefCoupons)
+
+              const appliedRefCouponIds=appliedRefCoupons.map((c)=>{return c._id.toString()})
+              console.log("appliedRefCouponIds",appliedRefCouponIds)
+
+              const deleteResult=await Coupon.deleteMany({userId,_id:{$in:appliedRefCouponIds}})
+              console.log("deleteResult===============",deleteResult)
+
+            //  Clear cart
+            const result = await Cart.updateOne({userId}, { $set: { items: [],appliedCoupons:[] } });
+            // if (result.matchedCount === 0) {
+            //   console.log("No document found to update");
+            // } else if (result.modifiedCount === 0) {
+            //   console.log("Document found but nothing was changed");
+            // } else {
+            //   console.log("Document updated successfully");
+            // }
+            // console.log("newOrder===>orderId====>",newOrder);
+
+            return res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
+      }
 
       if(totalAmount>userWallet.balance){
           return res.status(400).json({message:"Not enough balance in your wallet",reload:true})
@@ -1384,11 +1175,21 @@ const placeWalletPaidOrder = async (req,res)=>{
         const orderItems = userCart.items.map(item => ({
           productId: item.productId._id,
           productName: item.productId.productName,
-          productImage: item.productId.productImage[0],
+          productImage: item.productId.productImage[0].url,
           quantity: item.quantity,
+          mrp:item.productId.regularPrice * item.quantity,
           price: item.productId.salePrice*item.quantity,
+          offerDiscount:(item.productId.regularPrice * item.quantity)-(item.productId.salePrice * item.quantity),
           itemStatus: "Pending" // 👈 every product starts as "Pending"
         }));
+
+
+        const totalMrp=userCart.items.reduce((sum,item)=>{
+          return sum+item.productId.regularPrice*item.quantity
+        },0)
+
+        const totalOfferDiscount=totalMrp-totalPrice;
+
 
       // 🔑 Generate custom order ID
       const customOrderId = await getNextOrderId();
@@ -1409,6 +1210,9 @@ const placeWalletPaidOrder = async (req,res)=>{
           paymentStatus: "Paid",
           orderStatus: "Pending",
           orderItems,
+          totalMrp,
+          totalPrice,
+          totalOfferDiscount,
           totalAmount
       });
 
@@ -1429,7 +1233,7 @@ const placeWalletPaidOrder = async (req,res)=>{
 
       return res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
   } catch (error) {
-      console.error("orderController / placeOrder() error:",error);
+      console.error("orderController / placeWalletPaidOrder() error:",error);
       return res.status(500).json({
         success: false,
         message: "Something went wrong. Please try again later."
@@ -1437,6 +1241,11 @@ const placeWalletPaidOrder = async (req,res)=>{
 
   }
 }
+
+
+
+
+
 
 
 const showOrderSuccessPage=async (req,res)=>{
@@ -1458,6 +1267,11 @@ const showOrderSuccessPage=async (req,res)=>{
         res.redirect("/page-not-found")
     }
 }
+
+
+
+
+
 
 
 
@@ -1537,6 +1351,11 @@ const showOrders = async (req, res) => {
 };
 
 
+
+
+
+
+
 const showOrderDetails=async(req,res)=>{
     try {
         const userId=req.session.user || req.session.passport?.user;
@@ -1544,7 +1363,7 @@ const showOrderDetails=async(req,res)=>{
 
         const orderId = req.params.orderId;
 
-        const order = await Order.findOne({ orderId, userId }).lean();
+        const order = await Order.findOne({ orderId, userId });
         if (!order) return res.redirect("/page-not-found");
 
         res.render("user/profile/order/order-details", {
@@ -1560,13 +1379,21 @@ const showOrderDetails=async(req,res)=>{
     }
 }
 
+
+
+
+
+
+
+
 // helper
-async function restoreStock(orderItems) {
+async function restoreStock(orderItems,reason) {
   console.log("orderItems===>",orderItems);
   const updates = orderItems
     .filter(item => item.itemStatus === "Pending")
     .map(item => {
       item.itemStatus = "Cancelled";
+      item.cancelReason=reason;
       return Product.findByIdAndUpdate(item.productId, {
         $inc: { quantity: item.quantity }
       });
@@ -1574,6 +1401,10 @@ async function restoreStock(orderItems) {
 
   return Promise.all(updates);
 }
+
+
+
+
 
 
 // Cancel a single product in an order
@@ -1584,7 +1415,7 @@ const cancelOrderItem = async (req, res) => {
       return res.status(401).json({ success: false, message: "Login required" });
     }
 
-    const { orderId, itemId } = req.body;
+    const { orderId, itemId, reason } = req.body;
 
     const order = await Order.findOne({ orderId, userId });
     if (!order) {
@@ -1601,7 +1432,7 @@ const cancelOrderItem = async (req, res) => {
     }
 
     //  Restore stock
-    await restoreStock([item]);
+    await restoreStock([item],reason);
 
     //  Update item refund status (only if paid & online)
     if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
@@ -1622,15 +1453,39 @@ const cancelOrderItem = async (req, res) => {
       item.refundedOn = new Date();
     }
 
-    //  Update order status
-    const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
-    const someCancelled = order.orderItems.some(i => i.itemStatus === "Cancelled");
 
-    if (allCancelled) {
-      order.orderStatus = "Cancelled";
-    } else if (someCancelled) {
-      order.orderStatus = "Partially Cancelled";
+    const allStatuses = order.orderItems.map(i => i.itemStatus);
+    const allStatusSet=new Set(allStatuses)
+
+    if(allStatusSet.size===1 && allStatusSet.has("Cancelled")){
+      order.orderStatus = "Cancelled"
     }
+    if(allStatusSet.size===1 && allStatusSet.has("Delivered")){
+      order.orderStatus = "Delivered";
+      order.deliveredOn=new Date();
+    }
+    if(allStatusSet.size===2 && allStatusSet.has('Delivered') && allStatusSet.has("Cancelled")){
+      order.orderStatus="Delivered";
+
+      const deliveredDates=order.orderItems
+          .map((item)=>item.deliveredOn)
+          .filter((date)=>date)
+      deliveredDates.sort((a,b)=>a-b);
+      const latestDeliveredDate=deliveredDates[deliveredDates.length-1];
+
+      order.deliveredOn=latestDeliveredDate;
+    }
+
+
+    // //  Update order status
+    // const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
+    // const someCancelled = order.orderItems.some(i => i.itemStatus === "Cancelled");
+
+    // if (allCancelled) {
+    //   order.orderStatus = "Cancelled";
+    // } else if (someCancelled) {
+    //   order.orderStatus = "Partially Cancelled";
+    // }
 
     //  Update order refund summary
     const allRefunded = order.orderItems.every(i => i.refundStatus === "Refunded");
@@ -1641,6 +1496,17 @@ const cancelOrderItem = async (req, res) => {
     } else if (someRefunded) {
       order.refundStatus = "Partially Refunded";
     }
+
+    const refundAmount = item.price;
+    const offerDiscount=item.offerDiscount;
+    const couponDiscount=item.couponDiscount;
+
+    order.totalMrp-=item.mrp;
+    order.totalPrice-=(refundAmount+offerDiscount);
+    order.totalAmount-=refundAmount;
+    order.totalOfferDiscount-=offerDiscount;
+    order.totalCouponDiscount-=couponDiscount;
+
 
     await order.save();
 
@@ -1653,18 +1519,9 @@ const cancelOrderItem = async (req, res) => {
 };
 
 
-const refundToWallet = async (userId, amount, orderId) => {
-  let wallet = await Wallet.findOne({ userId });
 
-  wallet.balance += amount;
-  wallet.transactions.push({
-    type: "Credit",
-    amount,
-    description: `Refund for Order ${orderId}`
-  });
 
-  return wallet.save();
-};
+
 
 
 // Cancel entire order
@@ -1673,7 +1530,7 @@ const cancelWholeOrder = async (req, res) => {
     const userId = req.session.user || req.session.passport?.user;
     if (!userId) return res.status(401).json({ success: false, message: "Login required" });
 
-    const { orderId } = req.body;
+    const { orderId ,reason} = req.body;
 
     const order = await Order.findOne({ orderId, userId });
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -1691,8 +1548,33 @@ const cancelWholeOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: "Order cannot be cancelled at this stage" });
     }
 
-    // Restore stock for all Pending items
-    await restoreStock(order.orderItems);
+    const pendingItems=order.orderItems.filter((item)=>{
+      return item.itemStatus==="Pending"
+    })
+
+    let totalMrpOfPendingItems=0;
+    let totalOfferDiscountOfPendingItems=0;
+    let totalCouponDiscountOfPendingItems=0;
+    let totalPriceOfPendingItems=0;
+    let totalAmountOfPendingItems=0;
+
+    pendingItems.forEach((item)=>{
+      totalMrpOfPendingItems+=item.mrp;
+      totalOfferDiscountOfPendingItems+=item.offerDiscount;
+      totalCouponDiscountOfPendingItems+=item.couponDiscount;
+      totalPriceOfPendingItems+=(item.price+item.offerDiscount);
+      totalAmountOfPendingItems+=item.price;
+    })
+
+    order.totalMrp-=totalMrpOfPendingItems;
+    order.offerDiscount-=totalOfferDiscountOfPendingItems;
+    order.totalCouponDiscount-=totalCouponDiscountOfPendingItems;
+    order.totalPrice-=totalPriceOfPendingItems;
+    order.totalAmount-=totalAmountOfPendingItems;
+
+
+    // Restore stock and change status to "cancelled" for all Pending items,
+    await restoreStock(order.orderItems,reason);
 
     // Track total refunded (for wallet)
     let totalWalletRefund = 0;
@@ -1707,7 +1589,7 @@ const cancelWholeOrder = async (req, res) => {
           item.refundStatus = "Not Initiated";
         } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
           if (item.refundStatus !== "Refunded") {
-            totalWalletRefund += item.price * item.quantity;
+            totalWalletRefund += item.price;
             item.refundStatus = "Refunded";
             item.refundedOn = new Date();
           }
@@ -1730,16 +1612,27 @@ const cancelWholeOrder = async (req, res) => {
       }
     }
 
+
+
     // Determine order-level status
-    const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
+    const allStatuses = order.orderItems.map(i => i.itemStatus);
     const anyRefunded = order.orderItems.some(i => i.refundStatus === "Refunded");
 
-    if (allCancelled) {
-      order.orderStatus = "Cancelled";
-      order.refundStatus = anyRefunded ? "Refunded" : "Not Initiated";
-    } else {
-      order.orderStatus = "Partially Cancelled";
-      order.refundStatus = anyRefunded ? "Partially Refunded" : "Not Initiated";
+
+    if (allStatuses.every(s => s === "Cancelled")) {
+        order.orderStatus = "Cancelled";
+        order.refundStatus = anyRefunded ? "Refunded" : "Not Initiated";
+    }
+
+    if(allStatuses.includes('Delivered')){
+        order.orderStatus = "Delivered";
+
+        const deliveredDates=order.orderItems
+            .map((item)=>item.deliveredOn)
+            .filter((date)=>date)
+        deliveredDates.sort((a,b)=>a-b);
+        const latestDeliveredDate=deliveredDates[latestDeliveredDate.length-1];
+        order.deliveredOn=latestDeliveredDate;
     }
 
     await order.save();
@@ -1758,91 +1651,14 @@ const cancelWholeOrder = async (req, res) => {
 
 
 
-// const cancelWholeOrder = async (req, res) => {
-//   try {
-//     const userId = req.session.user || req.session.passport?.user;
-//     if (!userId) return res.status(401).json({ success: false, message: "Login required" });
 
-//     const { orderId } = req.body;
-//     const order = await Order.findOne({ orderId, userId });
-//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-//     // Block if any shipped/delivered items exist
-//     if (order.orderItems.some(i => ["Shipped", "Delivered"].includes(i.itemStatus))) {
-//       return res.status(400).json({ success: false, message: "Some items are already shipped/delivered. Order cannot be cancelled." });
-//     }
-
-//     // Allow only Pending or Partially Cancelled orders
-//     if (!["Pending", "Partially Cancelled"].includes(order.orderStatus)) {
-//       return res.status(400).json({ success: false, message: "Order cannot be cancelled at this stage" });
-//     }
-
-//     // Cancel only Pending items
-//     const itemsToCancel = order.orderItems.filter(i => i.itemStatus === "Pending");
-//     await restoreStock(itemsToCancel);
-
-//     // Refund logic per item
-//     itemsToCancel.forEach(item => {
-//       item.itemStatus = "Cancelled";
-
-//       if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
-//         item.refundStatus = "Refunded";
-//         item.refundedOn = new Date();
-//       } else if (order.paymentMethod === "Cash on Delivery") {
-//         item.refundStatus = "Not Initiated";
-//       } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
-//         item.refundStatus = "Refunded";
-//         item.refundedOn = new Date();
-//       }
-//     });
-
-//     // Determine overall order status
-//     const allCancelled = order.orderItems.every(i => i.itemStatus === "Cancelled");
-
-//     if (allCancelled) {
-//       order.orderStatus = "Cancelled";
-
-//       if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
-//         order.refundStatus = "Refunded";
-//       } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
-//         order.refundStatus = "Refunded";
-
-//         // 💰 Refund full amount to wallet
-//         await refundToWallet(userId, order.totalAmount, order.orderId);
-//       } else {
-//         order.refundStatus = "Not Initiated";
-//       }
-
-//     } else {
-//       order.orderStatus = "Partially Cancelled";
-
-//       if (order.paymentMethod === "Online Payment" && order.paymentStatus === "Paid") {
-//         order.refundStatus = "Partially Refunded";
-//       } else if (order.paymentMethod === "TeeSpace Wallet" && order.paymentStatus === "Paid") {
-//         order.refundStatus = "Partially Refunded";
-
-//         // 💰 Refund only for newly cancelled items
-//         const refundAmount = itemsToCancel.reduce((sum, i) => sum + i.price * i.quantity, 0);
-//         await refundToWallet(userId, refundAmount, order.orderId);
-//       } else {
-//         order.refundStatus = "Not Initiated";
-//       }
-//     }
-
-//     await order.save();
-//     res.json({ success: true, message: "Order cancelled and refund processed" });
-
-//   } catch (error) {
-//     console.log("cancelWholeOrder() error =>", error);
-//     res.status(500).json({ success: false, message: "Something went wrong" });
-//   }
-// };
 
 
 
 const getInvoice = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate("userId");
+    const order = await Order.findById(req.params.id).populate("userId");k
+    
     if (!order) return res.status(404).send("Order not found");
     if (!order.invoice?.generated) return res.status(400).send("Invoice not generated yet");
 
@@ -1888,6 +1704,9 @@ const getInvoice = async (req, res) => {
 };
 
 
+
+
+
 const returnOrderItem = async (req, res) => {
   try {
     const { orderId, itemId, reason } = req.body;
@@ -1924,8 +1743,7 @@ const returnOrderItem = async (req, res) => {
 
 module.exports={
     createRazorPayOrder,
-	verifyRazorpayPayment,
-	// placeOnlinePaidOrder,
+	  verifyRazorpayPayment,
     place_cod_order,
     placeWalletPaidOrder,
     showOrders,

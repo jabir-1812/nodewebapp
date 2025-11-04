@@ -541,7 +541,9 @@
                 </div>
                 <a href="/product-details?id=<%= products[i]._id %>" style="text-decoration: none;">
                   <div class="product-image-container">
-                    <img src="/uploads/product-images/<%= products[i].productImage[0] %>" alt="<%= products[i].productName %>" class="product-image">
+                    <!-- <img src="/uploads/product-images/<%= products[i].productImage[0] %>" alt="<%= products[i].productName %>" class="product-image"> -->
+                     
+                    <img src="<%= products[i].productImage[0]?.url %>" alt="<%= products[i].productName %>" class="product-image">
                     <button class="quick-view-btn">Quick View</button>
                   </div>
                   <div class="product-info">
@@ -624,7 +626,8 @@
                     showConfirmButton:false
                 })
                 // update cart icon
-                document.getElementById('cartCount').textContent = responseJson.cartLength;
+                // document.getElementById('cartCount').textContent = responseJson.cartLength;
+                location.reload()
             }else{
                 throw new Error(responseJson.status || 'Failed to add to cart');
             }

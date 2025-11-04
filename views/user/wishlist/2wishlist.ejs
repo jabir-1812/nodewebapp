@@ -175,7 +175,7 @@
         <div class="wishlist-grid">
             <% wishlist.forEach((item)=>{ %>
                 <div class="wishlist-item">
-                    <img class="product-image" src="/uploads/product-images/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName %>">
+                    <img class="product-image" src="<%= item.productId.productImage[0].url %>" alt="<%= item.productId.productName %>">
                     
                     <div class="product-name"><%= item.productId.productName %></div>
                     

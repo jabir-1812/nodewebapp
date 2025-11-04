@@ -2,7 +2,7 @@
 
 <%-include ('../../../views/user/profile/profile-partials/sidebar')%>
 
-<style>
+<!-- <style>
     .main-content {
         margin-left: 220px; /* matches sidebar width */
         padding: 90px 40px 40px;
@@ -11,150 +11,560 @@
         min-height: 100vh;
     }
 
-    .main-content h1 {
-        font-size: 2rem;
-        margin-bottom: 30px;
-        color: #343a40;
-    }
-
-    /* Profile sections */
-    .profile-section {
-        margin-bottom: 25px;
-        padding: 15px 20px;
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    .imgContainer {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background-color: #1976d2;
         display: flex;
+        justify-content: center;
         align-items: center;
-        justify-content: space-between;
-    }
+        overflow: hidden;
 
-    .profile-label {
-        font-weight: 600;
-        color: #495057;
-        min-width: 80px;
-        display: inline-block;
-    }
+        }
 
-    .profile-value {
-        flex-grow: 1;
-        color: #212529;
-        margin-left: 10px;
-    }
+        .imgContainer img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
 
-    /* Edit button */
-    .edit-btn {
-        background: none;
-        border: none;
-        color: #007bff;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: color 0.2s;
-    }
+        #defaultProfilePicture{
+            background-color: #1976d2;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 75px;
+            color: white;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+</style> -->
+<style>
+    /* Profile Page Styles */
 
-    .edit-btn:hover {
-        color: #0056b3;
-        text-decoration: underline;
-    }
+/* Main container styling */
+.main-content {
+    margin-left: 220px;
+    padding: 90px 40px 40px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
 
-    /* Forms */
-    form {
-        margin-top: 10px;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
+/* Container with card-like appearance */
+.container {
+    background-color: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
 
-    form input {
-        padding: 8px 10px;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        flex: 1;
-    }
+/* Page title */
+.container h1 {
+    color: #333;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 40px;
+    text-align: center;
+}
 
-    form button {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 8px 14px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
+/* Profile picture container */
+.imgContainer {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #1976d2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin: 0 auto 20px;
+    border: 4px solid #e3f2fd;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+}
 
-    form button:hover {
-        background-color: #218838;
-    }
+.imgContainer img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+}
 
-    #name-error,
-    #phone-error {
-        color: #dc3545;
-        font-size: 0.85rem;
-        margin-left: 10px;
-    }
+/* Default profile picture (initials) */
+#defaultProfilePicture {
+    background-color: #1976d2;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 60px;
+    color: white;
+    font-weight: 600;
+    font-family: system-ui, -apple-system, sans-serif;
+}
 
-    /* Actions */
-    .actions {
-        margin-top: 30px;
-    }
+/* Profile name heading */
+.row.justify-content-center.h3 {
+    font-size: 24px;
+    color: #333;
+    font-weight: 600;
+    margin: 20px 0 40px;
+    text-align: center;
+}
 
-    .btn {
-        padding: 10px 18px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        font-size: 0.95rem;
-    }
+/* Profile picture buttons */
+.w-25 {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
 
-    .btn-secondary {
-        background-color: #6c757d;
-        color: #fff;
-    }
+.w-25 button {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
 
-    .btn-secondary:hover {
-        background-color: #5a6268;
+.w-25 button:hover {
+    background-color: #1565c0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+}
+
+.w-25 button:active {
+    transform: translateY(0);
+}
+
+/* Profile information rows */
+.row {
+    display: flex;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 0;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.col-10 {
+    flex: 0 0 83.33%;
+    font-size: 16px;
+    color: #555;
+    font-weight: 500;
+}
+
+.col-2 {
+    flex: 0 0 16.67%;
+    text-align: right;
+}
+
+/* Edit buttons */
+.edit-btn,
+.row button {
+    background-color: #ffffff;
+    color: #1976d2;
+    border: 2px solid #1976d2;
+    padding: 8px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.edit-btn:hover,
+.row button:hover {
+    background-color: #1976d2;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
+}
+
+.edit-btn:active,
+.row button:active {
+    transform: translateY(0);
+}
+
+/* Copy button styling */
+#copyBtn {
+    background-color: #4caf50;
+    color: white;
+    border: 2px solid #4caf50;
+}
+
+#copyBtn:hover {
+    background-color: #45a049;
+    border-color: #45a049;
+}
+
+/* Referral link styling */
+#referralLink {
+    display: inline-block;
+    background-color: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #666;
+    margin-left: 10px;
+}
+
+/* Edit forms */
+#editUsernameForm,
+#editPhoneForm {
+    margin-top: 15px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+/* Input fields */
+.username,
+.phone {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.3s ease;
+}
+
+.username:focus,
+.phone:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+/* Error messages */
+#name-error,
+#phone-error {
+    color: #d32f2f;
+    font-size: 14px;
+    margin-bottom: 10px;
+    min-height: 20px;
+}
+
+/* Form submit buttons */
+#editUsernameForm button[type="submit"],
+#editPhoneForm button[type="submit"] {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#editUsernameForm button[type="submit"]:hover,
+#editPhoneForm button[type="submit"]:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+/* Links in buttons */
+.row a {
+    text-decoration: none;
+}
+
+/* Change password button */
+.row > div > a button {
+    background-color: #ff9800;
+    color: white;
+    border: 2px solid #ff9800;
+    padding: 10px 24px;
+}
+
+.row > div > a button:hover {
+    background-color: #f57c00;
+    border-color: #f57c00;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 20px;
     }
+    
+    .container {
+        padding: 20px;
+    }
+    
+    .row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .col-10,
+    .col-2 {
+        flex: 0 0 100%;
+        margin-bottom: 10px;
+        text-align: left;
+    }
+    
+    .w-25 {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .w-25 button {
+        width: 100%;
+    }
+}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<div class="main-content">
+    <div class="container">
+        <div class="row justify-content-center">
+            <h1>My Profile</h1>
+        </div>
 
-<main class="main-content">
-    <h1>User Profile</h1>
+        <div class="row justify-content-center">
+            <div class="imgContainer">
+                <% if(user.profilePicture && user.profilePicture.url){ %>
+                    <img src="<%= user.profilePicture.url %>" alt="Profile Picture">
+                <% }else{ %>
+                    <div id="defaultProfilePicture">
+                        <% const nameSplit= user.name.split(' ')%>
+                        <% let firstLetter=nameSplit[0][0].toUpperCase() %>
+                        <% let secondLetter="" %>
+                        <% if(nameSplit.length > 1){ %>
+                            <% secondLetter=nameSplit[1][0].toUpperCase() %>
+                        <% } %>
+                        <%= firstLetter %> <%= secondLetter %>
+                    </div>
+                <% } %>
+            </div>
+            <div class="row justify-content-center">
+                <div class="w-25">
+                    <% if(user.profilePicture){ %>
+                        <button onclick="removeProfilePicture()">Remove Profile Picture</button>
+                    <% } %>
+                    <button onclick="changeProfilePicture()">Change Profile Picture</button>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+                    <div id="preview"></div>
+                </div>
 
-    <div class="profile-section">
-        <span class="profile-label">Name:</span>
-        <span class="profile-value username"><%= user.name %></span>
-        <button id="editUsernameBtn" class="edit-btn" onclick="showEditUsernameForm()">edit</button>
+            </div>
+            <div class="row justify-content-center h3"><%= user.name %></div>            
+        </div>
+
+        <div class="row">
+            <div class="col-10">Name:<%= user.name %></div>
+            <div class="col-2">
+                <button id="editUsernameBtn" class="edit-btn" onclick="showEditUsernameForm()">Edit</button>
+            </div>
+            <form id="editUsernameForm" style="display: none;">
+                <input class="username" type="text" name="username" value="<%= user.name %>" required>
+                <div id="name-error"></div>
+                <button type="submit">Save Change</button>
+            </form>
+        </div>
+
+        <div class="row">
+            <div class="col-10">Phone:<%= user.phone %></div>
+            <div class="col-2">
+                <button id="editPhoneBtn" class="edit-btn" onclick="showEditPhoneForm()">Edit</button>
+            </div>
+            <form id="editPhoneForm" style="display: none;">
+                <input type="tel" name="phone" class="phone" value="<%= user.phone %>">
+                <div id="phone-error"></div>
+                <button type="submit">Save Change</button>
+            </form>
+        </div>
+
+        <div class="row">
+            <div class="col-10">Email:<%= user.email %></div>
+            <div class="col-2">
+                <a href="/change-email"><button>Edit</button></a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-10">
+                Referral Link: 
+                <span id="referralLink">localhost:3000/signup?ref=<%= user.referralToken %></span>
+            </div>
+            <div class="col-2">
+                <button id="copyBtn">Copy</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <a href="/change-password">
+                    <button>Change Password</button>
+                </a>
+            </div>
+        </div>
+
     </div>
-    <form id="editUsernameForm" style="display: none;">
-        <input class="username" type="text" name="username" value="<%= user.name %>" required>
-        <div id="name-error"></div>
-        <button type="submit">Save Change</button>
-    </form>
 
-    <div class="profile-section">
-        <span class="profile-label">Phone:</span>
-        <span class="profile-value phone"><%= user.phone %></span>
-        <button id="editPhoneBtn" class="edit-btn" onclick="showEditPhoneForm()">edit</button>
-    </div>
-    <form id="editPhoneForm" style="display: none;">
-        <input type="tel" name="phone" class="phone" value="<%= user.phone %>">
-        <div id="phone-error"></div>
-        <button type="submit">Save Change</button>
-    </form>
+</div>
 
-    <div class="profile-section">
-        <span class="profile-label">Email:</span>
-        <span class="profile-value"><%= user.email %></span>
-        <a href="/change-email" class="edit-btn">edit</a>
-    </div>
 
-    <div class="actions">
-        <a href="/change-password"><button class="btn btn-secondary">Change Password</button></a>
-    </div>
-</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const croppedImage = [null];
+
+    function changeProfilePicture() {
+        fileInput.click();
+    }
+
+    fileInput.addEventListener('change', (event) => {
+        preview.innerHTML = '';
+        if (!fileInput.files || !fileInput.files[0]) return;
+
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = reader.result;
+            img.style.maxWidth = '100%';
+            preview.appendChild(img);
+
+            const cropper = new Cropper(img, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+                responsive: true,
+                guides: false
+            });
+
+            
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'mt-2';
+
+            const cropButton = document.createElement('button');
+            cropButton.textContent = 'Crop & Upload';
+            cropButton.classList.add('btn', 'btn-dark', 'me-2');
+
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Cancel';
+            cancelButton.classList.add('btn', 'btn-outline-dark');
+
+            cancelButton.onclick = () => {
+                preview.innerHTML = '';
+                fileInput.value = '';
+                cropper.destroy();
+            };
+
+            controlsDiv.appendChild(cropButton);
+            controlsDiv.appendChild(cancelButton);
+            preview.appendChild(controlsDiv);
+
+            cropButton.onclick =async () => {
+                const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+                canvas.toBlob(async (blob)=>{
+                    const formData = new FormData();
+                    formData.append('profilePicture', blob, file.name);
+
+                    const res = await fetch('/user-profile/change-profile-picture', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await res.json();
+
+                    preview.innerHTML = '';
+                    if (data.success) {
+                        Swal.fire({
+                            text:"Profile picture updated",
+                            timer:5000,
+                            showConfirmButton:true,
+                            icon:"success"
+                        }).then(()=>{
+                            location.reload()
+                        })
+                    } else {
+                        preview.innerHTML = `<p class="text-danger">${data.message}</p>`;
+                    }
+                },'image/jpeg');
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    async function removeProfilePicture() {
+        try {
+            const result =await Swal.fire({
+                title:"Are you sure, You want to remove the profile picture ?",
+                confirmButtonText:"Yes",
+                showCancelButton:true,
+                cancelButtonText:"Cancel",
+                icon:'warning'
+            })
+            if(result.isConfirmed){
+                const response =await fetch('/user-profile/remove-profile-picture',{
+                    method:"DELETE"
+                })
+
+                const data= await response.json()
+                if(data.success){
+                    Swal.fire({
+                        title:"Profile picture removed",
+                        timer:5000,
+                        showConfirmButton:true,
+                        icon:"success"
+                    }).then(()=>{
+                        location.reload()
+                    })
+                }
+            }
+            
+        } catch (error) {
+            console.log("removeProfilePicture() error========",error)
+        }
+    }
+</script>
 
 
 <script>
+
+    const copyBtn=document.getElementById('copyBtn');
+    const referralLink=document.getElementById('referralLink').innerText;
+
+    copyBtn.addEventListener('click',async()=>{
+        try {
+            await navigator.clipboard.writeText(referralLink);
+            Swal.fire({
+                text:"Referral Link copied to your clipboard",
+                icon:"success",
+                timer:1000,
+                showConfirmButton:true
+            })
+        } catch (error) {
+            
+        }
+    })
     function showEditUsernameForm(){
         const editUsernameForm=document.getElementById('editUsernameForm');
         const btn=document.getElementById('editUsernameBtn');
@@ -187,11 +597,16 @@
         
         const result=await response.json()
 
-        if(response.ok){
-            Swal.fire("Done","Name updated","success");
-            document.querySelector('span.username').innerHTML=result.username;
-            editUsernameForm.style.display="none";
-            document.getElementById('editUsernameBtn').innerHTML="Edit";
+        if(result.success){
+            Swal.fire({
+                title:"Done",
+                text:"Name updated",
+                icon:"success",
+                showConfirmButton:true,
+                timer:5000
+            }).then(()=>{
+                location.reload();
+            })
         }else{
             Swal.fire("Oops!",result.message,"error")
         }
@@ -232,11 +647,16 @@
         
         const result=await response.json()
 
-        if(response.ok){
-            Swal.fire("Done","Phone number updated","success");
-            document.querySelector('span.phone').innerHTML=result.phone;
-            editPhoneForm.style.display="none";
-            document.getElementById('editPhoneBtn').innerHTML="Edit";
+       if(result.success){
+            Swal.fire({
+                title:"Done",
+                text:"Phone Number Updated",
+                icon:"success",
+                showConfirmButton:true,
+                timer:5000
+            }).then(()=>{
+                location.reload();
+            })
         }else{
             Swal.fire("Oops!",result.message,"error")
         }

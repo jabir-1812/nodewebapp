@@ -167,10 +167,14 @@
             </div>
             <div class="thumbnail-slider">
                 <% product.productImage.forEach((img, i) => { %>
-                <img src="/uploads/product-images/<%= img %>" 
+                <!-- <img src="/uploads/product-images/<%= img %>" 
                      class="thumbnail <%= i === 0 ? 'active' : '' %>" 
                      data-full="/uploads/product-images/<%= img %>"
-                     alt="Thumbnail <%= i+1 %>">
+                     alt="Thumbnail <%= i+1 %>"> -->
+                <img src="<%= img.url %>" 
+                class="thumbnail <%= i === 0 ? 'active' : '' %>" 
+                data-full="<%= img.url %>"
+                alt="Thumbnail <%= i+1 %>">
                 <% }) %>
             </div>
             <div class="thumbnail-nav">
@@ -181,8 +185,8 @@
         <div class="image-zoom-container">
             <div class="main-image-container">
                 <img id="mainImage" 
-                     src="/uploads/product-images/<%= product.productImage[0] %>" 
-                     data-zoom-image="/uploads/product-images/<%= product.productImage[0] %>"
+                     src="<%= product.productImage[0]?.url %>" 
+                     data-zoom-image="<%= product.productImage[0]?.url %>"
                      alt="<%= product.description %>">
             </div>
             <div class="zoom-box" id="zoomBox"></div>

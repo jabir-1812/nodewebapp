@@ -3,14 +3,107 @@ const fs=require('fs')
 const Brand = require("../../models/brandSchema");
 const Category=require('../../models/categorySchema');
 const Product = require("../../models/productSchema");
+const { cloudinary } = require("../../config/cloudinaryProduct");
 const sharp = require('sharp');
+
+// const loadAddProductPage = async (req,res)=>{
+//     try {
+//         const category=await Category.find({isDeleted:false});
+//         const brand=await Brand.find({isBlocked:false})
+
+//         res.render('./admin/products/add-product',{
+//             title:"Add Product",
+//             brand:brand,
+//             category:category
+//         })
+//     } catch (error) {
+//         console.log('error loading the add-product page:',error);
+//         res.redirect('/admin/page-error');
+//     }
+// }
+
+
+
+
+// const addProduct=async (req,res)=>{
+//     try {
+//         const product=req.body;
+//         const {productName}=req.body;
+//         const isProductExists=await Product.findOne({
+//             productName:productName
+//         })
+
+//         if(!isProductExists){
+//             const images=[];
+//             if(!req.files || req.files.length<3){
+//                 console.log("uploaded images are less than 3.required atleast 3")
+//                 throw new Error("required atleast 3 images to add a product")
+//             }
+//             // if(req.files && req.files.length>=3){
+//             //     for(let i=0;i<req.files.length;i++){
+//             //         const originalImagePath=req.files[i].path;
+//             //         console.log("original path:",originalImagePath);
+//             //         const resizedImagePath=path.join('public','uploads','product-images',req.files[i].filename);
+//             //         await sharp(originalImagePath).resize({width:440,height:440}).toFile(resizedImagePath);
+//             //         images.push(req.files[i].filename);//pushing filename after resizing.not the file
+//             //         //because the image with that filename stored in the /product-images.
+//             //         //we render the product images from the /product-images folder, for that we need the actual filenames.
+//             //         console.log("images[]:",images);
+//             //     }
+//             // }
+//             const imageUrls=req.files.map(file=>file.path)
+
+//             const category=await Category.findOne({name:product.category});
+
+//             if(!category){
+//                 console.log("error adding product:invalid category name")
+//                 return res.status(400).json('Invalid category name')
+//             }
+
+//             const brand=await Brand.findOne({brandName:product.brand})
+//             if(!brand){
+//                 console.log("Error adding product:invalid brand name")
+//                 return res.status(400).json("Invalid brand name");
+//             }
+
+//             const newProduct=new Product({
+//                 productName:product.productName,
+//                 description:product.productDescription,
+//                 brand:brand._id,
+//                 category:category._id,
+//                 regularPrice:product.regularPrice,
+//                 salePrice:product.salePrice,
+//                 createdOn:new Date(),
+//                 quantity:product.quantity,
+//                 size:product.size,
+//                 color:product.color,
+//                 productImage:imageUrls,
+//                 status:"Available",
+//             })
+//             await newProduct.save();
+//             console.log("new product saved");
+//             res.redirect('/admin/add-products')
+//         }else{
+//             console.log("error adding/saving product")
+//             return  res.status(400).json("Product name already exist");
+//         }
+//     } catch (error) {
+//         console.log("error adding/saving product:",error)
+//         res.redirect('/admin/page-error')
+//     }
+// }
+
+
+
+
+
 
 const loadAddProductPage = async (req,res)=>{
     try {
         const category=await Category.find({isDeleted:false});
         const brand=await Brand.find({isBlocked:false})
 
-        res.render('./admin/products/add-product',{
+        res.render('./admin/products/2add-product',{
             title:"Add Product",
             brand:brand,
             category:category
@@ -20,7 +113,6 @@ const loadAddProductPage = async (req,res)=>{
         res.redirect('/admin/page-error');
     }
 }
-
 
 
 
@@ -38,18 +130,23 @@ const addProduct=async (req,res)=>{
                 console.log("uploaded images are less than 3.required atleast 3")
                 throw new Error("required atleast 3 images to add a product")
             }
-            if(req.files && req.files.length>=3){
-                for(let i=0;i<req.files.length;i++){
-                    const originalImagePath=req.files[i].path;
-                    console.log("original path:",originalImagePath);
-                    const resizedImagePath=path.join('public','uploads','product-images',req.files[i].filename);
-                    await sharp(originalImagePath).resize({width:440,height:440}).toFile(resizedImagePath);
-                    images.push(req.files[i].filename);//pushing filename after resizing.not the file
-                    //because the image with that filename stored in the /product-images.
-                    //we render the product images from the /product-images folder, for that we need the actual filenames.
-                    console.log("images[]:",images);
-                }
-            }
+            // if(req.files && req.files.length>=3){
+            //     for(let i=0;i<req.files.length;i++){
+            //         const originalImagePath=req.files[i].path;
+            //         console.log("original path:",originalImagePath);
+            //         const resizedImagePath=path.join('public','uploads','product-images',req.files[i].filename);
+            //         await sharp(originalImagePath).resize({width:440,height:440}).toFile(resizedImagePath);
+            //         images.push(req.files[i].filename);//pushing filename after resizing.not the file
+            //         //because the image with that filename stored in the /product-images.
+            //         //we render the product images from the /product-images folder, for that we need the actual filenames.
+            //         console.log("images[]:",images);
+            //     }
+            // }
+            const productImages=req.files.map(file=>({
+                url:file.path,
+                public_id:file.filename
+            }));
+
 
             const category=await Category.findOne({name:product.category});
 
@@ -75,7 +172,7 @@ const addProduct=async (req,res)=>{
                 quantity:product.quantity,
                 size:product.size,
                 color:product.color,
-                productImage:images,
+                productImage:productImages,
                 status:"Available",
             })
             await newProduct.save();
@@ -256,6 +353,90 @@ const blockProduct = async (req,res)=>{
     }
 }
 
+// const loadEditProductPage = async (req,res)=>{
+//     try {
+//         const id=req.params.id;
+//         const product = await Product.findOne({_id:id});
+//         const category = await Category.find({})
+//         const brand = await Brand.find({})
+
+//         res.render('./admin/products/2edit-product',{
+//             title:"Edit Product",
+//             product:product,
+//             category:category,
+//             brand:brand
+//         })
+        
+//     } catch (error) {
+//         console.log("error rendering the edit-product page:",error)
+//         res.redirect('/admin/page-error')
+//     }
+// }
+
+// const editProduct=async (req,res)=>{
+//     try {
+//         console.log("editProduct has started");
+//         const productId=req.params.id;
+//         const product=await Product.findById(productId);
+//         if(!product) return res.status(404).json({message:"Product not found"})
+
+//         const existingImages=JSON.parse(req.body.existingImages || [])
+
+//         //remove deleted images from file system
+//         const removedImages=product.productImage.filter(img=> !existingImages.includes(img));
+//         removedImages.forEach(img=>{
+//             const imgPath=path.join('public','uploads','product-images',img);
+//             if(fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+//         })
+
+//         //Process new uploaded images
+//         const newFilenames=[];
+//         for(let file of req.files){
+//             //const filename=`${Date.now()-${file.originalname}`};
+//             const originalImagePath=file.path;
+//             const outputPath=path.join('public','uploads','product-images',file.originalname);
+
+//             await sharp(originalImagePath)
+//             .resize({width:440,height:440})
+//             .toFile(outputPath);
+
+//             newFilenames.push(file.originalname);
+//         }
+
+//         const updatedImages=[...existingImages, ...newFilenames];
+//         if(updatedImages.length<3){
+//             return res.status(404).json({success:false,message:"At least 3 images are required"})
+//         }
+
+//         //Update product
+//         product.productName=req.body.productName;
+//         product.description=req.body.productDescription;
+//         const brand=await Brand.findOne({brandName:req.body.brand})
+//         if(!brand) throw new Error("Brand not found")
+//         product.brand=brand._id;
+//         const category=await Category.findOne({name:req.body.category})
+//         if(!category) throw new Error("category not found")
+//         product.category=category._id;
+//         product.regularPrice=req.body.regularPrice;
+//         product.salePrice=req.body.salePrice;
+//         product.quantity=req.body.quantity;
+//         product.color=req.body.color;
+//         product.productImage=updatedImages;
+//         await product.save();
+
+//         res.status(200).json({success:false,message:"Product updated"})
+//         console.log("product updated successfully")
+
+//     } catch (error) {
+//         console.log("error in editProduct:",error);
+//         res.redirect('/amdin/page-error');
+//     }
+// }
+
+
+
+
+
 const loadEditProductPage = async (req,res)=>{
     try {
         const id=req.params.id;
@@ -263,7 +444,7 @@ const loadEditProductPage = async (req,res)=>{
         const category = await Category.find({})
         const brand = await Brand.find({})
 
-        res.render('./admin/products/2edit-product',{
+        res.render('./admin/products/3edit-product',{
             title:"Edit Product",
             product:product,
             category:category,
@@ -283,32 +464,39 @@ const editProduct=async (req,res)=>{
         const product=await Product.findById(productId);
         if(!product) return res.status(404).json({message:"Product not found"})
 
-        const existingImages=JSON.parse(req.body.existingImages || [])
+        const removedImages=JSON.parse(req.body.removedImages || "[]")
 
-        //remove deleted images from file system
-        const removedImages=product.productImage.filter(img=> !existingImages.includes(img));
-        removedImages.forEach(img=>{
-            const imgPath=path.join('public','uploads','product-images',img);
-            if(fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-        })
-
-        //Process new uploaded images
-        const newFilenames=[];
-        for(let file of req.files){
-            //const filename=`${Date.now()-${file.originalname}`};
-            const originalImagePath=file.path;
-            const outputPath=path.join('public','uploads','product-images',file.originalname);
-
-            await sharp(originalImagePath)
-            .resize({width:440,height:440})
-            .toFile(outputPath);
-
-            newFilenames.push(file.originalname);
+       // ✅ 2. Helper function to delete from Cloudinary
+        async function deleteFromCloud(publicId) {
+            try {
+                await cloudinary.uploader.destroy(publicId);
+                console.log("Deleted from Cloudinary:", publicId);
+            } catch (err) {
+                console.error("Cloudinary delete error:", err);
+            }
         }
 
-        const updatedImages=[...existingImages, ...newFilenames];
-        if(updatedImages.length<3){
-            return res.status(404).json({success:false,message:"At least 3 images are required"})
+       // ✅ 3. Remove deleted images (both from DB and Cloudinary)
+        for (let url of removedImages) {
+            // Find image in DB
+            const img = product.productImage.find((img) => img.url === url);
+            if (img && img.public_id) {
+                await deleteFromCloud(img.public_id);
+                product.productImage = product.productImage.filter((i) => i.url !== url);
+            }
+        }
+
+
+        // ✅ 4. Upload new images to Cloudinary
+        if (req.files && req.files.length > 0) {
+            for (let file of req.files) {
+                // NOTE: You don’t need a manual uploadToCloud() when using multer-storage-cloudinary
+                // Multer + CloudinaryStorage already upload automatically and add `.path` and `.filename`
+                product.productImage.push({
+                url: file.path,
+                public_id: file.filename,
+                });
+            }
         }
 
         //Update product
@@ -324,78 +512,21 @@ const editProduct=async (req,res)=>{
         product.salePrice=req.body.salePrice;
         product.quantity=req.body.quantity;
         product.color=req.body.color;
-        product.productImage=updatedImages;
+
         await product.save();
 
-        res.status(200).json({success:false,message:"Product updated"})
-        console.log("product updated successfully")
+        res.status(200).json({success:true,message:"Product updated"})
+        console.log("✅ product updated successfully")
 
     } catch (error) {
-        console.log("error in editProduct:",error);
+        console.log("❌ error in editProduct:",error);
         res.redirect('/amdin/page-error');
     }
 }
 
 
-// const getEditProduct=async (req,res)=>{
-//     try {
-//         const id=req.query.id;
-//         const product=await Product.findOne({_id:id});
-//         const category=await Category.find({});
-//         const brand=await Brand.find({});
-//         res.render("./admin/edit-product",{
-//             title:"Edit product",
-//             product:product,
-//             cat:category,
-//             brand:brand
-//         })
-//     } catch (error) {
-//         res.redirect('/admin/page-error')
-//     }
-// }
 
 
-// const editProduct=async (req,res)=>{
-//     try {
-//         const id=req.params.id;
-//         const product=await Product.findOne({_id:id});
-//         const data=req.body;
-//         const existingProduct=await Product.findOne({
-//             productName:data.productName,
-//             _id:{$ne:id}
-//         })
-//         if(existingProduct){
-//             return res.status(400).json({error:"Product with this name already exists. Please try with another name"});
-//         }
-
-//         const images=[];
-//         if(req.files && req.files.length>0){
-//             for(let i=0;i<req.files.length;i++){
-//                 images.push(req.file[i].filename);
-//             }
-//         }
-
-//         const updateFields={
-//             productName:data.productName,
-//             description:data.description,
-//             brand:data.brand,
-//             category:product.category,
-//             regularPrice:data.regularPrice,
-//             salePrice:data.salePrice,
-//             quantity:data.quantity,
-//             size:data.size,
-//             color:data.color
-//         }
-//         if(req.files.length > 0){
-//             updateFields.$push={productImage:{$each:images}};
-//         }
-//         await Product.findByIdAndUpdate(id,updateFields,{new:true});
-//         res.redirect("/admin/products");
-//     } catch (error) {
-//         console.error(error);
-//         res.redirect('/admin/page-error')
-//     }
-// }
 
 module.exports={
     loadAddProductPage,
@@ -409,215 +540,3 @@ module.exports={
     blockProduct,
     unblockProduct
 }
-// const Product=require('../../models/productSchema');
-// const Category=require('../../models/categorySchema');
-// const Brand=require('../../models/brandSchema');
-// const User=require('../../models/userSchema');
-// const fs=require('fs');
-// const path=require('path');
-// const sharp=require('sharp');
-// const { triggerAsyncId } = require('async_hooks');
-
-// const getProductAddPage=async (req,res)=>{
-//     try {
-//         const category=await Category.find({isListed:true});
-//         const brand=await Brand.find({isBlocked:false});
-//         res.render('./admin/product-add',{
-//             title:"Add product",
-//             cat:category,
-//             brand:brand
-//         })
-//     } catch (error) {
-//        res.redirect('/admin/page-error') 
-//     }
-// }
-
-
-// const addddProducts=async (req,res)=>{
-//     try {
-//         const products=req.body;
-//         const productExists=await Product.findOne({
-//             productName:products.productName
-//         });
-
-//         if(!productExists){
-//             const images=[];
-//             if(req.files && req.files.length>0){
-//                 for(let i=0;i<req.files.length;i++){
-//                     const originalImagePath=req.files[i].path;
-
-//                     const resizedImagePath=path.join('public','uploads','product-images',req.files[i].filename);
-//                     await sharp(originalImagePath).resize({width:440,height:440}).toFile(resizedImagePath);
-//                     images.push(req.files[i].filename);
-//                 }
-//             }
-
-//             const categoryId=await Category.findOne({name:products.category});
-
-//             if(!categoryId){
-//                 return res.status(400).json('Invalid category name')
-//             }
-//             const newProduct=new Product({
-//                 productName:products.productName,
-//                 description:products.description,
-//                 brand:products.brand,
-//                 category:categoryId._id,
-//                 regularPrice:products.regularPrice,
-//                 salePrice:products.salePrice,
-//                 createdOn:new Date(),
-//                 quantity:products.quantity,
-//                 size:products.size,
-//                 color:products.color,
-//                 productImage:images,
-//                 status:"Available",
-//             })
-
-//             await newProduct.save();
-//             return res.redirect('/admin/add-products');
-
-//         }else{
-//             return  res.status(400).json("Product already exist, please try with another name");
-//         }
-//     } catch (error) {
-//     console.error('Error saving product',error);
-//     return res.redirect('/admin/page-error')        
-//     }
-// }
-
-
-
-// const getAllProducts=async (req,res)=>{
-//     try {
-//         const search=req.query.search || "";
-//         const page=req.query.page || 1;
-//         const limit=4;
-//         console.log("2")
-//         const productData=await Product.find({
-//             $or:[
-//                 {productName:{$regex:new RegExp(".*"+search+".*","i")}},
-//                 {brand:{$regex:new RegExp(".*"+search+".*","i")}}
-//             ]
-//         }).limit(limit*1)
-//         .skip((page-1)*limit)
-//         .populate('category')
-//         .exec();
-//         console.log("productData:",productData)
-
-//         const count=await Product.find({
-//             $or:[
-//                 {productName:{$regex:new RegExp(".*"+search+".*","i")}},
-//                 {brand:{$regex:new RegExp(".*"+search+".*","i")}}
-//             ],
-//         }).countDocuments();
-
-//         const category=await Category.find({isListed:true});
-//         const brand=await Brand.find({isBlocked:false});
-
-//         if(category && brand){
-//             res.render('./admin/products',{
-//                 title:"Products",
-//                 data:productData,
-//                 currentPage:page,
-//                 totalPages:page,
-//                 totalPages:Math.ceil(count/limit),
-//                 cat:category,
-//                 brand:brand,
-//             })
-//         }else{
-//             res.render("./admin/page-error");
-//         }
-//     } catch (error) {
-//         res.redirect("/admin/page-error");
-//     }
-// }
-
-// const addProductOffer=async (req,res)=>{
-//     try {
-//         const {productId,percentage}=req.body;
-//         const findProduct=await Product.findOne({_id:productId});
-//         const findCategory=await Category.findOne({_id:findProduct.category});
-//         if(findCategory.categoryOffer > percentage){
-//             return res.json({status:false,message:'This products category already has a category offer'})
-//         }
-
-//         findProduct.salePrice=findProduct.salePrice-Math.floor(findProduct.regularPrice*(percentage/100));
-//         findProduct.productOffer = parseInt(percentage);
-//         await findProduct.save();
-//         findCategory.categoryOffer=0;
-//         await findCategory.save();
-//         res.json({status:true});
-//     } catch (error) {
-//         res.redirect('/admin/page-error');
-//         res.status(500).json({status:false,message:"Internal Server Error"})
-//     }
-// }
-
-
-// const removeProductOffer=async (req,res)=>{
-//     try {
-//         const {productId}=req.body;
-//         const findProduct=await Product.findOne({_id:productId});
-//         const percentage=findProduct.productOffer;
-//         findProduct.salePrice=findProduct.salePrice+Math.floor(findProduct.regularPrice*(percentage/100));
-//         findProduct.productOffer=0;
-//         await findProduct.save();
-//         res.json({status:true})
-//     } catch (error) {
-//         res.redirect("/admin/page-error")
-//     }
-// }
-
-
-// const blockProduct=async (req,res)=>{
-//     try {
-//         let id=req.query.id;
-//         await Product.updateOne({_id:id},{$set:{isBlocked:true}});
-//         res.redirect('/admin/products');
-//     } catch (error) {
-//         res.redirect("/admin/page-error")
-//     }
-// }
-
-// const unblockProduct=async (req,res)=>{
-//     try {
-//         let id=req.query.id;
-//         await Product.updateOne({_id:id},{$set:{isBlocked:false}});
-//         res.redirect('/admin/products');
-//     } catch (error) {
-//         res.redirect('/admin/page-error')
-//     }
-// }
-
-
-
-
-// const deleteSingleImage=async (req,res)=>{
-//     try {
-//         const {imageNameToServer,productIdToServer}=req.body;
-//         const product=await Product.findByIdAndUpdate(productIdToServer,{$pull:{productImage:imageNameToServer}});
-//         const imagePath=path.join('public','uploads','re-image',imageNameToServer);
-        
-//         if(fs.existsSync(imagePath)){
-//             await fs.unlinkSync(imagePath);
-//             console.log((`Image ${imageNameToServer} deleted successfully`));
-//         }else{
-//             console.log(`Image ${imageNameToServer} not found`)
-//         }
-//         res.send({status:true});
-//     } catch (error) {
-//         res.redirect('/admin/page-error');
-//     }
-// }
-
-// module.exports={
-    // getProductAddPage,
-    // addProducts,
-    // getAllProducts,
-    // addProductOffer,
-    // removeProductOffer,
-    // blockProduct,
-    // unblockProduct,
-    // getEditProduct,
-    // editProduct,
-    // deleteSingleImage
-// 

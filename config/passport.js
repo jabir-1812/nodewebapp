@@ -4,29 +4,53 @@ const GoogleStrategy=require('passport-google-oauth20').Strategy;//imports googl
 const User=require('../models/userSchema')
 const env=require('dotenv').config();
 
+const crypto=require('crypto');
+const giveReferralCoupon = require('../utils/giveReferralCoupon');
+
+
 
 //tells passport to use google login strategy
 // we are creating new google strategy
 passport.use(new GoogleStrategy({                   
     clientID:process.env.GOOGlE_CLIENT_ID,      //we tell google who we are     
     clientSecret:process.env.GOOGlE_CLIENT_SECRET,
-    callbackURL:'/auth/google/callback'         //redirect route after successful user login
+    callbackURL:'/auth/google/callback',//redirect route after successful user login
+    passReqToCallback:true        //allows access to req in callback 
 },
-async (accessToken,refreshToken,profile,done)=>{    //profile=>user info from google
-    try {                                           //done()function tells passport "i've finished logging the user"
+async (req,accessToken,refreshToken,profile,done)=>{    //profile=>user info from google
+    try {         
+        let ref=null;
+        if(req.query.state){
+            const parsedState=JSON.parse(req.query.state);
+            ref=parsedState.ref;
+        }                                  
+        //done()function tells passport "i've finished logging the user"
         let user=await User.findOne({googleId:profile.id});
         if(user){
             return done(null,user);     //null=no error, everything ok
-        }else{                          //returning user=>user info from google to passport
+        }else{            
+            let referrdByUser=null;
+            if(ref){
+                referrdByUser=await User.findOne({referralToken:ref});
+            }              
+            //returning user=>user info from google to passport
             user=new User({             //if user not exist, we create user.
                 name:profile.displayName,
                 email:profile.emails[0].value,
                 googleId:profile.id,
+                referralToken:crypto.randomBytes(8).toString('hex'),
+                referredBy:referrdByUser ? referrdByUser._id : null,
             });
             await user.save();
+
+            if(referrdByUser){
+                await giveReferralCoupon(referrdByUser._id);
+            }
+
             return done(null,user);         //returning the user info to passport
         }
     } catch (error) {
+        console.error('Google Strategy Error:', error);
         return done(error,null)
     }
 }

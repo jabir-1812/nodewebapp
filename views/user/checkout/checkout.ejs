@@ -1,3 +1,412 @@
+<style>
+    /* ====================
+   CHECKOUT PAGE STYLES
+   ==================== */
+
+/* General Container Styling */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Main Layout */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -15px;
+}
+
+.col-8, .col-4, .col-1, .col-11, .col-6 {
+    padding: 0 15px;
+}
+
+.col-8 { width: 66.66%; }
+.col-4 { width: 33.33%; }
+.col-1 { width: 8.33%; }
+.col-11 { width: 91.66%; }
+.col-6 { width: 50%; }
+
+/* Border and Spacing */
+.border {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.my-5 {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.my-3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.my-2 {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.p-5 {
+    padding: 2rem;
+}
+
+/* ====================
+   ADDRESS SECTION
+   ==================== */
+
+#addressesContainer {
+    width: 100%;
+    padding: 20px;
+}
+
+/* Address Card Styling */
+.address-card {
+    background-color: #f9f9f9;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.address-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Radio Button Styling */
+input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #28a745;
+}
+
+/* Address Details */
+.address-card .row {
+    margin: 8px 0;
+    color: #333;
+}
+
+/* Form Elements */
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+/* Error Messages */
+.error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+/* ====================
+   BUTTONS
+   ==================== */
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+button[type="submit"],
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+button[type="submit"]:hover,
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+button[type="button"] {
+    background-color: #6c757d;
+    color: white;
+    margin-left: 10px;
+}
+
+button[type="button"]:hover {
+    background-color: #545b62;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+/* Edit/Remove Buttons */
+button:not([type]) {
+    background-color: #17a2b8;
+    color: white;
+}
+
+button:not([type]):hover {
+    background-color: #138496;
+}
+
+/* ====================
+   CART ITEMS TABLE
+   ==================== */
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.table thead {
+    background-color: #f8f9fa;
+}
+
+.table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Product Image */
+.img-thumbnail {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+/* Quantity Controls */
+#cartItemsContainer button {
+    padding: 5px 12px;
+    font-size: 16px;
+    font-weight: bold;
+    min-width: 35px;
+}
+
+input[type="number"] {
+    width: 60px;
+    text-align: center;
+    padding: 5px;
+    margin: 0 5px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* Price Styling */
+strike {
+    color: #999;
+}
+
+.text-success {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.text-danger {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* ====================
+   PAYMENT METHODS
+   ==================== */
+
+.container h1 {
+    font-size: 24px;
+    font-weight: 600;
+    padding: 15px;
+    margin: 0;
+    color: #333;
+    text-transform: uppercase;
+}
+
+input[name="paymentMethod"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 5px;
+}
+
+/* ====================
+   COUPON SECTION
+   ==================== */
+
+#couponForm input[type="text"] {
+    height: 45px;
+}
+
+#couponForm button {
+    height: 45px;
+    width: 100%;
+}
+
+.applied-coupon {
+    background-color: #d4edda;
+    padding: 10px;
+    font-weight: 600;
+    color: #155724;
+}
+
+/* Coupon Messages */
+#coupon-error-message,
+#coupon-success-message {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+/* ====================
+   PRICE DETAILS
+   ==================== */
+
+#priceDetailsContainer .row {
+    padding: 15px;
+}
+
+#priceDetailsContainer .col-6 {
+    font-size: 15px;
+    color: #333;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#totalAmount,
+#totalPrice {
+    font-weight: 700;
+    font-size: 18px;
+    color: #333;
+}
+
+/* ====================
+   UTILITY CLASSES
+   ==================== */
+
+.text-end {
+    text-align: right;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.justify-content-center {
+    justify-content: center;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.d-grid {
+    display: grid;
+}
+
+/* ====================
+   RESPONSIVE DESIGN
+   ==================== */
+
+@media (max-width: 768px) {
+    .col-8, .col-4, .col-6 {
+        width: 100%;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 10px 5px;
+    }
+    
+    button {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+}
+
+/* ====================
+   ANIMATIONS
+   ==================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.address-form-container,
+#addNewAddressFormContainer {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Hidden Elements */
+[style*="display: none"] {
+    display: none !important;
+}
+</style>
+
+
+
 <%-include ('../../../views/partials/user/header') %>
     
 
@@ -7,6 +416,7 @@
             <div class="col-8">
                 <!-- addresses -->
                 <div class="container border my-5">
+                    <div class="row h3">Delivery Address</div>
                     <div class="row">
                         <div id="addressesContainer">
                             <%-include ('../../user/checkout/checkout-partials/4address-forms') %>
@@ -16,6 +426,7 @@
 
                 <!-- cart items -->
                 <div class="container border my-5">
+                    <div class="row h3">Cart Items</div>
                     <div class="row">
                         <div id="cartItemsContainer">
                             <%-include ('../../user/checkout/checkout-partials/2cart-items') %>
@@ -24,11 +435,11 @@
                 </div>
 
                 <div class="container border my-5">
-                    <div class="row border">
+                    <div class="row">
                         <h1 class="h1">payment methods</h1>
                     </div>
 
-                    <div class="row border my-2">
+                    <div class="row border-bottom my-2 py-2">
                         <div class="col-1">
                             <input type="radio" name="paymentMethod" id="COD" value="COD" required>
                         </div>
@@ -37,7 +448,7 @@
                         </div>
                     </div>
 
-                    <div class="row border my-2">
+                    <div class="row border-bottom my-2 py-2">
                         <div class="col-1">
                             <input type="radio" name="paymentMethod" id="onlinePayment" value="onlinePayment" required>
                         </div>
@@ -46,7 +457,7 @@
                         </div>
                     </div>                    
                     
-                    <div class="row border my-2">
+                    <div class="row border-bottom my-2 py-2">
                         <div class="col-1">
                             <input type="radio" name="paymentMethod" id="walletPayment" value="walletPayment" required>
                         </div>
@@ -61,12 +472,15 @@
             <!-- right side of the checkout page -->
             <div class="col-4">
                 <!-- coupon form -->
-                <div class="container border my-5 p-5" id="couponContainer">
+                <div class="container border my-5" id="couponContainer">
                     <%- include('../../user/checkout/checkout-partials/coupon-forms.ejs')%>
                 </div>
 
                 <!-- price details -->
                 <div class="container border my-5">
+                    <div class="row">
+                        <h1 class="h1">Price Details</h1>
+                    </div>
                     <div id="priceDetailsContainer">
                         <%-include ('../../user/checkout/checkout-partials/price details.ejs') %>
                     </div>

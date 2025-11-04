@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const env = require("dotenv").config();
 const session = require("express-session");
 const { response } = require("express");
+const Coupon=require('../../models/couponSchema');
+const { cloudinary } = require("../../config/cloudinaryUserProfile");
 
 function generateOTP() {
   const digits = "1234567890";
@@ -215,6 +217,62 @@ const userProfile= async (req,res)=>{
     res.redirect('/page-not-found')
   }
 }
+
+
+
+const changeProfilePicture = async (req,res)=>{
+  try {
+    // const imageUrl=`/uploads/user profile pictures/${req.file.filename}`
+    const userId=req.session.user || req.session.passport?.user;
+    // Cloudinary automatically adds a `path` (URL) in req.file
+    const user=await User.findOne({_id:userId})
+    if(!user) return res.status(500).json({message:"user not found"})
+
+    if(user.profilePicture && user.profilePicture.public_id){
+      try {
+        await cloudinary.uploader.destroy(user.profilePicture.public_id);
+        console.log("Old image deleted from cloudinary")
+      } catch (error) {
+        console.error("Failed to delete old image from cloudinary=====error=====",error)
+      }
+    }
+    user.profilePicture={
+      url:req.file.path,
+      public_id:req.file.filename
+    };
+    await user.save();
+    res.json({success:true})
+  } catch (error) {
+    console.error("changeProfilePicture() error:",error);
+    res.status(500).json({ success: false, message: 'Upload failed' });
+  }
+}
+
+
+
+
+const removeProfilePicture = async (req,res)=>{
+  try {
+    const userId=req.session.user || req.session.passport?.user;
+    const user=await User.findOne({_id:userId})
+
+    if(user.profilePicture && user.profilePicture.public_id){
+      try {
+        await cloudinary.uploader.destroy(user.profilePicture.public_id);
+        console.log("Old image deleted from cloudinary")
+      } catch (error) {
+        console.error("Failed to delete old image from cloudinary=====error=====",error)
+      }
+      user.profilePicture={url:null,public_id:null};
+      await user.save();
+    }
+    res.json({success:true, message:"Profile picture removed"})
+  } catch (error) {
+    console.log("removeProfilePicture() error==========>",error)
+    res.status(500).json({message:"something went wrong"})
+  }
+}
+
 
 const changeUsername= async (req,res)=>{
   try {
@@ -545,6 +603,30 @@ const deleteAddress=async (req,res)=>{
   }
 }
 
+
+
+const getReferralCoupons=async(req,res)=>{
+  try {
+      const userId=req.session.user || req.session.passport?.user;
+      const userData=await User.findById(userId);
+
+      const referralCoupons=await Coupon.find({userId})
+
+      res.render('./user/profile/referral-coupons/referral-coupons',{
+        title:"Referral Rewards",
+        user:userData,
+        referralCoupons,
+        cartLength:''
+      })
+
+  } catch (error) {
+    console.error("getReferralCoupons() error====>",error)
+    res.redirect('/page-not-found')
+  }
+}
+
+
+
 module.exports = {
   getForgotPasswordPage,
   verifyEmail,
@@ -554,6 +636,8 @@ module.exports = {
   resendOtp,
   postNewPassword,
   userProfile,
+  changeProfilePicture,
+  removeProfilePicture,
   changeUsername,
   changePhoneNumber,
   loadChangeEmailPage,
@@ -569,5 +653,6 @@ module.exports = {
   addAddress,
   loadEditAddressPage,
   editAddress,
-  deleteAddress
+  deleteAddress,
+  getReferralCoupons
 };

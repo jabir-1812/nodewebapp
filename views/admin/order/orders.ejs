@@ -89,7 +89,7 @@
                             <span class="badge bg-warning text-dark"><%= order.orderStatus %></span>
                             <% } else if(order.orderStatus === "Delivered") { %>
                             <span class="badge bg-success"><%= order.orderStatus %></span>
-                                <small>On <%= new Date(order.deliveredAt).toDateString().slice(4) %></small>
+                                <small>On <%= new Date(order.deliveredOn).toDateString().slice(4) %></small>
                             <% } else if(order.orderStatus === "Cancelled") { %>
                             <span class="badge bg-danger"><%= order.orderStatus %></span>
                             <% } else { %>

@@ -14,6 +14,8 @@ const couponSchema = new mongoose.Schema({
   usersUsed: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // track who used it
   isActive: { type: Boolean, default: true },
   description:{type:String},
+  type:{type:String},
+  userId:{type:mongoose.Schema.Types.ObjectId, ref:"User"},
 
   // 🟢 category-based coupon fields
   isCategoryBased: { type: Boolean, default: false },

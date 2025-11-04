@@ -102,18 +102,27 @@ const updateItemStatus = async (req, res) => {
 
         // --- Update overall orderStatus based on items ---
         const allStatuses = order.orderItems.map(i => i.itemStatus);
+        const allStatusSet=new Set(allStatuses)
 
-        if (allStatuses.every(s => s === "Cancelled")) {
-            order.orderStatus = "Cancelled";
-        } else if (allStatuses.every(s => s === "Delivered")) {
-            order.orderStatus = "Delivered";
-            order.deliveredOn=new Date();
-            order.paymentStatus="Paid";
-        } else if (allStatuses.some(s => s === "Shipped")) {
-            order.orderStatus = "Partially Shipped";
-        } else {
-            order.orderStatus = "Pending";
+        if(allStatusSet.size===1 && allStatusSet.has("Cancelled")){
+        order.orderStatus = "Cancelled"
         }
+        if(allStatusSet.size===1 && allStatusSet.has("Delivered")){
+        order.orderStatus = "Delivered"
+        order.deliveredOn = new Date();
+        }
+        if(allStatusSet.size===2 && allStatusSet.has('Delivered') && allStatusSet.has("Cancelled")){
+        order.orderStatus="Delivered";
+        
+        const deliveredDates=order.orderItems
+            .map((item)=>item.deliveredOn)
+            .filter((date)=>date)
+        deliveredDates.sort((a,b)=>a-b);
+        const latestDeliveredDate=deliveredDates[deliveredDates.length-1];
+        order.deliveredOn=latestDeliveredDate;
+        }
+
+        
 
         // --- 🔑 Invoice logic ---
         if (!order.invoice?.generated) {
@@ -179,14 +188,18 @@ const updateReturnStatus=async(req,res)=>{
     }
 
     item.returnStatus = status;
+    item.refundStatus = status;
 
     if (status === "Refunded") {
         await Product.findByIdAndUpdate(item.productId, {
             $inc: { quantity: item.quantity }  // increase stock back
         });
-      const refundAmount = item.price * item.quantity; // TODO: adjust for discounts
+      const refundAmount = item.price;
+      const offerDiscount=item.offerDiscount;
+      const couponDiscount=item.couponDiscount;
 
-      if (order.paymentMethod === "Cash on Delivery") {
+
+      if (order.paymentMethod === "Cash on Delivery" || order.paymentMethod==="TeeSpace Wallet") {
         // ✅ COD → refund to wallet
         let wallet = await Wallet.findOne({ userId: order.userId });
         if (!wallet) {
@@ -203,11 +216,17 @@ const updateReturnStatus=async(req,res)=>{
         await wallet.save();
         item.refundStatus="Refunded";
         item.refundedOn= new Date();
-      } else if (order.paymentMethod === "Online Payment" && paymentStatus==="Paid") {
+      }else if (order.paymentMethod === "Online Payment" && paymentStatus==="Paid") {
         // ✅ Online payment → just mark refunded (no wallet credit)
         item.refundStatus = "Refunded";
         item.refundedOn = new Date();
       }
+
+      order.totalMrp-=(refundAmount+offerDiscount+couponDiscount);
+      order.totalPrice-=(refundAmount+offerDiscount);
+      order.totalAmount-=refundAmount;
+      order.totalOfferDiscount-=offerDiscount;
+      order.totalCouponDiscount-=couponDiscount;
     }
 
     await order.save();

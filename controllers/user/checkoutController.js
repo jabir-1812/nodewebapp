@@ -305,24 +305,24 @@ const loadCheckoutPage = async (req, res) => {
         for (const validCoupon of validCoupons) {
             //checking applicable products if it is category based coupon
             if (validCoupon.isCategoryBased) {
-            const applicableCategoryIds = validCoupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
+                const applicableCategoryIds = validCoupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
 
-            //returning the products that are in applicable cateogory
-            // const hasApplicableProduct = userCart.items.some(item =>
-            //     applicableCategoryIds.includes(item.productId.category?._id.toString())
-            // );
-            const hasApplicableProduct = userCart.items.some(item =>
-              item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString())
-            );
-
-
-            //if there is no applicable products, remove the coupon from user's cart
-            if (!hasApplicableProduct) {
-                userCart.appliedCoupons = userCart.appliedCoupons.filter(appliedCoupon =>
-                validCoupon._id.toString() !== appliedCoupon.couponId.toString()
+                //returning the products that are in applicable cateogory
+                // const hasApplicableProduct = userCart.items.some(item =>
+                //     applicableCategoryIds.includes(item.productId.category?._id.toString())
+                // );
+                const hasApplicableProduct = userCart.items.some(item =>
+                  item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString())
                 );
-                shouldSave = true;
-            }
+
+
+                //if there is no applicable products, remove the coupon from user's cart
+                if (!hasApplicableProduct) {
+                    userCart.appliedCoupons = userCart.appliedCoupons.filter(appliedCoupon =>
+                    validCoupon._id.toString() !== appliedCoupon.couponId.toString()
+                    );
+                    shouldSave = true;
+                }
             }
         }
 
@@ -801,16 +801,18 @@ const deleteCartItem =async (req,res)=>{
 
 const applyCoupon= async(req,res)=>{
   try {
+    const userId = req.session.user || req.session.passport?.user;
+
     const {couponCode}=req.body;
     const coupon=await Coupon.findOne({couponCode})
 
     //coupon validation
     if(!coupon) return res.status(400).json({success:false,message:"Inavlid coupon code"})
+    if(coupon.userId && coupon.userId.toString()!==userId.toString()) return res.status(400).json({message:"This coupon is not available for you"})
     if(!coupon.isActive) return res.status(400).json({success:false,message:"Coupon is not active"})
     if(coupon.expiryDate < new Date()) return  res.status(400).json({success:false,message:"Coupon expired"})
     if(coupon.startDate > new Date()) return  res.status(400).json({success:false,message:"Coupon is not active"})
 
-    const userId=req.session.user || req.session.passport?.user;
     if(!userId) return res.status(400).json({message:"session expired",reload:true})
     const userCart = await Cart.findOne({ userId })
         .populate({
@@ -869,7 +871,7 @@ const applyCoupon= async(req,res)=>{
         })
     }
     if(userCart.appliedCoupons.length>=3){
-      res.status(400).json({message:"cannot apply more than 3 coupon"})
+      return res.status(400).json({message:"cannot apply more than 3 coupon"})
     }
 
     // ----- Check if already applied -----
