@@ -1,6 +1,0 @@
-2025-11-05 13:47:24 [info]: Home route was called
-2025-11-05 13:47:24 [info]: GET / 200 11.843 ms
-2025-11-05 13:47:24 [info]: GET /uploads/banner/banner%201.jpg 200 1.330 ms
-2025-11-05 13:47:24 [info]: GET /uploads/banner/banner%203.webp 200 0.781 ms
-2025-11-05 13:47:24 [info]: GET /uploads/banner/banner%202.webp 200 0.960 ms
-2025-11-05 13:47:24 [info]: GET /favicon.ico 200 1.640 ms
