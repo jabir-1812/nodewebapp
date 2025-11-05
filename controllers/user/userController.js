@@ -11,6 +11,7 @@ const bcrypt=require('bcrypt');
 const Offer=require('../../models/offerSchema')
 const Coupon=require('../../models/couponSchema')
 const crypto=require('crypto')
+const logger=require('../../config/logger')
 
 
 
@@ -234,6 +235,7 @@ const loadLogin=async (req,res)=>{
             return res.render('./user/login',{title:"Log in",message:"",passwordMsg:"",user:""})
     } catch (error) {
         console.log('loadLogin() error=====>',error)
+        logger.error("loadLogin() error")
         res.redirect('/page-not-found')
     }
 }
@@ -319,7 +321,8 @@ const loadHomepage=async (req,res)=>{
                 brandOffers,
                 coupons
             });
-            res.render('./user/3home',{
+            logger.info("Home route was called")
+            return res.render('./user/3home',{
                 title:"Home",
                 user:userData,
                 products:productData,
@@ -343,6 +346,7 @@ const loadHomepage=async (req,res)=>{
         }
     } catch (error) {
         console.log('loadHomepage() error:',error)
+        logger.error("loadHomepage() error")
         res.redirect('/page-not-found')
     }
 }

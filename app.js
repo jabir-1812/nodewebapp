@@ -1,7 +1,7 @@
 const express=require('express');
 const app=express();
 const path=require('path');
-const env=require('dotenv').config();
+require('dotenv').config();
 const passport=require('./config/passport')
 const db=require('./config/db');
 const userRouter=require('./routes/userRouter');
@@ -9,7 +9,22 @@ const adminRouter=require('./routes/adminRouter');
 const expressLayout=require('express-ejs-layouts')
 const session=require('express-session');
 const nocache=require('nocache')
+const morgan=require('morgan')
+const logger=require('./config/logger')
+
+
 db();
+
+// create a stream object for Morgan to use Winston
+const stream = {
+  write: (message) => logger.info(message.trim()) // remove extra newline
+};
+
+// use Morgan with Winston (morgan middleware first)
+// app.use(morgan('combined', { stream }));
+// app.use(morgan('tiny', { stream }));
+const shortFormat = ':method :url :status :response-time ms';
+app.use(morgan(shortFormat, { stream }));
 
 
 app.use(expressLayout);

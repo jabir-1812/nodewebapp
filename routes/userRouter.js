@@ -26,6 +26,7 @@ const multer=require('multer');
 // }) 
 
 const upload=multer({storage:profileStorage})
+const logger=require('../config/logger')
 
 
 
