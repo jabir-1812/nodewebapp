@@ -1,37 +1,6 @@
-2025-11-05 00:06:45 [info]: Home route was called
-2025-11-05 00:06:45 [info]: GET / 200 12.247 ms
-2025-11-05 00:06:45 [info]: GET /uploads/banner/banner%201.jpg 200 0.998 ms
-2025-11-05 00:06:45 [info]: GET /uploads/banner/banner%203.webp 200 1.093 ms
-2025-11-05 00:06:45 [info]: GET /uploads/banner/banner%202.webp 200 1.163 ms
-2025-11-05 00:06:45 [info]: GET /favicon.ico 200 1.457 ms
-2025-11-05 11:17:19 [info]: GET / 200 91.020 ms
-2025-11-05 11:17:19 [info]: GET /uploads/banner/banner%202.webp 200 6.986 ms
-2025-11-05 11:17:19 [info]: GET /uploads/banner/banner%201.jpg 200 7.751 ms
-2025-11-05 11:17:19 [info]: GET /uploads/banner/banner%203.webp 200 6.636 ms
-2025-11-05 11:17:19 [info]: GET /favicon.ico 200 17.405 ms
-2025-11-05 11:17:25 [info]: GET /login 200 5.755 ms
-2025-11-05 11:17:25 [info]: GET /user/login.css 200 2.896 ms
-2025-11-05 11:17:25 [info]: GET /favicon.ico 200 3.914 ms
-2025-11-05 11:17:37 [info]: POST /login 302 160.968 ms
-2025-11-05 11:17:37 [info]: Home route was called
-2025-11-05 11:17:37 [info]: GET / 200 22.388 ms
-2025-11-05 11:17:37 [info]: GET /uploads/banner/banner%201.jpg 200 2.194 ms
-2025-11-05 11:17:37 [info]: GET /uploads/banner/banner%203.webp 200 2.225 ms
-2025-11-05 11:17:37 [info]: GET /uploads/banner/banner%202.webp 200 2.452 ms
-2025-11-05 11:17:37 [info]: GET /favicon.ico 200 3.772 ms
-2025-11-05 11:17:41 [info]: GET /cart 200 14.029 ms
-2025-11-05 11:17:41 [info]: GET /favicon.ico 200 2.172 ms
-2025-11-05 11:17:43 [info]: GET /shop 200 40.697 ms
-2025-11-05 11:17:43 [info]: GET /favicon.ico 200 3.097 ms
-2025-11-05 11:17:44 [info]: POST /add-to-cart 200 29.785 ms
-2025-11-05 11:17:46 [info]: GET /shop 200 43.039 ms
-2025-11-05 11:17:46 [info]: GET /favicon.ico 200 2.208 ms
-2025-11-05 11:17:47 [info]: GET /cart 200 20.353 ms
-2025-11-05 11:17:47 [info]: GET /favicon.ico 200 2.857 ms
-2025-11-05 11:17:48 [info]: GET /checkout 200 40.283 ms
-2025-11-05 11:17:49 [info]: GET /favicon.ico 200 2.626 ms
-2025-11-05 11:19:19 [info]: POST /create-razorpay-order 200 1528.924 ms
-2025-11-05 11:20:47 [info]: POST /create-razorpay-order 200 223.696 ms
-2025-11-05 11:22:04 [info]: POST /verify-razorpay-payment 200 26.650 ms
-2025-11-05 11:22:09 [info]: GET /order-success/ORD2025000171 200 17.776 ms
-2025-11-05 11:22:09 [info]: GET /favicon.ico 200 1.876 ms
+2025-11-05 13:47:24 [info]: Home route was called
+2025-11-05 13:47:24 [info]: GET / 200 11.843 ms
+2025-11-05 13:47:24 [info]: GET /uploads/banner/banner%201.jpg 200 1.330 ms
+2025-11-05 13:47:24 [info]: GET /uploads/banner/banner%203.webp 200 0.781 ms
+2025-11-05 13:47:24 [info]: GET /uploads/banner/banner%202.webp 200 0.960 ms
+2025-11-05 13:47:24 [info]: GET /favicon.ico 200 1.640 ms
