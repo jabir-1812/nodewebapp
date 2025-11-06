@@ -7,26 +7,30 @@
         <div class="row my-3 border">
 
             <div class="col-1 my-2">
-                <input type="radio" name="addressId" value="<%= address._id %>" %>>
+                <input id="<%= address._id %>" type="radio" name="addressId" value="<%= address._id %>" %>>
             </div>
-            <div class="col-11 my-2">
-                <div class="row my-2"><%= address.addressType %></div>
-                <div class="row my-2"><%= address.name %></div>
-                <div class="row my-2">
-                    <div><%= address.landMark %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></div>
-                    <div>
-                        Phone: +91 <%= address.phone %>
-                        <% if(address.altPhone){ %> 
-                            | Alt: +91 <%= address.altPhone %>
-                        <% } %>
+            <div class="col-10 my-2">
+                <label for="<%= address._id %>">
+                    <div class="my-2"><%= address.addressType %></div>
+                    <div class="my-2">
+                        <%= address.name %>
                     </div>
-                </div>
-                <div class="row">
-                    <button id="editFormBtn<%= index %>" type="button" onclick="showEditAddressForm('<%= index %>')">
-                        Edit
-                    </button>
-                </div>
-            </div>  
+                    <div class="my-2">
+                        <div><%= address.landMark %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></div>
+                        <div>
+                            Phone: +91 <%= address.phone %>
+                            <% if(address.altPhone){ %> 
+                                | Alternative Phone: +91 <%= address.altPhone %>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="my-2">
+                        <button id="editFormBtn<%= index %>" type="button" onclick="showEditAddressForm('<%= index %>')">
+                            Edit
+                        </button>
+                    </div>
+                </label>
+            </div>
         </div>
 
         <div class="row my-3">

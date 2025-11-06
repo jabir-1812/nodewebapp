@@ -552,6 +552,10 @@ const place_cod_order=async (req,res)=>{
         if(totalPrice===0){
           return res.status(400).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
         }
+
+        if(userCart.appliedCoupons.length === 0 && totalAmount>1000){
+          return res.status(400).json({message:"Cash on Delivery is not available for order above Rs.1000/-",reload:true})
+        }
         
         if(userCart.appliedCoupons.length > 0){
             if(appliedCoupons.length === userCart.appliedCoupons.length){
@@ -703,6 +707,12 @@ const place_cod_order=async (req,res)=>{
             const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
               return sum+curr.itemTotalAmount
             },0)
+
+            console.log("totalAmount after coupon application============",totalAmount)
+
+            if(totalAmount>1000){
+                return res.status(400).json({message:"Cash on Delivery is not available for orders above Rs.1000/-",reload:true})
+            }
 
             const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
               return sum+curr.itemTotalMrp

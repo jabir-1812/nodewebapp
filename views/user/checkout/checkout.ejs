@@ -445,6 +445,7 @@ input[name="paymentMethod"] {
                         </div>
                         <div class="col-11">
                             <label for="COD">Cash On Delivery</label>
+                            <div class="text-secondary">Avaiable for order below Rs.1000/-</div>
                         </div>
                     </div>
 
@@ -463,7 +464,7 @@ input[name="paymentMethod"] {
                         </div>
                         <div class="col-11">
                             <label for="walletPayment">TeeSpace Wallet</label>
-                            <div>(Avaiable Balance: Rs.<%= userWallet.balance %>/-)</div>
+                            <div class="text-secondary">(Avaiable Balance: Rs.<%= userWallet.balance %>/-)</div>
                         </div>
                     </div>
                 </div>
