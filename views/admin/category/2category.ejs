@@ -230,8 +230,7 @@ tr:hover {
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Description</th>
-                <th>Created At</th>
+                <th>Products</th>
                 <th>Offer%</th>
                 <th>Offer actions</th>
                 <th>Status</th>
@@ -243,8 +242,7 @@ tr:hover {
                 <% categories.forEach((category,index)=> { %>
                     <tr>
                         <td><%= category.name %></td>
-                        <td><%= category.description || '-' %></td>
-                        <td><%= new Date(category.createdAt).toLocaleDateString() %></td>
+                        <td><%= category.products %></td>
                         <td><%= category.offer %> %</td>
                         <td>
                             <%if(category.offer===0){%>

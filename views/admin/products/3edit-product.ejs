@@ -41,7 +41,7 @@
                         <label class="form-label">Brand</label>
                         <select class="form-select border" name="brand">
                             <% for(let i=0;i< brand.length;i++){ %>
-                                <option value="<%= brand[i].brandName %>" <%= brand[i].brandName === product.brand ? 'selected' : '' %> >
+                                <option value="<%= brand[i].brandName %>" <%= String(brand[i]._id) === String(product.brand) ? 'selected' : '' %> >
                                     <%= brand[i].brandName %>
                                 </option>
                                 <%}%>
@@ -53,7 +53,7 @@
                         <label class="form-label">Category</label>
                         <select class="form-select border" name="category">
                         <% for(let i=0;i< category.length;i++){ %>
-                            <option value="<%= category[i].name %>" <%= category[i].name === product.category ? 'selected' : '' %>>
+                            <option value="<%= category[i].name %>" <%= String(category[i]._id) === String(product.category) ? 'selected' : '' %>>
                                 <%= category[i].name %>
                             </option>
                             <% } %>
@@ -67,7 +67,7 @@
                     <div class="col">
                         <label class="form-label">Full description</label>
                         <textarea placeholder="Type here" name="productDescription" 
-                                class="form-control border"rows="4"> <%= product.description %></textarea>
+                                class="form-control border"rows="4"><%= product.description %></textarea>
                         <div id="description-error" class="error-message"></div>
                     </div>
                 </div>
@@ -122,7 +122,7 @@
                 <div class="row mt-4">
                     <div class="col-12">
                         <h4>Add New Images:</h4>
-                        <input type="file" id="newImages" multiple accept="image/*">
+                        <input type="file" id="newImages" class="form-control border" accept="image/*">
                         <div id="cropContainer" style="width: 500px;"></div> <!-- where CropperJS will show image -->
                         <div id="previewContainer" class="d-flex flex-wrap gap-2 mt-3"></div>
                     </div>
@@ -145,253 +145,6 @@
     
 <%-include ('../../../views/partials/admin/footer')%>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-<!-- <script>
-    let currentImages=[...<%- JSON.stringify(product.productImage) %>];
-    //no problem if we don't copy the array.but it's better to copy.it doesn't make change in the original array if we make change in this copied array.
-
-    //product.images is look like ['img1.jpg','img2.jpg']/ it is server side JS array, browser doesn't understand server side.it only uderstands client side.
-    //if we write like >>> let currentImages=[...<%-product.images%>].
-    //the currentImages look like=[img1.jpg,img2.jpg]. no quotes for the elements.so elements are not strings.it is like variables
-    //so browser thinks that elements(img1.jpg,img2.jpg) are like variables, browser looks for that not exisiting variables.and throw error.
-
-    //we need array element with quotes like ['img1.jpg','img2.jpg'].
-    //that is why we use JSON.stringify. so it helps to convert the server side array to JS literal.adds quotes around strings.
-    //for example: server side array==>['img1.jpg'] .if we use JSON.stringify(product.images) the array looks like ===> '["img1.jpg"]' 
-    //if we don't use it will look like==>[img1.jpg], so browser thinks that is a variable.
-
-    // Why use <%- %> instead of <%= %>?
-    //if we use <%= %>. the array looks like ==>["img1.jpg", &quot;img2.jpg&quot;].this is escaped output
-    //we need the array as it is and unescaped, that is why use <%- %>
-    //for example: let's say user.name=<p>hello</p>
-
-    //if we use <..%=user.name %>. the output look like ==>&lt;p&gt;hello&lt;p&gt;
-    //if we use <..%- user.name %>. the output looks like ==><p>hello</p>
-
-
-    //maximum number of image uplaod is 4. so excess <input> tags are making disabled.
-    //  to prevent uplaod images more than 4
-    for(let i=currentImages.length-1; i>=0; i--){
-                const imageInputField=document.getElementById('imageInputField'+i);
-                imageInputField.disabled=true;
-            }
-
-    //handle remove current image
-    document.querySelectorAll('.removeImageBtn').forEach(btn =>{
-        btn.addEventListener('click',async ()=>{
-            const confirmDelete= await Swal.fire({
-                title:"Are you sure want to remove this image?",
-                icon:"warning",
-                showCancelButton:true,
-                confirmButtonText:"Yes, remove",
-                cancelButtonText:"Cancel"
-            })
-            if(!confirmDelete.isConfirmed) return;
-
-            const filename=btn.dataset.filename; //name of the removing image
-            const container=btn.closest('.image-box');
-            container.remove();
-            currentImages=currentImages.filter(img=>img!==filename);//filenames that are not match with removed image, will returned.(used to track which images are still kept).
-            for(let i=0; i<4-currentImages.length ; i++){
-                const imageInputField=document.getElementById('imageInputField'+i);
-                imageInputField.disabled=false;
-            }
-        })
-    })
-    
-    const croppedImages=new Array(4).fill(null);
-
-    for(let i=0;i<4;i++){
-        const input=document.getElementById('imageInputField'+i);
-        const preview=document.getElementById('preview'+i);
-
-        input.addEventListener('change',()=>{
-            console.log("started working.....")
-            console.log("preview:",preview)
-
-            if(!input.files || !input.files[0])  return;
-
-            const file=input.files[0];
-            if (!file.type.startsWith('image/')){
-                Swal.fire("Choose an image file","","error")
-                input.value='';
-                    return;
-            }
-            const reader=new FileReader();
-
-            reader.onload=()=>{
-                const img=document.createElement('img');
-                img.src=reader.result;
-                img.style.maxWidth='200px';
-                preview.appendChild(img);
-
-                //making cropping tool on the selected image by <input> tag
-                const cropper=new Cropper(img,{
-                    aspectRatio:1,
-                    viewMode:1,
-                    autoCropArea:1
-                });
-
-                const cropBtn=document.createElement('button');
-                cropBtn.textContent="Crop & Save";
-                cropBtn.type='button';
-                preview.appendChild(cropBtn);
-
-
-                cropBtn.onclick=()=>{
-                    const canvas =cropper.getCroppedCanvas({width:500,height:500});
-                    canvas.toBlob(blob=>{
-                        croppedImages[i]={blob,name:file.name};
-                        preview.innerHTML='';
-
-
-                        const croppedImg=document.createElement('img');
-                        croppedImg.src=URL.createObjectURL(blob);
-                        croppedImg.style.width='100px';
-                        preview.appendChild(croppedImg);
-
-
-                        const removeBtn=document.createElement('button');
-                        removeBtn.textContent="Remove";
-                        removeBtn.type='button';
-                        removeBtn.onclick=()=>{
-                            croppedImages[i]=null;
-                            input.value='';
-                            preview.innerHTML='';
-                        }
-                        preview.appendChild(removeBtn);
-                    })
-                }
-            }
-
-            reader.readAsDataURL(file);
-        })
-    }
-
-    const form = document.getElementById('editForm');
-    form.addEventListener('submit',(event)=>{
-        event.preventDefault();
-
-        const totalImages=currentImages.length+croppedImages.filter(Boolean).length;
-        const productName=document.getElementsByName('productName')[0].value;
-        const brand = document.getElementsByName('brand')[0].value;
-        const productDescription=document.getElementsByName('productDescription')[0].value;
-        const price = document.getElementsByName('regularPrice')[0].value;
-        const saleprice = document.getElementsByName('salePrice')[0].value;
-        const quantity = document.getElementsByName('quantity')[0].value;
-        const color = document.getElementsByName('color')[0].value;
-        const category = document.getElementsByName('category')[0].value;
-
-
-        clearErrorMessages();//clearing all the current error messages
-
-
-        if (productName.trim() === "") {
-            console.log("productName:",productName);
-            displayErrorMessage('productName-error', 'Please enter a product name.');
-            return;
-        }
-         // Validate Product Name: allow letters, spaces, hyphens, apostrophes, and basic international characters
-        if (!/^[A-Za-zÀ-ÿ\s'-]+$/.test(productName.trim())) {
-            displayErrorMessage('productName-error', 'Product name should contain only letters, spaces, hyphens, or apostrophes.');
-            event.preventDefault();
-            return;
-        }
-
-        // Validate Product Description: allow letters, numbers, punctuation, spaces, and basic symbols
-        if (productDescription.trim() === "") {
-            displayErrorMessage('description-error', 'Please enter a product description.');
-            event.preventDefault();
-            return;
-        }
-
-        if (!/^[\wÀ-ÿ0-9\s.,!'"%():;?-]+$/.test(productDescription.trim())) {
-            displayErrorMessage('description-error', 'Product description contains invalid characters.');
-            event.preventDefault();
-            return;
-        }
-
-        if (quantity.trim()==="" || parseInt(quantity) < 0) {
-            displayErrorMessage('quantity-error', 'Please enter a valid non-negative quantity.');
-            return;
-        }
-
-        if (price.trim()==="" || !/^\d+(\.\d{1,2})?$/.test(price) || parseFloat(price) < 0) {
-            displayErrorMessage('regularPrice-error', 'Please enter a valid non-negative price.');
-            return;
-        }
-
-        if (saleprice.trim()==="" || !/^\d+(\.\d{1,2})?$/.test(saleprice) || parseFloat(saleprice) < 0) {
-            displayErrorMessage('salePrice-error', 'Please enter a valid non-negative price.');
-            return;
-        }
-        if (parseFloat(price) <= parseFloat(saleprice)) {
-            displayErrorMessage('regularPrice-error', 'Regular price must be greater than sale price.');
-            return;
-        }
-
-        if (color.trim() === "") {
-            displayErrorMessage('color-error', 'Please enter a color.');
-            return;
-        }
-
-        if(totalImages<3){
-            displayErrorMessage("input-field-error","Minimum 3 images are required");
-            return;
-        }
-
-        if(totalImages>4){
-            displayErrorMessage("input-field-error","Maximum 4 images are required");
-            return;
-        }
-
-        const formData=new FormData(form);
-        formData.append('existingImages',JSON.stringify(currentImages));
-
-        //croppedImages looks like ====>[{blob:Blob,name:'imgName.jpg'},{..}]
-        croppedImages.forEach(item=>{
-            if(item){
-                formData.append('images',item.blob,item.name);
-            }
-            console.log(formData)
-        });
-
-
-
-        fetch(form.action,{
-            method:'POST',
-            body:formData,
-        }).then(res=>{
-            if(res.ok){
-                // alert("Product updated successfully");
-                Swal.fire({
-                    title:"Done",
-                    text:"Product updated Successfully",
-                    icon:"success",
-                    timer:1500
-                }).then(()=>{
-                    window.location.href='/admin/products';
-                })
-                
-            }else{
-                // alert("Failed to update product");
-                Swal.fire({title:"Failed",text:res.message,icon:"error"})
-            }
-        })
-    })
-
-    function displayErrorMessage(elementId, message) {
-        var errorElement = document.getElementById(elementId);
-        errorElement.innerText = message;
-        errorElement.style.display = "block";
-    }
-
-    function clearErrorMessages() {
-        const errorElements = document.getElementsByClassName('error-message');
-        Array.from(errorElements).forEach(element => {
-            element.innerHTML = "";
-        });
-    }
-</script> -->
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -428,14 +181,19 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // 📸 STEP 2: Handle New Image Selection
     newImagesInput.addEventListener("change", function(event) {
-        const files = event.target.files;
-        Array.from(files).forEach((file) => {
+        const file = event.target.files[0];
+
+            // ✅ 1. Check if selected file is an image
+            if (!file.type.startsWith("image/")) {
+                Swal.fire("Please select only image file.","","error");
+                newImagesInput.value=''
+                return; // skip non-image file
+            }
             const reader = new FileReader();
             reader.onload = function(e) {
                 showCropper(e.target.result, file.name);
             };
             reader.readAsDataURL(file);
-        });
     });
 
     // 🌾 STEP 3: Show CropperJS for selected image
@@ -552,8 +310,9 @@ document.addEventListener("DOMContentLoaded", function() {
             displayErrorMessage('salePrice-error', 'Please enter a valid non-negative price.');
             return;
         }
-        if (parseFloat(price) <= parseFloat(saleprice)) {
-            displayErrorMessage('regularPrice-error', 'Regular price must be greater than sale price.');
+         if (parseFloat(price) < parseFloat(saleprice)) {
+            displayErrorMessage('regularPrice-error', 'Regular price must be greater than or equal to sale price.');
+            event.preventDefault();
             return;
         }
 
@@ -566,6 +325,7 @@ document.addEventListener("DOMContentLoaded", function() {
         croppedImages.forEach((file) => {
             formData.append("newImages", file);
         });
+        
 
         fetch("/admin/edit-product/<%= product._id %>", {
             method: "POST",
@@ -589,7 +349,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
     function displayErrorMessage(elementId, message) {
-        var errorElement = document.getElementById(elementId);
+        const errorElement = document.getElementById(elementId);
         errorElement.innerText = message;
         errorElement.style.display = "block";
     }

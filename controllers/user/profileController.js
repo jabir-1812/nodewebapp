@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const User = require("../../models/userSchema");
 const Address=require('../../models/addressSchema');
 const nodemailer = require("nodemailer");
@@ -6,7 +7,8 @@ const env = require("dotenv").config();
 const session = require("express-session");
 const { response } = require("express");
 const Coupon=require('../../models/couponSchema');
-const { cloudinary } = require("../../config/cloudinaryUserProfile");
+const sharp=require("sharp");
+const cloudinary = require("../../config/cloudinary");
 
 function generateOTP() {
   const digits = "1234567890";
@@ -87,7 +89,7 @@ const verifyEmail = async (req, res) => {
       if (emailSent) {
         req.session.userOtp = otp;
         req.session.email = email;
-        res.status(200).json({success:true,message:"Email verified",redirectUrl:'/forgot-password/email-otp-verification'})
+        res.status(Status.OK).json({success:true,message:"Email verified",redirectUrl:'/forgot-password/email-otp-verification'})
         console.log("OTP:", otp);
       } else {
         res.json({
@@ -100,7 +102,7 @@ const verifyEmail = async (req, res) => {
     }
   } catch (error) {
     console.log("error:",error)
-    res.status(500).json({success:false,message:"Something went wrong, Please try later"});
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong, Please try later"});
   }
 };
 
@@ -141,7 +143,7 @@ const verifyForgotPasswordOtp=async (req,res)=>{
             res.json({success:false,message:"OTP not matching"})
         }
     } catch (error) {
-        res.status(500).json({success:false,message:"An error occured. Please try again"});
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"An error occured. Please try again"});
     }
 }
 
@@ -165,13 +167,13 @@ const resendOtp=async (req,res)=>{
         const emailSent=await sendVerificationEmail(email,otp);
         if(emailSent){
             console.log("Resend OTP:",otp);
-            res.status(200).json({success:true,message:"Resend OTP successful"});
+            res.status(Status.OK).json({success:true,message:"Resend OTP successful"});
         }else{
-          res.status(200).json({success:false,message:"OTP not sent, Please try again"})
+          res.status(Status.OK).json({success:false,message:"OTP not sent, Please try again"})
         }
     } catch (error) {
         console.error('Error in resend OTP:',error);
-        res.status(500).json({success:false,message:"Internal server error"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"Internal server error"})
     }
 }
 
@@ -188,12 +190,12 @@ const postNewPassword=async (req,res)=>{
                 {_id:userId},
                 {$set:{password:passwordHash}}
             )
-            res.status(200).json({success:true,message:"Password has reset successfully."})
+            res.status(Status.OK).json({success:true,message:"Password has reset successfully."})
         }else{
             res.status(404).json({success:false,message:'Password do not match'})
         }
     } catch (error) {
-        res.status(500).json({success:false,message:"Something went wrong, Please try later"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong, Please try later"})
     }
 }
 
@@ -220,31 +222,94 @@ const userProfile= async (req,res)=>{
 
 
 
-const changeProfilePicture = async (req,res)=>{
-  try {
-    // const imageUrl=`/uploads/user profile pictures/${req.file.filename}`
-    const userId=req.session.user || req.session.passport?.user;
-    // Cloudinary automatically adds a `path` (URL) in req.file
-    const user=await User.findOne({_id:userId})
-    if(!user) return res.status(500).json({message:"user not found"})
+// const changeProfilePicture = async (req,res)=>{
+//   try {
+//     // const imageUrl=`/uploads/user profile pictures/${req.file.filename}`
+//     const userId=req.session.user || req.session.passport?.user;
+//     // Cloudinary automatically adds a `path` (URL) in req.file
+//     const user=await User.findOne({_id:userId})
+//     if(!user) return res.status(Status.INTERNAL_ERROR).json({message:"user not found"})
 
-    if(user.profilePicture && user.profilePicture.public_id){
-      try {
-        await cloudinary.uploader.destroy(user.profilePicture.public_id);
-        console.log("Old image deleted from cloudinary")
-      } catch (error) {
-        console.error("Failed to delete old image from cloudinary=====error=====",error)
-      }
+//     if(user.profilePicture && user.profilePicture.public_id){
+//       try {
+//         await cloudinary.uploader.destroy(user.profilePicture.public_id);
+//         console.log("Old image deleted from cloudinary")
+//       } catch (error) {
+//         console.error("Failed to delete old image from cloudinary=====error=====",error)
+//       }
+//     }
+//     user.profilePicture={
+//       url:req.file.path,
+//       public_id:req.file.filename
+//     };
+//     await user.save();
+//     res.json({success:true})
+//   } catch (error) {
+//     console.error("changeProfilePicture() error:",error);
+//     res.status(Status.INTERNAL_ERROR).json({ success: false, message: 'Upload failed' });
+//   }
+// }
+
+const changeProfilePicture=async(req,res)=>{
+  try {
+    const userId=req.session.user || req.session.passport?.user;
+
+    const user=await User.findOne({_id:userId})
+    if(!user) return res.status(Status.INTERNAL_ERROR).json({message:"user not found"})
+
+    if(req.file){
+        let processedBuffer;
+        try {
+          processedBuffer=await sharp(req.file.buffer)
+            .resize(500,500, {fit:"cover"})
+            .toFormat("webp")
+            .webp({quality:85})
+            .toBuffer();
+        } catch (error) {
+          return res.status(Status.INTERNAL_ERROR).json({success:false,message:"Failed to process the image",error:error.message})     
+        }
+
+        //upload new image to cloudinary first
+        const uploadNewProfilePicture=()=>{
+            return new Promise((resolve,reject)=>{
+                cloudinary.uploader.upload_stream(
+                    {folder:"user_profile_pictures",format:"webp"},
+                    (error,result)=>{
+                        if(error)return reject(error);
+                        resolve(result)
+                    }
+                ).end(processedBuffer)
+            })
+        };
+
+        let newProfilePicture;
+        try {
+            newProfilePicture=await uploadNewProfilePicture();
+        } catch (error) {
+            return res.status(Status.INTERNAL_ERROR).json({success:false,message:"Failed to upload new profile picture",error:error.message})
+        }
+
+        //delete old profile picture from cloudinary(after success upload)
+        if(user.profilePicture && user.profilePicture.public_id){
+            try {
+                await cloudinary.uploader.destroy(user.profilePicture.public_id)
+            } catch (error) {
+                console.error("Old profile picture delete failed:",error);
+                //not a critical failure, don't return error
+            }
+        }
+
+        //update db
+        user.profilePicture.url=newProfilePicture.secure_url;
+        user.profilePicture.public_id=newProfilePicture.public_id;
     }
-    user.profilePicture={
-      url:req.file.path,
-      public_id:req.file.filename
-    };
+
     await user.save();
-    res.json({success:true})
+    return res.json({success:true, message:"User profile picture updated successfully"})
+    
   } catch (error) {
     console.error("changeProfilePicture() error:",error);
-    res.status(500).json({ success: false, message: 'Upload failed' });
+    res.status(Status.INTERNAL_ERROR).json({ success: false, message: 'Something went wrong' });
   }
 }
 
@@ -269,7 +334,7 @@ const removeProfilePicture = async (req,res)=>{
     res.json({success:true, message:"Profile picture removed"})
   } catch (error) {
     console.log("removeProfilePicture() error==========>",error)
-    res.status(500).json({message:"something went wrong"})
+    res.status(Status.INTERNAL_ERROR).json({message:"something went wrong"})
   }
 }
 
@@ -282,10 +347,10 @@ const changeUsername= async (req,res)=>{
 
     const {username}=req.body;
     await User.findByIdAndUpdate(userId,{name:username});
-    res.status(200).json({success:true,username:username})
+    res.status(Status.OK).json({success:true,username:username})
   } catch (error) {
     console.log("changeUsername() error====>",error);
-    res.status(500).json({success:false,message:"Something went wrong"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong"})
   }
 }
 
@@ -297,10 +362,10 @@ const changePhoneNumber= async (req,res)=>{
 
     const {phone}=req.body;
     await User.findByIdAndUpdate(userId,{phone:phone});
-    res.status(200).json({success:true,phone:phone})
+    res.status(Status.OK).json({success:true,phone:phone})
   } catch (error) {
     console.log("changePhoneNumber() error====>",error);
-    res.status(500).json({success:false,message:"Something went wrong"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong"})
   }
 }
 
@@ -355,18 +420,18 @@ const verifyCurrentEmail=async (req,res)=>{
         req.session.userOtp=otp;
         req.session.email=email;
 
-        res.status(200).json({success:true,message:`OTP has been sent to your email-id: ${email}`,redirectUrl:'/change-email/verify-email-otp'})
+        res.status(Status.OK).json({success:true,message:`OTP has been sent to your email-id: ${email}`,redirectUrl:'/change-email/verify-email-otp'})
         console.log("Email sent:",email);
         console.log('OTP:',otp)
       }else{
-        res.status(200).json({success:false,message:'An error occured while sending mail'})
+        res.status(Status.OK).json({success:false,message:'An error occured while sending mail'})
       }
     }else{
       res.status(404).json({success:false,message:"User with this email does not exist"})
     }
   } catch (error) {
     console.log("changeEmail() error:",error)
-    res.status(500).json({success:false,message:"Something went wrong, Please try later"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong, Please try later"})
   }
 }
 
@@ -376,13 +441,13 @@ const verifyEmailOtp =async (req,res)=>{
     const enteredOtp=req.body.otp;
     console.log("entered otp====>",enteredOtp)
     if(enteredOtp===req.session.userOtp){
-      res.status(200).json({success:true,message:"OTP verified",redirectUrl:'/change-email/enter-new-email'})
+      res.status(Status.OK).json({success:true,message:"OTP verified",redirectUrl:'/change-email/enter-new-email'})
     }else{
-      res.status(200).json({success:false,message:"OTP is not matching"})
+      res.status(Status.OK).json({success:false,message:"OTP is not matching"})
     }
   } catch (error) {
     console.log("verifyEmailOtp() error:",error)
-    res.status(500).json({success:false,message:"Something went wrong, Please try later"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong, Please try later"})
   }
 }
 
@@ -409,10 +474,10 @@ const updateEmail=async (req,res)=>{
     const newEmail=req.body.newEmail;
     const userId=req.session.user;
     await User.findByIdAndUpdate(userId,{email:newEmail});
-    res.status(200).json({success:true,message:"Email updated successfully",redirectUrl:'/user-profile'})
+    res.status(Status.OK).json({success:true,message:"Email updated successfully",redirectUrl:'/user-profile'})
   } catch (error) {
     console.log("updateEmail() error:",error);
-    res.status(500).json({success:false,message:"Something went wrong, Please try later"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong, Please try later"})
   }
 }
 
@@ -447,11 +512,11 @@ const verifyCurrentPassword=async (req,res)=>{
     if(!passwordMatch){
       return res.status(404).json({success:false,message:"Incorrect Password"})
     }
-    return res.status(200).json({success:true,message:"Password matching, success."})
+    return res.status(Status.OK).json({success:true,message:"Password matching, success."})
 
   } catch (error) {
     console.log("changePassword() error:",error)
-    res.status(500).json({success:false,message:"An error occured. Please try again later"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"An error occured. Please try again later"})
   }
 }
 
@@ -499,16 +564,16 @@ const addAddress=async (req,res)=>{
         address:[{addressType,name,city,landMark,state,pincode,phone,altPhone}]
       })
       await newAddress.save()
-      return res.status(200).json({success:true,message:"New address added successfully"})
+      return res.status(Status.OK).json({success:true,message:"New address added successfully"})
     }else{
       userAddress.address.push({addressType,name,city,landMark,state,pincode,phone,altPhone})
       await userAddress.save();
-      return res.status(200).json({success:true,message:"New address added successfully"})
+      return res.status(Status.OK).json({success:true,message:"New address added successfully"})
     }
   } catch (error) {
     console.log("addAddress() error");
     console.log("addAddress() error,Error adding address",error);
-    res.status(500).json({success:false,message:"Something went wrong"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong"})
   }
 }
 
@@ -571,10 +636,10 @@ const editAddress=async (req,res)=>{
       }}
     )
 
-    return res.status(200).json({success:true,message:"Address has been updated"})
+    return res.status(Status.OK).json({success:true,message:"Address has been updated"})
   } catch (error) {
     console.log("editAddress() error:",error)
-    return res.status(500).json({success:false,message:"Something went wrong"})
+    return res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong"})
   }
 }
 
@@ -596,10 +661,10 @@ const deleteAddress=async (req,res)=>{
         }
       }
     )
-    return res.status(200).json({success:true,message:"Address has been deleted successfully"})
+    return res.status(Status.OK).json({success:true,message:"Address has been deleted successfully"})
   } catch (error) {
     console.log("deleteAddress() error:",error)
-    res.status(500).json({success:false,message:"Something went wrong, Please try later"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong, Please try later"})
   }
 }
 

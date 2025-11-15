@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const User=require('../../models/userSchema');
 const Product=require('../../models/productSchema');
 const Address=require('../../models/addressSchema');
@@ -14,132 +15,6 @@ const path = require("path");
 require('dotenv').config();
 
 
-// const loadCheckoutPage = async (req, res) => {
-//   try {
-//     const userId = req.session.user || req.session.passport?.user;
-//     const user = await User.findById(userId);
-//     if (!user) return res.status(404).send("User not found");
-
-//     //fetch wallet
-//     const userWallet=await Wallet.findOne({userId})
-//     if(!userWallet){
-//       userWallet=await Wallet.create({userId})
-//     }
-
-//     // Fetch addresses
-//     const findAddresses = await Address.findOne({ userId });
-//     const addresses = findAddresses ? findAddresses.address : [];
-
-//     let totalAmount = 0,totalPrice=0;
-
-//     // Fetch cart with product details
-//     let userCart = await Cart.aggregate([
-//       { $match: { userId: new mongoose.Types.ObjectId(String(userId)) } },
-//       { $unwind: "$items" },
-//       {
-//         $lookup: {
-//           from: "products",
-//           localField: "items.productId",
-//           foreignField: "_id",
-//           as: "productDetails"
-//         }
-//       },
-//       { $unwind: "$productDetails" },
-//       {
-//         $group: {
-//           _id: "$_id",
-//           userId: { $first: "$userId" },
-//           items: {
-//             $push: {
-//               productId: "$productDetails._id",
-//               quantity: "$items.quantity",
-//               productDetails: "$productDetails"
-//             }
-//           }
-//         }
-//       }
-//     ]);
-//     //after aggregation, the userCart will look like this:
-//     // [
-//     //     {
-//     //         "_id": "cart1",
-//     //         "userId": "user1",
-//     //         "items": [
-//     //         {
-//     //             "productId": "p1",
-//     //             "quantity": 2,
-//     //             "productDetails": { "_id": "p1", "name": "Laptop", "price": 50000 }
-//     //         },
-//     //         {
-//     //             "productId": "p2",
-//     //             "quantity": 1,
-//     //             "productDetails": { "_id": "p2", "name": "Mouse", "price": 1000 }
-//     //         }
-//     //         ]
-//     //     }
-//     // ]
-
-
-//     if (!userCart.length) {
-//       return res.render("user/checkout/7checkout", {
-//         title: "Checkout page",
-//         addresses,
-//         user,
-//         userCart: null,
-//         cartLength: 0,
-//         totalPrice:0,
-//         totalAmount: 0,
-//         razorPayKeyId:process.env.RAZORPAY_KEY_ID,
-//         userWallet
-//       });
-//     }
-
-//     userCart = userCart[0]; // aggregated result is in array
-
-//     let cartUpdated = false;
-
-//     // Re-check product stock
-//     for (let i = 0; i < userCart.items.length; i++) {
-//       let item = userCart.items[i];
-//       if (item.quantity > item.productDetails.quantity) {
-//         item.quantity = item.productDetails.quantity; // adjust to stock
-//         cartUpdated = true;
-//       }
-//       totalPrice += item.quantity * item.productDetails.salePrice;
-//       totalAmount += item.quantity * item.productDetails.salePrice;
-//     }
-
-//     // If any update, reflect in DB
-//     if (cartUpdated) {
-//       await Cart.updateOne(
-//         { _id: userCart._id, "items.productId": { $exists: true } },
-//         {
-//           $set: {
-//             items: userCart.items.map(it => ({
-//               productId: it.productId,
-//               quantity: it.quantity
-//             }))
-//           }
-//         }
-//       );
-//     }
-
-//     res.render("user/checkout/7checkout", {
-//       title: "Checkout page",
-//       addresses,
-//       user,
-//       userCart,
-//       cartLength: userCart.items.length,
-//       totalPrice,
-//       totalAmount,
-//       razorPayKeyId:process.env.RAZORPAY_KEY_ID,
-//       userWallet
-//     });
-//   } catch (error) {
-//     console.log("loadCheckoutPage() error:", error);
-//     res.redirect("/page-not-found");
-//   }
-// };
 
 const loadCheckoutPage = async (req, res) => {
   try {
@@ -546,7 +421,7 @@ const editAddress = async (req, res) => {
 
     } catch (error) {
         console.log("error in editAddress() in checkoutController====>", error);
-        res.status(500).json({success:false, message: "Something went wrong" });
+        res.status(Status.INTERNAL_ERROR).json({success:false, message: "Something went wrong" });
     }
 };
 
@@ -587,7 +462,7 @@ const addNewAddress = async (req, res) => {
 
     } catch (error) {
         console.log("checkoutController====>addNewAddress() error:", error);
-        res.status(500).json({ message: "Something went wrong" });
+        res.status(Status.INTERNAL_ERROR).json({ message: "Something went wrong" });
     }
 };
 
@@ -600,10 +475,10 @@ const addNewAddress = async (req, res) => {
 
 //     // 🔹 Validate input
 //     if (!mongoose.Types.ObjectId.isValid(productId))
-//       return res.status(400).json({ success: false, message: "Invalid product ID" ,reload:true});
+//       return res.status(Status.BAD_REQUEST).json({ success: false, message: "Invalid product ID" ,reload:true});
 
 //     if (typeof count !== "number" || isNaN(count))
-//       return res.status(400).json({ success: false, message: "Invalid count value",reload:true });
+//       return res.status(Status.BAD_REQUEST).json({ success: false, message: "Invalid count value",reload:true });
 
 //     // 🔹 Fetch cart & product in parallel
 //     const [cart, product] = await Promise.all([
@@ -612,14 +487,14 @@ const addNewAddress = async (req, res) => {
 //     ]);
 
 //     if (!cart) return res.status(404).json({ success: false, message: "Cart not found",reload:true });
-//     if (!product) return res.status(400).json({ success: false, message: "Product not found",reload:true});
+//     if (!product) return res.status(Status.BAD_REQUEST).json({ success: false, message: "Product not found",reload:true});
 
 //     //get the product stock
 //     const productStock = product.quantity;
 
 //     //get the product item element from the cart items[] with the product ID
 //     const item = cart.items.find(i => i.productId.toString() === productId);
-//     if (!item) return res.status(400).json({ success: false, message: "Product not in cart",reload:true });
+//     if (!item) return res.status(Status.BAD_REQUEST).json({ success: false, message: "Product not in cart",reload:true });
 
 //     // 🔹 Helper function to recalc totals & render HTML
 //     const renderCart = async (userId, message, success = false) => {
@@ -703,7 +578,7 @@ const addNewAddress = async (req, res) => {
 //     return renderCart(userId, "Quantity updated successfully", true);
 //   } catch (error) {
 //     console.error("changeCartQuantity() error:", error);
-//     res.status(500).json({ success: false, error: "Server error" });
+//     res.status(Status.INTERNAL_ERROR).json({ success: false, error: "Server error" });
 //   }
 // };
 const changeCartQuantity = async (req, res) => {
@@ -713,10 +588,10 @@ const changeCartQuantity = async (req, res) => {
 
     // 🔹 Validate input
     if (!mongoose.Types.ObjectId.isValid(productId))
-      return res.status(400).json({ success: false, message: "Invalid product ID" ,reload:true});
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Invalid product ID" ,reload:true});
 
     if (typeof count !== "number" || isNaN(count))
-      return res.status(400).json({ success: false, message: "Invalid count value",reload:true });
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Invalid count value",reload:true });
 
     // 🔹 Fetch cart & product in parallel
     const [cart, product] = await Promise.all([
@@ -725,14 +600,14 @@ const changeCartQuantity = async (req, res) => {
     ]);
 
     if (!cart) return res.status(404).json({ success: false, message: "Cart not found",reload:true });
-    if (!product) return res.status(400).json({ success: false, message: "Product not found",reload:true});
+    if (!product) return res.status(Status.BAD_REQUEST).json({ success: false, message: "Product not found",reload:true});
     if(product.isBlocked || product.status !== "Available"){
-      return res.status(400).json({message:"Product is Unavailable",reload:true})
+      return res.status(Status.BAD_REQUEST).json({message:"Product is Unavailable",reload:true})
     }
 
     //get the product item element from the cart items[] with the product ID
     const item = cart.items.find(item => item.productId.toString() === productId);
-    if (!item) return res.status(400).json({ success: false, message: "Product not in cart",reload:true });
+    if (!item) return res.status(Status.BAD_REQUEST).json({ success: false, message: "Product not in cart",reload:true });
 
     //get the product stock
     const productStock = product.quantity;
@@ -743,7 +618,7 @@ const changeCartQuantity = async (req, res) => {
         { userId, "items.productId": productId },
         { $set: { "items.$.quantity": 0 } }
       );
-      return res.status(400).json({message:"Product is out of stock",reload:true})
+      return res.status(Status.BAD_REQUEST).json({message:"Product is out of stock",reload:true})
     }
 
     const newQty = item.quantity + count;
@@ -761,7 +636,7 @@ const changeCartQuantity = async (req, res) => {
         { userId, "items.productId": productId },
         { $set: { "items.$.quantity": productStock } }
       );
-      return res.status(400).json({message:`Available stock is: ${productStock}`})
+      return res.status(Status.BAD_REQUEST).json({message:`Available stock is: ${productStock}`})
     }
 
     // 🔹 Update quantity
@@ -773,7 +648,7 @@ const changeCartQuantity = async (req, res) => {
     return res.json({success:true,message:"Quantity updated successfully",reload:true})
   } catch (error) {
     console.error("changeCartQuantity() error:", error);
-    res.status(500).json({ success: false, error: "Server error" });
+    res.status(Status.INTERNAL_ERROR).json({ success: false, error: "Server error" });
   }
 };
 
@@ -789,10 +664,10 @@ const deleteCartItem =async (req,res)=>{
       { $pull: { items: { productId: new mongoose.Types.ObjectId(String(productId)) } } }
     );
 
-    res.status(200).json({ status: true, message: "Item removed" });
+    res.status(Status.OK).json({ status: true, message: "Item removed" });
   } catch (error) {
     console.log('deleteCartItem() error:', error);
-    res.status(500).json({ status: false, error: "Server error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, error: "Server error" });
   }
 }
 
@@ -807,13 +682,13 @@ const applyCoupon= async(req,res)=>{
     const coupon=await Coupon.findOne({couponCode})
 
     //coupon validation
-    if(!coupon) return res.status(400).json({success:false,message:"Inavlid coupon code"})
-    if(coupon.userId && coupon.userId.toString()!==userId.toString()) return res.status(400).json({message:"This coupon is not available for you"})
-    if(!coupon.isActive) return res.status(400).json({success:false,message:"Coupon is not active"})
-    if(coupon.expiryDate < new Date()) return  res.status(400).json({success:false,message:"Coupon expired"})
-    if(coupon.startDate > new Date()) return  res.status(400).json({success:false,message:"Coupon is not active"})
+    if(!coupon) return res.status(Status.BAD_REQUEST).json({success:false,message:"Inavlid coupon code"})
+    if(coupon.userId && coupon.userId.toString()!==userId.toString()) return res.status(Status.BAD_REQUEST).json({message:"This coupon is not available for you"})
+    if(!coupon.isActive) return res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon is not active"})
+    if(coupon.expiryDate < new Date()) return  res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon expired"})
+    if(coupon.startDate > new Date()) return  res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon is not active"})
 
-    if(!userId) return res.status(400).json({message:"session expired",reload:true})
+    if(!userId) return res.status(Status.BAD_REQUEST).json({message:"session expired",reload:true})
     const userCart = await Cart.findOne({ userId })
         .populate({
             path: 'items.productId',
@@ -865,13 +740,13 @@ const applyCoupon= async(req,res)=>{
         ]);
 
 
-        return res.status(400).json({
+        return res.status(Status.BAD_REQUEST).json({
             message:"Your cart is empty",
             html:{cartItems:cartHtml,priceDetails:priceDetailsHtml,couponForm:couponHtml}
         })
     }
     if(userCart.appliedCoupons.length>=3){
-      return res.status(400).json({message:"cannot apply more than 3 coupon"})
+      return res.status(Status.BAD_REQUEST).json({message:"cannot apply more than 3 coupon"})
     }
 
     // ----- Check if already applied -----
@@ -879,7 +754,7 @@ const applyCoupon= async(req,res)=>{
       (c) => c.couponId?.toString() === coupon._id.toString()
     );
     if (alreadyApplied)
-      return res.status(400).json({ success: false, message: "Coupon already applied" });
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Coupon already applied" });
 
     if(coupon.isCategoryBased){
         const applicableCategoryIds=coupon.applicableCategories;
@@ -896,7 +771,7 @@ const applyCoupon= async(req,res)=>{
 
         //if there is no product having this coupon code, stop.
         if(applicableProducts.length===0){
-            return res.status(400).json({success:false,message:"These categories do not have this coupon discount"})
+            return res.status(Status.BAD_REQUEST).json({success:false,message:"These categories do not have this coupon discount"})
         }
     }
 
@@ -946,7 +821,7 @@ const applyCoupon= async(req,res)=>{
             { $set: { appliedCoupons: [] } } // atomic update
           );
 
-            return res.status(400).json({
+            return res.status(Status.BAD_REQUEST).json({
                 message:`Product not available or not found`,
                 reload:true
             })
@@ -959,7 +834,7 @@ const applyCoupon= async(req,res)=>{
             { $set: { appliedCoupons: [] } } // atomic update
           );
 
-            return res.status(400).json({
+            return res.status(Status.BAD_REQUEST).json({
                 message:`${product.productName} is blocked or not available`,
                 reload:true
             })
@@ -1027,7 +902,7 @@ const applyCoupon= async(req,res)=>{
                 )
             ]);
 
-            return res.status(400).json({
+            return res.status(Status.BAD_REQUEST).json({
                 message:`Sorry, ${product.productName} only ${product.quantity} available right now`,text:"Please re-apply the coupons",
                 html:{cartItems:cartHtml,priceDetails:priceDetailsHtml,couponForm:couponHtml}
             })
@@ -1070,7 +945,7 @@ const applyCoupon= async(req,res)=>{
 
 
     if(totalPrice < coupon.minPurchase){
-        return res.status(400).json({message:`Minimum purchase ${coupon.minPurchase} required`})
+        return res.status(Status.BAD_REQUEST).json({message:`Minimum purchase ${coupon.minPurchase} required`})
     }
 
     let couponDiscount=0;
@@ -1250,7 +1125,7 @@ const applyCoupon= async(req,res)=>{
 
   } catch (error) {
     console.error('applyCoupon() error',error)
-    res.status(500).json({success:false,message:"Something went wrong"})
+    res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong"})
   }
 }
 
@@ -1282,7 +1157,7 @@ const removeCoupon = async (req,res)=>{
     }
   } catch (error) {
     console.error("removeCoupon() error",error);
-    res.status(500).json({message:"Something went wrong",reload:true})
+    res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong",reload:true})
   }
 }
 

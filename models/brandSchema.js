@@ -17,10 +17,8 @@ const brandSchema =new Schema({
             message:"Brand name already exists(case insensitive)"
         }
     },
-    brandImage:{
-        type:[String],
-        required:true
-    },
+    brandImage: { type: String, required: true },      // Cloudinary URL
+    cloudinaryId: { type: String, required: true },    // needed for future delete/update
     isBlocked:{
         type:Boolean,
         default:false

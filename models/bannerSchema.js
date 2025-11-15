@@ -1,10 +1,15 @@
 const mongoose=require('mongoose');
+const { cloudinary } = require('../config/cloudinaryBanner');
 const {Schema}=mongoose;
 
 
 const bannerSchema=new Schema({
     image:{
         type:String,
+        required:true
+    },
+    cloudinaryId:{
+        type:String, 
         required:true
     },
     title:{

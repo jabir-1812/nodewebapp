@@ -1,3 +1,5 @@
+const Status=require('../../constants/statusCodes')
+const DELIVERY_STATUS=require('../../constants/deliveryStatus.enum')
 const Order=require('../../models/orderSchema');
 const User=require('../../models/userSchema');
 const Wallet=require('../../models/walletSchema')
@@ -88,15 +90,19 @@ const updateItemStatus = async (req, res) => {
 
         // Find the order
         const order = await Order.findOne({ orderId });
-        if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+        if (!order) return res.status(Status.NOT_FOUND).json({ success: false, message: "Order not found" });
 
         // Find item inside order
         const item = order.orderItems.id(itemId);
-        if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+        if (!item) return res.status(Status.NOT_FOUND).json({ success: false, message: "Item not found" });
+
+        if(!Object.values(DELIVERY_STATUS).includes(status)){
+            return res.status(Status.BAD_REQUEST).json({message:"Invalid delivery status"})
+        }
 
         // Update status
         item.itemStatus = status;
-        if(status==="Delivered"){
+        if(status===DELIVERY_STATUS.DELIVERED){
             item.deliveredOn=new Date();
         }
 
@@ -104,15 +110,15 @@ const updateItemStatus = async (req, res) => {
         const allStatuses = order.orderItems.map(i => i.itemStatus);
         const allStatusSet=new Set(allStatuses)
 
-        if(allStatusSet.size===1 && allStatusSet.has("Cancelled")){
-        order.orderStatus = "Cancelled"
+        if(allStatusSet.size===1 && allStatusSet.has(DELIVERY_STATUS.CANCELLED)){
+        order.orderStatus = DELIVERY_STATUS.CANCELLED
         }
-        if(allStatusSet.size===1 && allStatusSet.has("Delivered")){
-        order.orderStatus = "Delivered"
+        if(allStatusSet.size===1 && allStatusSet.has(DELIVERY_STATUS.DELIVERED)){
+        order.orderStatus = DELIVERY_STATUS.DELIVERED
         order.deliveredOn = new Date();
         }
-        if(allStatusSet.size===2 && allStatusSet.has('Delivered') && allStatusSet.has("Cancelled")){
-        order.orderStatus="Delivered";
+        if(allStatusSet.size===2 && allStatusSet.has(DELIVERY_STATUS.DELIVERED) && allStatusSet.has(DELIVERY_STATUS.CANCELLED)){
+        order.orderStatus=DELIVERY_STATUS.DELIVERED;
         
         const deliveredDates=order.orderItems
             .map((item)=>item.deliveredOn)
@@ -127,7 +133,7 @@ const updateItemStatus = async (req, res) => {
         // --- 🔑 Invoice logic ---
         if (!order.invoice?.generated) {
             const hasShippedOrDelivered = order.orderItems.some(
-                (i) => i.itemStatus === "Shipped" || i.itemStatus === "Delivered"
+                (i) => i.itemStatus === DELIVERY_STATUS.SHIPPED || i.itemStatus === DELIVERY_STATUS.DELIVERED
             );
 
             if (hasShippedOrDelivered) {
@@ -149,28 +155,39 @@ const updateItemStatus = async (req, res) => {
         });
     } catch (error) {
         console.log("updateItemStatus error:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
+        res.status(Status.INTERNAL_ERROR).json({ success: false, message: "Internal server error" });
     }
 };
 
 
 
-const manageReturnRequest=async (req,res)=>{
-     try {
-        const { orderId, itemId, action } = req.params; // action = approve | reject
+const manageReturnRequest = async (req, res) => {
+  try {
+    const { orderId, itemId, action } = req.params;
+    const { reason=null } = req.body;
 
-        const order = await Order.findOneAndUpdate(
-        { orderId: orderId, "orderItems._id": itemId },
-        { $set: { "orderItems.$.returnStatus": action === "approve" ? "Approved" : "Rejected" } },
-        { new: true }
-        );
+    const updateFields = {
+      "orderItems.$.returnStatus": action === "approve" ? "Approved" : "Rejected"
+    };
 
-        res.json({ success: true, status: action });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Something went wrong" });
+    //  If rejected, also store rejection reason
+    if (action === "reject") {
+      updateFields["orderItems.$.rejectionReason"] = reason || "No reason provided";
     }
-}
+
+    const order = await Order.findOneAndUpdate(
+      { orderId: orderId, "orderItems._id": itemId },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    res.json({ success: true, status: action });
+  } catch (err) {
+    console.error("manageReturnRequest() error=====",err);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
 
 const updateReturnStatus=async(req,res)=>{
   try {
@@ -194,39 +211,54 @@ const updateReturnStatus=async(req,res)=>{
         await Product.findByIdAndUpdate(item.productId, {
             $inc: { quantity: item.quantity }  // increase stock back
         });
-      const refundAmount = item.price;
-      const offerDiscount=item.offerDiscount;
-      const couponDiscount=item.couponDiscount;
+        const refundAmount = item.price;
+        const offerDiscount=item.offerDiscount;
+        const couponDiscount=item.couponDiscount;
 
 
-      if (order.paymentMethod === "Cash on Delivery" || order.paymentMethod==="TeeSpace Wallet") {
-        // ✅ COD → refund to wallet
+    //   if (order.paymentMethod === "Cash on Delivery" || order.paymentMethod==="TeeSpace Wallet") {
+    //     // ✅ COD → refund to wallet
+    //     let wallet = await Wallet.findOne({ userId: order.userId });
+    //     if (!wallet) {
+    //       wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
+    //     }
+
+    //     wallet.balance += refundAmount;
+    //     wallet.transactions.push({
+    //       amount: refundAmount,
+    //       type: "credit",
+    //       description: `Refund for ${item.productName} (Order ${order.orderId})`
+    //     });
+
+    //     await wallet.save();
+    //     item.refundStatus="Refunded";
+    //     item.refundedOn= new Date();
+    //   }else if (order.paymentMethod === "Online Payment" && paymentStatus==="Paid") {
+    //     // ✅ Online payment → just mark refunded (no wallet credit)
+    //     item.refundStatus = "Refunded";
+    //     item.refundedOn = new Date();
+    //   }
         let wallet = await Wallet.findOne({ userId: order.userId });
         if (!wallet) {
-          wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
+            wallet = new Wallet({ userId: order.userId, balance: 0, transactions: [] });
         }
 
         wallet.balance += refundAmount;
         wallet.transactions.push({
-          amount: refundAmount,
-          type: "credit",
-          description: `Refund for ${item.productName} (Order ${order.orderId})`
+            amount: refundAmount,
+            type: "credit",
+            description: `Refund for ${item.productName} (Order ${order.orderId})`
         });
 
         await wallet.save();
         item.refundStatus="Refunded";
         item.refundedOn= new Date();
-      }else if (order.paymentMethod === "Online Payment" && paymentStatus==="Paid") {
-        // ✅ Online payment → just mark refunded (no wallet credit)
-        item.refundStatus = "Refunded";
-        item.refundedOn = new Date();
-      }
 
-      order.totalMrp-=(refundAmount+offerDiscount+couponDiscount);
-      order.totalPrice-=(refundAmount+offerDiscount);
-      order.totalAmount-=refundAmount;
-      order.totalOfferDiscount-=offerDiscount;
-      order.totalCouponDiscount-=couponDiscount;
+        order.totalMrp-=(refundAmount+offerDiscount+couponDiscount);
+        order.totalPrice-=(refundAmount+offerDiscount);
+        order.totalAmount-=refundAmount;
+        order.totalOfferDiscount-=offerDiscount;
+        order.totalCouponDiscount-=couponDiscount;
     }
 
     await order.save();

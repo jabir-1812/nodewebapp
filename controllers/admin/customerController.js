@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const User=require('../../models/userSchema');
 
 const customerInfo=async (req,res)=>{
@@ -51,7 +52,7 @@ const blockCustomer=async (req,res)=>{
         await User.updateOne({_id:userId},{$set:{isBlocked:true}});
         res.json({success:true,message:"user blocked successfully"})
     } catch (error) {
-        res.status(500).json({success:false,message:"error blocking the user"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"error blocking the user"})
         console.error("error blocking the user:",error)
         res.redirect('/admin/page-error')
     }
@@ -64,7 +65,7 @@ const unblockCustomer=async (req,res)=>{
         await User.updateOne({_id:userId},{$set:{isBlocked:false}});
         res.json({success:true,message:"user unblocked successfully"})
     } catch (error) {
-        res.status(500).json({success:false,message:"error unblocking the user"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"error unblocking the user"})
         console.error("error unblocking the user:",error)
         res.redirect('/admin/page-error')
     }

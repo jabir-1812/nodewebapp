@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const Banner=require('../../models/bannerSchema');
 const path=require('path')
 const fs=require('fs')
@@ -57,7 +58,7 @@ const addBanner=async (req,res)=>{
         }) 
 
         await newBanner.save().then((data)=>{console.log("success dataaa",data)});
-        res.status(200).json({message:"Banner added successfully"});
+        res.status(Status.OK).json({message:"Banner added successfully"});
         // res.redirect('/admin/banners')
     } catch (error) {
         console.log("addBanner() error:",error);
@@ -108,7 +109,7 @@ const editBanner = async (req,res)=>{
         return res.json({ success: true });
     } catch (error) {
         console.log('editBanner error:',error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(Status.INTERNAL_ERROR).json({ message: 'Internal Server Error' });
     }
 }
 

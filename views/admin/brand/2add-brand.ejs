@@ -1,0 +1,241 @@
+<style>
+    .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .error-message{
+    color: red;
+  }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<%-include ('../../../views/partials/admin/header')%>
+
+<div class="main-content">
+    <div class="container">
+        <form action="">
+            <div class="row">
+                <div class="col">
+                    <label for="brandName">Brand Name:</label>
+                    <input type="text" id="brandName" name="brandName" class="form-control" placeholder="Enter brand name" required>
+                    <div id="brandName-error" class="error-message"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <label for="fileInput">Brand Logo</label>
+                    <input type="file" id="fileInput" class="form-control border" name="brandLogo" accept="image/*">
+                    <div id="brandLogo-error" class="error-message"></div>
+                </div>
+            </div>
+            <div class="row d-flex justify-content-center">
+                <div class="col-md-6 my-5 d-flex justify-content-center">
+                    <div id="preview"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col d-flex justify-content-center">
+                    <button id="submitBtn" type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<%-include ('../../../views/partials/admin/footer')%>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const preview = document.getElementById('preview');
+const submitBtn = document.getElementById('submitBtn');
+const brandNameInput = document.getElementById('brandName');
+
+const brandNameError = document.getElementById('brandName-error');
+const brandLogoError = document.getElementById('brandLogo-error');
+
+let cropper = null;
+let cropped = false; // ✅ Track if image is cropped
+
+fileInput.addEventListener('change', (event) => {
+    preview.innerHTML = '';
+    brandLogoError.textContent = '';
+    cropped = false;
+
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        Swal.fire("Please choose a valid image file", "", "error");
+        fileInput.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+        Swal.fire("Error reading the file", "", "error");
+        fileInput.value = '';
+    };
+
+    reader.onload = () => {
+        const img = document.createElement('img');
+        img.src = reader.result;
+        img.style.maxWidth = '100%';
+        preview.appendChild(img);
+
+        if (cropper) cropper.destroy();
+
+        cropper = new Cropper(img, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 1,
+            responsive: true,
+            guides: false
+        });
+
+        const controls = document.createElement('div');
+        controls.className = 'mt-2';
+
+        const cropButton = document.createElement('button');
+        cropButton.textContent = 'Crop & Save';
+        cropButton.classList.add('btn', 'btn-dark', 'me-2');
+        cropButton.type = 'button';
+
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.classList.add('btn', 'btn-outline-dark');
+        cancelButton.type = 'button';
+
+        cancelButton.onclick = () => {
+            preview.innerHTML = '';
+            fileInput.value = '';
+            cropper.destroy();
+            cropper = null;
+        };
+
+        controls.appendChild(cropButton);
+        controls.appendChild(cancelButton);
+        preview.appendChild(controls);
+
+        cropButton.onclick = () => {
+            if (!cropper) return;
+
+            const canvas = cropper.getCroppedCanvas({
+                width: 500,
+                height: 500
+            });
+
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    Swal.fire("Failed to crop the image", "", "error");
+                    return;
+                }
+
+                const croppedFile = new File([blob], file.name, { type: blob.type });
+                const dt = new DataTransfer();
+                dt.items.add(croppedFile);
+                fileInput.files = dt.files;
+
+                preview.innerHTML = '';
+
+                const croppedImg = document.createElement('img');
+                croppedImg.src = URL.createObjectURL(blob);
+                croppedImg.style.width = '200px';
+                preview.appendChild(croppedImg);
+
+                cropped = true;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = "Remove";
+                removeBtn.type = 'button';
+                removeBtn.classList.add('btn', 'btn-outline-danger', 'mt-2');
+
+                removeBtn.onclick = () => {
+                    preview.innerHTML = '';
+                    fileInput.value = '';
+                    cropped = false;
+                };
+
+                preview.appendChild(removeBtn);
+            });
+        };
+    };
+
+    reader.readAsDataURL(file);
+});
+
+// ✅ VALIDATION + AJAX SUBMIT
+submitBtn.addEventListener('click', async function (e) {
+    e.preventDefault();
+
+    let valid = true;
+    brandNameError.textContent = '';
+    brandLogoError.textContent = '';
+
+    // ✅ brand name validation
+    if (brandNameInput.value.trim().length === 0) {
+        brandNameError.textContent = 'Brand name is required';
+        valid = false;
+    }
+
+    // ✅ logo validation
+    if (!fileInput.files.length) {
+        brandLogoError.textContent = 'Brand logo is required';
+        valid = false;
+    }
+
+    if (!cropped) {
+        brandLogoError.textContent = 'Please crop the image before submitting';
+        valid = false;
+    }
+
+    if (!valid) return;
+
+    // ✅ SEND USING AJAX
+    const formData = new FormData();
+    formData.append('brandName', brandNameInput.value.trim());
+    formData.append('brandLogo', fileInput.files[0]);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+
+    const response = await fetch('/admin/add-brand',{
+        method:"POST",
+        body:formData
+    })
+
+    const result=await response.json();
+
+    if(response.ok){
+        Swal.fire({
+            title:"Brand added successfully",
+            icon:"success",
+            timer:5000,
+            showConfirmButton:true
+        }).then(()=>{
+            window.location.href="/admin/brands"
+        })
+    }else{
+        Swal.fire({
+            icon:"error",
+            title:result.message || "",
+            timer:10000,
+            showConfirmButton:true
+        }).then(()=>{
+            submitBtn.disabled=false;
+            submitBtn.textContent="Submit";
+        })
+    }
+});
+</script>
+
+

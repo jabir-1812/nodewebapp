@@ -14,13 +14,13 @@ const loadLogin=(req,res)=>{
 const login=async (req,res)=>{
     try {
         const {email,password}=req.body;
-        console.log(`email:${email}
-            password:${password}`)
+        // console.log(`email:${email}
+        //     password:${password}`)
         const admin=await User.findOne({email,isAdmin:true});
-        console.log("admin=====>",admin)
+        // console.log("admin=====>",admin)
         
         if(admin){
-            console.log("if case worked=====")
+            // console.log("if case worked=====")
             const passwordMatch=await bcrypt.compare(password,admin.password);
             if(passwordMatch){
                 req.session.admin=admin._id;
@@ -37,19 +37,6 @@ const login=async (req,res)=>{
     }
 }
 
-
-const loadDashboard = async (req, res) => {
-  try {
-    if (req.session.admin) {
-     return res.render("./admin/dashboard", { title: "Admin Dashboard" });
-    }
-    else{
-        return res.redirect('/admin/login')
-    }
-  } catch (error) {
-    res.redirect("/admin/page-error");
-  }
-};
 
 
 const logout=async (req,res)=>{
@@ -76,7 +63,6 @@ const pageError=async (req,res)=>{
 module.exports={
     loadLogin,
     login,
-    loadDashboard,
     logout,
     pageError
 }

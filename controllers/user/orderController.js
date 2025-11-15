@@ -1,3 +1,5 @@
+const Status=require('../../constants/statusCodes')
+const DELIVERY_STATUS=require('../../constants/deliveryStatus.enum')
 const Cart=require('../../models/cartSchema')
 const Address=require('../../models/addressSchema')
 const Product=require('../../models/productSchema')
@@ -10,6 +12,7 @@ const crypto = require('crypto')
 const Wallet = require('../../models/walletSchema')
 require('dotenv').config();
 const Coupon=require('../../models/couponSchema')
+// const { STATUS_CODES } = require('http')
 // const { default: products } = require('razorpay/dist/types/products')
 
 class AppError extends Error {
@@ -38,7 +41,7 @@ const razorpay=new Razorpay({
 const createRazorPayOrder = async(req,res)=>{
 	try {
 		const userId=req.session.user || req.session.passport?.user;
-    if(!userId)return res.status(400).json({message:"session expired"})
+    if(!userId)return res.status(Status.BAD_REQUEST).json({message:"session expired"})
 
 		const {addressId,appliedCoupons=[]}=req.body;
 
@@ -68,7 +71,7 @@ const createRazorPayOrder = async(req,res)=>{
           ]
           })
     
-      if(!userCart || userCart.items.length===0) return res.status(400).json({status:false,message:"Cart is empty",reload:true})
+      if(!userCart || userCart.items.length===0) return res.status(Status.BAD_REQUEST).json({status:false,message:"Cart is empty",reload:true})
 
       //validating all items in the cart
       const cartProductIds=userCart.items.map((item)=>{
@@ -85,7 +88,7 @@ const createRazorPayOrder = async(req,res)=>{
 
       //updating if any invalid products removed from user's cart
       if(userCart.items.length !== cartProductIds.length){
-          return res.status(400).json({message:"some products are invalid,please try again",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"some products are invalid,please try again",reload:true})
       }
 
       let totalPrice=0;
@@ -107,11 +110,11 @@ const createRazorPayOrder = async(req,res)=>{
       // If any change happened, save updated cart
       if (isCartUpdated) {
         await userCart.save();
-        return res.status(400).json({message:"Some products are few left or out of stock, Please re-check your cart",reload:true})
+        return res.status(Status.BAD_REQUEST).json({message:"Some products are few left or out of stock, Please re-check your cart",reload:true})
       }
 
       if(totalPrice===0){
-        return res.status(400).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
+        return res.status(Status.BAD_REQUEST).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
       }
 
       //if any coupon applied, calculate discount and reduce it from total price
@@ -130,12 +133,12 @@ const createRazorPayOrder = async(req,res)=>{
             if(!areCouponsMatch){
               userCart.appliedCoupons=[];
               await userCart.save()
-              return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+              return res.status(Status.INTERNAL_ERROR).json({message:"Coupon mismatch, please try again",reload:true})
             }
         }else{
           userCart.appliedCoupons=[];
           await userCart.save()
-          return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+          return res.status(Status.INTERNAL_ERROR).json({message:"Coupon mismatch, please try again",reload:true})
         }
         
         //checking coupons are valid, and available
@@ -152,7 +155,7 @@ const createRazorPayOrder = async(req,res)=>{
             startDate: { $lt: now }
         });
         if(appliedCouponIds.length !== coupons.length){
-          return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
         }
 
         //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
@@ -162,22 +165,22 @@ const createRazorPayOrder = async(req,res)=>{
         if(!areCouponsMeetMinPurchase){
           userCart.appliedCoupons=[];
           userCart.save()
-          return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
         }
 
         //check if the product is valid category
         for(const coupon of coupons){
           if(coupon.isCategoryBased){
-          const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
-          const hasApplicableProduct=userCart.items.some((item)=>{
-            return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
-          })
-          //if there is no applicable products, remove the coupon from user's cart
-          if(!hasApplicableProduct){
-            userCart.appliedCoupons=[]
-            await userCart.save();
-            return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
-          }
+            const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
+            const hasApplicableProduct=userCart.items.some((item)=>{
+              return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
+            })
+            //if there is no applicable products, remove the coupon from user's cart
+              if(!hasApplicableProduct){
+                userCart.appliedCoupons=[]
+                await userCart.save();
+                return res.status(Status.BAD_REQUEST).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
+              }
           }
         }
 
@@ -245,7 +248,7 @@ const createRazorPayOrder = async(req,res)=>{
             productName:item.productId.productName,
             productImage:item.productId.productImage[0].url,
             quantity:item.quantity,
-            itemStatus:"Pending"
+            itemStatus:DELIVERY_STATUS.PENDING
           }
         })
 
@@ -289,7 +292,7 @@ const createRazorPayOrder = async(req,res)=>{
             shippingAddress: selectedAddress.toObject(),
             paymentMethod:"Online Payment",
             paymentStatus: "Pending", // update after payment success
-            orderStatus: "Pending",
+            orderStatus: DELIVERY_STATUS.PENDING,
             orderItems,
             totalMrp,
             totalOfferDiscount,
@@ -329,7 +332,7 @@ const createRazorPayOrder = async(req,res)=>{
         mrp:item.productId.regularPrice * item.quantity,
         price: item.productId.salePrice*item.quantity,
         offerDiscount:(item.productId.regularPrice * item.quantity)-(item.productId.salePrice * item.quantity),
-        itemStatus: "Pending" // 👈 every product starts as "Pending"
+        itemStatus: DELIVERY_STATUS.PENDING // 👈 every product starts as "Pending"
       }));
 
 
@@ -353,7 +356,7 @@ const createRazorPayOrder = async(req,res)=>{
           shippingAddress: selectedAddress.toObject(),
           paymentMethod:"Online Payment",
           paymentStatus: "Pending", // update after payment success
-          orderStatus: "Pending",
+          orderStatus: DELIVERY_STATUS.PENDING,
           orderItems,
           totalMrp,
           totalPrice,
@@ -386,12 +389,420 @@ const createRazorPayOrder = async(req,res)=>{
 		console.log("createRazorPayOrder() error=====>",error);
 
 		// ❌ Unknown/internal error
-		return res.status(500).json({
+		return res.status(Status.INTERNAL_ERROR).json({
 		success: false,
 		message: "Something went wrong. Please try again later."
 		});
 	}
 }
+
+
+
+
+
+
+
+
+
+const razorpayPaymentFailure=async (req,res)=>{
+  try {
+    const {razorpay_order_id, razorpay_payment_id, error_reason, appOrderId} = req.body;
+    await Order.updateOne(
+      {orderId:appOrderId},
+      {
+        paymentStatus:"Failed",
+        razorPayOrderId:razorpay_order_id,
+        razorPayPaymentId:razorpay_payment_id,
+        razorPayFailureReason:error_reason
+      }
+    )
+    res.json({success:true})
+  } catch (error) {
+    console.error("razorpayPaymentFailure() error========",error);
+    return res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
+  }
+}
+
+
+
+
+
+
+
+
+const showOrderFailurePage=async(req,res)=>{
+  try {
+    const userId=req.session.user || req.session.passport?.user;
+    const userData=await User.findById(userId)
+    const order=await Order.findOne({orderId:req.params.orderId})
+
+    res.render('user/order-failure',{
+      title:"Order Failed",
+      order,
+      razorPayKeyId:process.env.RAZORPAY_KEY_ID,
+      user:userData,
+      cartLength:null
+    })
+    
+  } catch (error) {
+    console.error("showOrderFailurePage() error==========",error);
+    res.redirect('/page-not-found')
+  }
+}
+
+
+
+
+
+
+
+
+
+const cancelFailedOrder=async(req,res)=>{
+  try {
+    const {orderId} = req.body;
+    // await Order.updateOne(
+    //   {orderId},
+    //   {
+    //     paymentStatus:"Failed",
+    //     orderStatus:DELIVERY_STATUS.CANCELLED
+    //   }
+    // )
+    await Order.updateOne(
+      { orderId },
+      {
+        $set: {
+          paymentStatus: "Failed",
+          orderStatus: DELIVERY_STATUS.CANCELLED,
+          "orderItems.$[elem].itemStatus": DELIVERY_STATUS.CANCELLED
+        }
+      },
+      {
+        arrayFilters: [{ "elem": { $exists: true } }]
+      }
+    );
+    // Reverse stock
+    const userId=req.session.user || req.session.passport?.user;
+    const userCart=await Cart.findOne({userId})
+      for (let item of userCart.items) {
+          await Product.findByIdAndUpdate(item.productId._id, {
+              $inc: { quantity: item.quantity }
+          });
+      }
+
+    return res.json({success:true})
+  } catch (error) {
+    console.error("cancelFailedOrder() error=========",error)
+    return res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
+  }
+}
+
+
+
+
+
+
+
+
+
+
+//in this function, we are recreating the razorpay order
+const retryPayment=async (req,res)=>{
+  try {
+    const {orderId}=req.body;
+    if(!orderId){
+      return res.status(Status.BAD_REQUEST).json({message:"Order not found",redirectToCheckoutPage:true})
+    }
+
+		const userId=req.session.user || req.session.passport?.user;
+    const order=await Order.findOne({orderId})
+    if(!order){
+      return res.status(Status.BAD_REQUEST).json({message:"Order not found",redirectToCheckoutPage:true})
+    }
+
+
+    let userCart = await Cart.findOne({ userId })
+          .populate({
+            path: "items.productId",
+            select: "productName productImage salePrice regularPrice brand quantity isBlocked category", // only the fields you need
+            populate:[ 
+            {
+              path: "brand",
+              select: "brandName",
+            },
+            {
+              path:"category",
+              select:"name"
+            }
+          ]
+          })
+    
+      if(!userCart || userCart.items.length===0) return res.status(Status.BAD_REQUEST).json({status:false,message:"Cart is empty",redirectToCheckoutPage:true})
+
+       //validating all items in the cart
+        const cartProductIds=userCart.items.map((item)=>{
+            return item.productId._id
+        })
+        const validCartProducts=await Product.find({_id:{$in:cartProductIds}})
+        const validCartProductsIds=validCartProducts.map((p)=>{return p._id.toString()})
+
+        //returning only valid products to the user's cart,
+        //removing the invalid products from user's cart
+        userCart.items=userCart.items.filter((item)=>{
+            return validCartProductsIds.includes(item.productId._id.toString())
+        })
+
+        //updating if any invalid products removed from user's cart
+        if(userCart.items.length !== cartProductIds.length){
+            return res.status(Status.BAD_REQUEST).json({message:"some products are invalid,please try again",redirectToCheckoutPage:true})
+        }
+
+        let totalPrice=0;
+        let totalAmount = 0;
+        let isCartUpdated = false;//initially set as false.
+
+
+      // Check each item quantity vs stock
+      for (const item of userCart.items) {
+        if (item.productId && item.quantity > item.productId.quantity) {
+          item.quantity = item.productId.quantity; // reduce to available stock
+          isCartUpdated = true;
+        }
+        totalPrice += (item.productId ? item.productId.salePrice : 0) * item.quantity;
+        totalAmount += (item.productId ? item.productId.salePrice : 0) * item.quantity;
+      }
+
+
+      // If any change happened, save updated cart
+      if (isCartUpdated) {
+        await userCart.save();
+        return res.status(Status.BAD_REQUEST).json({message:"Some products are few left or out of stock, Please re-check your cart",redirectToCheckoutPage:true})
+      }
+
+      if(totalPrice===0){
+        return res.status(Status.BAD_REQUEST).json({message:"Your cart is empty,re-check your cart and please try again",redirectToCheckoutPage:true})
+      }
+
+      //if any coupon applied, calculate discount and reduce it from total price
+      if(userCart.appliedCoupons.length > 0){
+        //checking coupons are valid, and available
+        const appliedCouponIds=userCart.appliedCoupons.map((appliedCoupon)=>{
+            return appliedCoupon.couponId;
+        })
+
+        //fetching all applied coupon's original doc with the coupon ids
+        const now = new Date();
+        const coupons = await Coupon.find({
+            _id: { $in: appliedCouponIds },
+            isActive: true,
+            expiryDate: { $gt: now },
+            startDate: { $lt: now }
+        });
+        if(appliedCouponIds.length !== coupons.length){
+          return res.status(Status.BAD_REQUEST).json({message:"Some coupons are expired or unavailable, Please try again",redirectToCheckoutPage:true})
+        }
+
+        //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
+        const areCouponsMeetMinPurchase=coupons.every((coupon)=>{
+          return coupon.minPurchase <= totalPrice
+        })
+        if(!areCouponsMeetMinPurchase){
+          userCart.appliedCoupons=[];
+          userCart.save()
+          return res.status(Status.BAD_REQUEST).json({message:"Minimum Purchase required for the coupon, Please try again",redirectToCheckoutPage:true})
+        }
+
+        //check if the product is valid category
+        for(const coupon of coupons){
+          if(coupon.isCategoryBased){
+            const applicableCategoryIds = coupon.applicableCategories.map(applicableCatId => applicableCatId.toString());
+            const hasApplicableProduct=userCart.items.some((item)=>{
+              return (item.productId?.category && applicableCategoryIds.includes(item.productId.category._id.toString()))
+            })
+            //if there is no applicable products, remove the coupon from user's cart
+              if(!hasApplicableProduct){
+                userCart.appliedCoupons=[]
+                await userCart.save();
+                return res.status(Status.BAD_REQUEST).json({message:"These product categories don't have this coupon discount, Please try again",redirectToCheckoutPage:true})
+              }
+          }
+        }
+
+
+        //all set
+        //calculate coupon discount
+        const itemPriceDetails=[] //to store every product's total amount and total discount
+        for(const item of userCart.items){
+          const itemTotalMrp=item.productId.regularPrice * item.quantity;
+          const itemTotalPrice=item.productId.salePrice * item.quantity;
+          let itemTotalCouponDiscount=0;
+          for(const coupon of coupons){
+            if(coupon.isCategoryBased){
+              //if the product is other category, skip this coupon application for that product
+              if(
+                !coupon.applicableCategories
+                  .some((catId)=>{return catId.toString()=== item.productId.category._id.toString()})
+                ){
+                  continue;
+                }
+
+                let discount=0;
+                if(coupon.discountType==="percentage"){
+                  discount=(itemTotalPrice*coupon.discountValue)/100
+                }else{
+                  //if fixed discount
+                  discount=(itemTotalPrice/totalPrice)*coupon.discountValue
+                }
+
+                //cap max discount
+                if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
+                  discount=coupon.maxDiscountAmount;
+                }
+
+                itemTotalCouponDiscount+=discount;
+            }else{//if coupon is not category based
+                let discount=0;
+              
+                if(coupon.discountType==="percentage"){
+                  discount=(itemTotalPrice*coupon.discountValue)/100
+                }else{
+                  //if fixed discount
+                  discount=(itemTotalPrice/totalPrice)*coupon.discountValue
+                }
+
+                //cap max discount
+                if(coupon.maxDiscountAmount && discount> coupon.maxDiscountAmount){
+                  discount=coupon.maxDiscountAmount;
+                }
+                itemTotalCouponDiscount+=discount;
+            }
+          }
+          itemPriceDetails.push({
+            productId:item.productId._id.toString(),
+            itemTotalMrp:itemTotalMrp,
+            itemTotalPrice:itemTotalPrice,
+            itemTotalCouponDiscount:itemTotalCouponDiscount,
+            itemTotalAmount:itemTotalPrice-itemTotalCouponDiscount
+          })
+        }
+
+        //prepare order items obj with coupon discount
+        const orderItems=userCart.items.map((item)=>{
+          return {
+            productId:item.productId._id.toString(),
+            productName:item.productId.productName,
+            productImage:item.productId.productImage[0].url,
+            quantity:item.quantity,
+            itemStatus:DELIVERY_STATUS.PENDING
+          }
+        })
+
+         orderItems.forEach((o)=>{
+          const itemPrices=itemPriceDetails.find((i)=>{ return i.productId === o.productId})
+          o.mrp=itemPrices.itemTotalMrp;
+          o.couponDiscount=itemPrices.itemTotalCouponDiscount;
+          o.offerDiscount=itemPrices.itemTotalMrp-itemPrices.itemTotalPrice;
+          o.price=itemPrices.itemTotalAmount;
+
+        })
+
+
+        const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
+          return sum+curr.itemTotalMrp
+        },0)
+
+        const totalCouponDiscount=itemPriceDetails.reduce((sum,curr)=>{
+          return sum+curr.itemTotalCouponDiscount
+        },0)
+
+        // const totalPrice=itemPriceDetails.reduce((sum,curr)=>{
+        //   return sum+curr.itemTotalPrice
+        // },0)
+
+        const totalAmount=itemPriceDetails.reduce((sum,curr)=>{
+          return sum+curr.itemTotalAmount
+        },0)
+
+        const totalOfferDiscount=totalMrp-totalPrice;
+
+        // 5. Create order
+        order.orderId=orderId;
+        order.userId=userId;
+        order.paymentMethod="Online Payment";
+        order.paymentStatus="Pending";
+        order.orderStatus=DELIVERY_STATUS.PENDING;
+        order.orderItems=orderItems;
+        order.totalMrp=totalMrp;
+        order.totalCouponDiscount=totalCouponDiscount;
+        order.totalOfferDiscount=totalOfferDiscount;
+        order.totalPrice=totalPrice;
+        order.totalAmount=totalAmount;
+
+        await order.save();
+
+        // Reduce stock
+        for (let item of userCart.items) {
+            await Product.findByIdAndUpdate(item.productId._id, {
+                $inc: { quantity: -item.quantity }
+            });
+        }
+
+         const options={
+          amount:totalAmount*100,
+          currency:"INR",
+          receipt:orderId
+        }
+
+        const razorpayOrder =await razorpay.orders.create(options);
+		    return res.json({razorpayOrder,teeSpaceOrderId:orderId});
+        
+      }
+      
+
+      const totalMrp=userCart.items.reduce((sum,item)=>{
+        return sum+item.productId.regularPrice*item.quantity
+      },0)
+
+      const totalOfferDiscount=totalMrp-totalPrice;
+
+       order.orderId=orderId;
+        order.userId=userId;
+        order.paymentMethod="Online Payment";
+        order.paymentStatus="Pending";
+        order.orderStatus=DELIVERY_STATUS.PENDING;
+        order.totalMrp=totalMrp;
+        // order.totalCouponDiscount=totalCouponDiscount;
+        order.totalOfferDiscount=totalOfferDiscount;
+        order.totalPrice=totalPrice;
+        order.totalAmount=totalAmount;
+
+        await order.save();
+
+        // Reduce stock
+        for (let item of userCart.items) {
+            await Product.findByIdAndUpdate(item.productId._id, {
+                $inc: { quantity: -item.quantity }
+            });
+        }
+
+         const options={
+          amount:totalAmount*100,
+          currency:"INR",
+          receipt:orderId
+        }
+
+        const razorpayOrder =await razorpay.orders.create(options);
+		    return res.json({razorpayOrder,teeSpaceOrderId:orderId});
+  } catch (error) {
+    console.error("retryPayment() error=======",error)
+    return res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
+  }
+}
+
+
+
+
+
 
 
 
@@ -405,7 +816,7 @@ const verifyRazorpayPayment = async (req,res)=>{
     const userId=req.session.user || req.session.passport?.user
 
     const order=await Order.findOne({userId,orderId:teeSpaceOrderId})
-    if(!order) return res.status(400).json({success:false,message:"Order not found, Please try again"})
+    if(!order) return res.status(Status.BAD_REQUEST).json({success:false,message:"Order not found, Please try again"})
     
 
 		const sign = razorpay_order_id + "|" + razorpay_payment_id;
@@ -429,7 +840,7 @@ const verifyRazorpayPayment = async (req,res)=>{
               $inc: { quantity: item.quantity }
           });
       }
-      return res.status(400).json({ success: false, message: "Payment verification failed." });
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Payment verification failed." });
     }
 
      // Mark order as paid
@@ -458,7 +869,7 @@ const verifyRazorpayPayment = async (req,res)=>{
     return res.json({ success: true, message: "Payment verified successfully." ,orderId:teeSpaceOrderId});
 	} catch (error) {
 		console.log("verifyRazorpayPayment() error===>",error)
-    return res.status(500).json({
+    return res.status(Status.INTERNAL_ERROR).json({
       success: false,
       message: "Something went wrong while verifying payment.",
     });
@@ -478,7 +889,7 @@ const place_cod_order=async (req,res)=>{
         const userId=req.session.user || req.session.passport?.user;
         const {addressId,appliedCoupons=[]}=req.body;
         
-        if(!userId)return res.status(400).json({message:"session expired"})
+        if(!userId)return res.status(Status.BAD_REQUEST).json({message:"session expired"})
 
         //  Fetch address and copy it
           const userAddressDoc = await Address.findOne(
@@ -507,7 +918,7 @@ const place_cod_order=async (req,res)=>{
           ]
           })
     
-        if(!userCart || userCart.items.length===0) return res.status(400).json({status:false,message:"Cart is empty",reload:true})
+        if(!userCart || userCart.items.length===0) return res.status(Status.BAD_REQUEST).json({status:false,message:"Cart is empty",reload:true})
 
         //validating all items in the cart
         const cartProductIds=userCart.items.map((item)=>{
@@ -524,7 +935,7 @@ const place_cod_order=async (req,res)=>{
     
         //updating if any invalid products removed from user's cart
         if(userCart.items.length !== cartProductIds.length){
-            return res.status(400).json({message:"some products are invalid,please try again",reload:true})
+            return res.status(Status.BAD_REQUEST).json({message:"some products are invalid,please try again",reload:true})
         }
         
         let totalPrice=0;
@@ -546,15 +957,15 @@ const place_cod_order=async (req,res)=>{
         // If any change happened, save updated cart
         if (isCartUpdated) {
           await userCart.save();
-          return res.status(400).json({message:"Some products are few left or out of stock, Please re-check your cart",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"Some products are few left or out of stock, Please re-check your cart",reload:true})
         }
 
         if(totalPrice===0){
-          return res.status(400).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
         }
 
         if(userCart.appliedCoupons.length === 0 && totalAmount>1000){
-          return res.status(400).json({message:"Cash on Delivery is not available for order above Rs.1000/-",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"Cash on Delivery is not available for order above Rs.1000/-",reload:true})
         }
         
         if(userCart.appliedCoupons.length > 0){
@@ -572,12 +983,12 @@ const place_cod_order=async (req,res)=>{
                 if(!areCouponsMatch){
                   userCart.appliedCoupons=[];
                   await userCart.save()
-                  return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+                  return res.status(Status.INTERNAL_ERROR).json({message:"Coupon mismatch, please try again",reload:true})
                 }
             }else{
               userCart.appliedCoupons=[];
               await userCart.save()
-              return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+              return res.status(Status.INTERNAL_ERROR).json({message:"Coupon mismatch, please try again",reload:true})
             }
           
             //checking coupons are valid, and available
@@ -594,7 +1005,7 @@ const place_cod_order=async (req,res)=>{
                 startDate: { $lt: now }
             });
             if(appliedCouponIds.length !== coupons.length){
-              return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
+              return res.status(Status.BAD_REQUEST).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
             }
 
             //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
@@ -604,7 +1015,7 @@ const place_cod_order=async (req,res)=>{
             if(!areCouponsMeetMinPurchase){
               userCart.appliedCoupons=[];
               userCart.save()
-              return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
+              return res.status(Status.BAD_REQUEST).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
             }
 
             //check if the product is valid category
@@ -618,7 +1029,7 @@ const place_cod_order=async (req,res)=>{
                     if(!hasApplicableProduct){
                       userCart.appliedCoupons=[]
                       await userCart.save();
-                      return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
+                      return res.status(Status.BAD_REQUEST).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
                     }
                 }
             }
@@ -711,7 +1122,7 @@ const place_cod_order=async (req,res)=>{
             console.log("totalAmount after coupon application============",totalAmount)
 
             if(totalAmount>1000){
-                return res.status(400).json({message:"Cash on Delivery is not available for orders above Rs.1000/-",reload:true})
+                return res.status(Status.BAD_REQUEST).json({message:"Cash on Delivery is not available for orders above Rs.1000/-",reload:true})
             }
 
             const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
@@ -841,7 +1252,7 @@ const place_cod_order=async (req,res)=>{
     } catch (error) {
         console.error("orderController / place_cod_order() error:",error);
 
-        return res.status(500).json({
+        return res.status(Status.INTERNAL_ERROR).json({
           success: false,
           message: "Something went wrong. Please try again later.",
           reload:true
@@ -855,11 +1266,16 @@ const place_cod_order=async (req,res)=>{
 
 
 
+
+
+
+
+
 const placeWalletPaidOrder = async (req,res)=>{
   try {
       const userId=req.session.user || req.session.passport?.user;
       const userWallet=await Wallet.findOne({userId})
-      if(!userWallet)return res.status(500).json({success:false,message:"Your wallet is not found"})
+      if(!userWallet)return res.status(Status.INTERNAL_ERROR).json({success:false,message:"Your wallet is not found"})
 
       const {addressId,appliedCoupons=[]}=req.body;
 
@@ -891,7 +1307,7 @@ const placeWalletPaidOrder = async (req,res)=>{
         ]
         })
 
-      if(!userCart || userCart.items.length===0) return res.status(400).json({status:false,message:"Cart is empty",reload:true})
+      if(!userCart || userCart.items.length===0) return res.status(Status.BAD_REQUEST).json({status:false,message:"Cart is empty",reload:true})
 
        //validating all items in the cart
       const cartProductIds=userCart.items.map((item)=>{
@@ -908,7 +1324,7 @@ const placeWalletPaidOrder = async (req,res)=>{
   
       //updating if any invalid products removed from user's cart
       if(userCart.items.length !== cartProductIds.length){
-          return res.status(400).json({message:"some products are invalid,please try again",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"some products are invalid,please try again",reload:true})
       }
 
       let totalPrice=0;
@@ -930,11 +1346,11 @@ const placeWalletPaidOrder = async (req,res)=>{
       // If any change happened, save updated cart
       if (isCartUpdated) {
         await userCart.save();
-        return res.status(400).json({message:"Some products are few left or out of stock, Please re-check your cart",reload:true})
+        return res.status(Status.BAD_REQUEST).json({message:"Some products are few left or out of stock, Please re-check your cart",reload:true})
       }
 
       if(totalPrice===0){
-        return res.status(400).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
+        return res.status(Status.BAD_REQUEST).json({message:"Your cart is empty,re-check your cart and please try again",reload:true})
       }
 
       if(userCart.appliedCoupons.length > 0){
@@ -952,12 +1368,12 @@ const placeWalletPaidOrder = async (req,res)=>{
                 if(!areCouponsMatch){
                   userCart.appliedCoupons=[];
                   await userCart.save()
-                  return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+                  return res.status(Status.INTERNAL_ERROR).json({message:"Coupon mismatch, please try again",reload:true})
                 }
             }else{
               userCart.appliedCoupons=[];
               await userCart.save()
-              return res.status(500).json({message:"Coupon mismatch, please try again",reload:true})
+              return res.status(Status.INTERNAL_ERROR).json({message:"Coupon mismatch, please try again",reload:true})
             }
             
             //checking coupons are valid, and available
@@ -974,7 +1390,7 @@ const placeWalletPaidOrder = async (req,res)=>{
                 startDate: { $lt: now }
             });
             if(appliedCouponIds.length !== coupons.length){
-              return res.status(400).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
+              return res.status(Status.BAD_REQUEST).json({message:"Some coupons are expired or unavailable, Please try again",reload:true})
             }
 
             //re-checking if cart total meeting minPurchase for coupon discount.every coupon has atleast 0 minPurchase
@@ -984,7 +1400,7 @@ const placeWalletPaidOrder = async (req,res)=>{
             if(!areCouponsMeetMinPurchase){
               userCart.appliedCoupons=[];
               userCart.save()
-              return res.status(400).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
+              return res.status(Status.BAD_REQUEST).json({message:"Minimum Purchase required for the coupon, Please try again",reload:true})
             }
 
             //this only work if the coupon is category based
@@ -999,7 +1415,7 @@ const placeWalletPaidOrder = async (req,res)=>{
               if(!hasApplicableProduct){
                 userCart.appliedCoupons=[]
                 await userCart.save();
-                return res.status(400).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
+                return res.status(Status.BAD_REQUEST).json({message:"These product categories don't have this coupon discount, Please try again",reload:true})
               }
               }
             }
@@ -1088,7 +1504,7 @@ const placeWalletPaidOrder = async (req,res)=>{
             },0)
 
             if(totalAmount>userWallet.balance){
-              return res.status(400).json({message:"Not enough balance in your wallet",reload:true})
+              return res.status(Status.BAD_REQUEST).json({message:"Not enough balance in your wallet",reload:true})
             }
 
             const totalMrp=itemPriceDetails.reduce((sum,curr)=>{
@@ -1178,7 +1594,7 @@ const placeWalletPaidOrder = async (req,res)=>{
       }
 
       if(totalAmount>userWallet.balance){
-          return res.status(400).json({message:"Not enough balance in your wallet",reload:true})
+          return res.status(Status.BAD_REQUEST).json({message:"Not enough balance in your wallet",reload:true})
       }
 
       // Prepare order items with itemStatus
@@ -1244,13 +1660,16 @@ const placeWalletPaidOrder = async (req,res)=>{
       return res.json({ success: true, message: "Order placed successfully", orderId: newOrder.orderId });
   } catch (error) {
       console.error("orderController / placeWalletPaidOrder() error:",error);
-      return res.status(500).json({
+      return res.status(Status.INTERNAL_ERROR).json({
         success: false,
         message: "Something went wrong. Please try again later."
       });
 
   }
 }
+
+
+
 
 
 
@@ -1285,6 +1704,10 @@ const showOrderSuccessPage=async (req,res)=>{
 
 
 
+
+
+
+
 const showOrders = async (req, res) => {
     try {
         const userId = req.session.user || req.session.passport?.user;
@@ -1292,7 +1715,7 @@ const showOrders = async (req, res) => {
 
         // Pagination
         const page = parseInt(req.query.page) || 1;  
-        const limit = 5;  // orders per page
+        const limit = 1;  // orders per page
         const skip = (page - 1) * limit;
 
         // Search
@@ -1359,6 +1782,8 @@ const showOrders = async (req, res) => {
         res.redirect("/page-not-found");
     }
 };
+
+
 
 
 
@@ -1438,7 +1863,7 @@ const cancelOrderItem = async (req, res) => {
     }
 
     if (item.itemStatus !== "Pending") {
-      return res.status(400).json({ success: false, message: "Item cannot be cancelled at this stage" });
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Item cannot be cancelled at this stage" });
     }
 
     //  Restore stock
@@ -1524,7 +1949,7 @@ const cancelOrderItem = async (req, res) => {
 
   } catch (error) {
     console.log("cancelOrderItem() error =>", error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
+    res.status(Status.INTERNAL_ERROR).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -1547,7 +1972,7 @@ const cancelWholeOrder = async (req, res) => {
 
     // Block cancellation if shipped/delivered items exist
     if (order.orderItems.some(i => ["Shipped", "Delivered"].includes(i.itemStatus))) {
-      return res.status(400).json({
+      return res.status(Status.BAD_REQUEST).json({
         success: false,
         message: "Some items are already shipped/delivered. Order cannot be cancelled."
       });
@@ -1555,7 +1980,7 @@ const cancelWholeOrder = async (req, res) => {
 
     // Allow cancel only if order is in these statuses
     if (!["Pending", "Partially Cancelled"].includes(order.orderStatus)) {
-      return res.status(400).json({ success: false, message: "Order cannot be cancelled at this stage" });
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Order cannot be cancelled at this stage" });
     }
 
     const pendingItems=order.orderItems.filter((item)=>{
@@ -1655,7 +2080,7 @@ const cancelWholeOrder = async (req, res) => {
 
   } catch (error) {
     console.error("cancelWholeOrder() error =>", error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
+    res.status(Status.INTERNAL_ERROR).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -1670,7 +2095,7 @@ const getInvoice = async (req, res) => {
     const order = await Order.findById(req.params.id).populate("userId");k
     
     if (!order) return res.status(404).send("Order not found");
-    if (!order.invoice?.generated) return res.status(400).send("Invoice not generated yet");
+    if (!order.invoice?.generated) return res.status(Status.BAD_REQUEST).send("Invoice not generated yet");
 
     // Set response headers
     res.setHeader("Content-Type", "application/pdf");
@@ -1709,7 +2134,7 @@ const getInvoice = async (req, res) => {
     doc.end();
   } catch (error) {
     console.error("getInvoice error:", error);
-    res.status(500).send("Internal server error");
+    res.status(Status.INTERNAL_ERROR).send("Internal server error");
   }
 };
 
@@ -1754,6 +2179,10 @@ const returnOrderItem = async (req, res) => {
 module.exports={
     createRazorPayOrder,
 	  verifyRazorpayPayment,
+    razorpayPaymentFailure,
+    showOrderFailurePage,
+    cancelFailedOrder,
+    retryPayment,
     place_cod_order,
     placeWalletPaidOrder,
     showOrders,

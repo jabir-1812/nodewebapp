@@ -137,7 +137,8 @@
         const form = document.getElementById('addProductForm');
         const croppedImages=new Array(4).fill(null); //croppedImages=[null,null,null,null]
 
-        form.addEventListener('submit', function(event){
+        form.addEventListener('submit',async function(event){
+            event.preventDefault();
             console.log('form submitting...........');
             const productName=document.getElementsByName('productName')[0].value;
             const brand = document.getElementsByName('brand')[0].value;
@@ -196,8 +197,8 @@
                 event.preventDefault();
                 return;
             }
-            if (parseFloat(price) <= parseFloat(saleprice)) {
-                displayErrorMessage('regularPrice-error', 'Regular price must be greater than sale price.');
+            if (parseFloat(price) < parseFloat(saleprice)) {
+                displayErrorMessage('regularPrice-error', 'Regular price must be greater than or equal to sale price.');
                 event.preventDefault();
                 return;
             }
@@ -219,6 +220,46 @@
                 console.log("croppedImageCount:",croppedImageCount)
                 return;
             }
+
+            const formData=new FormData(form)
+            const data=Object.fromEntries(formData.entries())
+            console.log("daataaaaaaaa",data)
+            console.log("files=========",formData.getAll("images"))
+
+            const response=await fetch("/admin/add-products",{
+                method:"POST",
+                body:formData
+            })
+
+            const result=await response.json();
+            
+            if(response.ok){
+                if(result.success){
+                    Swal.fire({
+                        timer:5000,
+                        showConfirmButton:true,
+                        icon:"success",
+                        title:result.message || "New product added successfully"
+                    }).then(()=>{
+                        window.location.href="/admin/products"
+                    })
+                }else{
+                    Swal.fire({
+                        timer:10000,
+                        showConfirmButton:true,
+                        icon:"error",
+                        title:result.message,
+                    })
+                }
+            }else{
+                Swal.fire({
+                    title:result.message,
+                    timer:10000,
+                    showConfirmButton:true,
+                    icon:"error"
+                })
+            }
+
 
         });
 
@@ -321,20 +362,15 @@
     
 
     function displayErrorMessage(elementId, message) {
-        console.log("displayErrorMessage has started.elementId:",elementId)
-        var errorElement = document.getElementById(elementId);
+        const errorElement = document.getElementById(elementId);
         errorElement.innerText = message;
         errorElement.style.display = "block";
     }
 
     function clearErrorMessages() {
-        console.log('clearErrorMessage() has started')
         const errorElements = document.getElementsByClassName('error-message');
-        console.log("error elements:",errorElements)
         Array.from(errorElements).forEach(element => {
-            console.log("before:::::",element);
             element.innerHTML = "";
-            console.log("after:::::",element)
         });
     }
 

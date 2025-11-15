@@ -64,6 +64,12 @@ app.use((req, res) => {
   })
 });
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render('error-page', { title: "Server Error" });
+});
+
+
 app.listen(process.env.PORT,(err)=>{
     if(err){
         console.log("error starting server:",err)

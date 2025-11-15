@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const Category=require('../../models/categorySchema');
 const Product =require('../../models/productSchema')
 const Offer = require('../../models/offerSchema')
@@ -15,6 +16,16 @@ categoryInfo = async (req,res)=>{
         .sort({createdAt:-1})
         .skip((page - 1)* ITEMS_PER_PAGE)
         .limit(ITEMS_PER_PAGE)
+
+        const products=await Product.aggregate([{$group:{_id:"$category",products:{$sum:1}}}])
+
+        for(const c of categories){
+          for(const p of products){
+            if(c._id.toString()===p._id.toString()){
+              c.products=p.products
+            }
+          }
+        }
 
         res.render('./admin/category/2category',{
             title:"Categories",
@@ -63,7 +74,7 @@ const addCategory = async (req,res)=>{
                 formData: req.body
             });
         } else {
-            res.status(500).send('Server Error');
+            res.status(Status.INTERNAL_ERROR).send('Server Error');
             console.log("catch block error in adding category:",error);
             res.redirect("/admin/page-error");
         }
@@ -185,7 +196,7 @@ const addCategoryOffer = async (req, res) => {
     res.json({ status: true, message: "Category offer added successfully" });
   } catch (error) {
     console.error("Error adding category offer:", error);
-    res.status(500).json({ status: false, message: "Internal Server Error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, message: "Internal Server Error" });
   }
 }
 
@@ -238,7 +249,7 @@ const removeCategoryOffer = async (req, res) => {
     res.json({ status: true, message: "Category offer removed successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ status: false, message: "Internal Server Error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, message: "Internal Server Error" });
   }
 };
 
@@ -250,7 +261,7 @@ const listCategory = async (req,res)=>{
         await Category.updateOne({_id:categoryId},{$set:{isDeleted:false}});
         res.json({success:true,message:"Category listed successfully"})
     } catch (error) {
-        res.status(500).json({success:false,message:"error listing the category"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"error listing the category"})
         console.log("listCategory error:",error);
     }
 }
@@ -262,7 +273,7 @@ const unlistCategory = async (req,res)=>{
         await Category.updateOne({_id:categoryId},{$set:{isDeleted:true}});
         res.json({success:true,message:"Category unlisted successfully"})
     } catch (error) {
-        res.status(500).json({success:false,message:"error unlisting the category"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"error unlisting the category"})
         console.log("unlistCategory error:",error);
     }
 }

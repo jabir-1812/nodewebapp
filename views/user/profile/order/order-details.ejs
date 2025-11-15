@@ -310,6 +310,9 @@
                             </span>
                     </p>
                     <p><strong>Return Reason:</strong> <%= item.returnReason %></p>
+                            <% if(item.returnStatus === "Rejected"){ %>
+                                <p><strong>Rejection Reason:</strong> <%= item.rejectionReason %></p>       
+                            <% } %>
                         <% } %>
 
                         <% if(item.refundStatus==="Refunded"){ %>

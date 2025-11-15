@@ -35,7 +35,7 @@
         <div class="form-group" id="existingImageContainer" style="<%= brand.brandImage ? '' : 'display:none;' %>">
             <label>Existing Brand Logo:</label>
             <div>
-                <img src="/uploads/resized-images/<%= brand.brandImage %>" alt="Brand Logo" style="max-width: 150px;">
+                <img src="<%= brand.brandImage %>" alt="Brand Logo" style="max-width: 150px;">
                 <button type="button" id="removeExistingImage" class="btn btn-sm btn-danger">Remove</button>
             </div>
         </div>

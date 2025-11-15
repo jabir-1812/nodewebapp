@@ -93,7 +93,14 @@
             return;
         }
 
+
         const file=imageInputField.files[0];
+        if (!file.type.startsWith('image/')) {
+            Swal.fire("Please choose a valid image file", "", "error");
+            imageInputField.value = '';
+            return;
+        }
+        
         const reader=new FileReader();
 
         reader.onload=function(e){

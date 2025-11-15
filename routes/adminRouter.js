@@ -10,9 +10,14 @@ const bannerController=require('../controllers/admin/bannerController');
 const orderController=require('../controllers/admin/adminOrderController');
 const couponController=require('../controllers/admin/couponController');
 const salesReportController=require('../controllers/admin/salesReportController')
+const dashboardController=require('../controllers/admin/dashboardController')
 const multer=require('multer');
-const {productStorage}=require('../config/cloudinaryProduct');
-const uploads=multer({storage:productStorage});
+const {bannerStorage}=require('../config/cloudinaryBanner')
+const bannerUploads=multer({storage:bannerStorage});
+
+
+
+const upload=require('../middlewares/multer')
 const logger=require('../config/logger')
 
 
@@ -23,8 +28,16 @@ router.get('/page-error',adminController.pageError);
 //Login
 router.get('/login',adminController.loadLogin);
 router.post('/login',adminController.login);
-router.get('/',adminAuth,adminController.loadDashboard);
 router.get('logout',adminController.logout);
+
+
+
+
+
+
+router.get('/',adminAuth,dashboardController.loadDashboard);
+
+
 
 
 
@@ -51,11 +64,11 @@ router.post('/unlist-category',adminAuth,categoryController.unlistCategory);
 //Brand Management
 router.get('/brands',adminAuth,brandController.loadAllBrands);
 router.get('/add-brand',adminAuth,brandController.loadAddBrandPage);
-router.post('/add-brand',adminAuth,uploads.single("image"),brandController.addBrand);
+router.post('/add-brand',adminAuth,upload.single("brandLogo"),brandController.addBrand);
 router.post('/add-brand-offer',adminAuth,brandController.addBrandOffer);
 router.post('/remove-brand-offer',adminAuth,brandController.removeBrandOffer);
 router.get('/edit-brand/:id',adminAuth,brandController.loadEditBrand);
-router.post('/edit-brand/:id',adminAuth,uploads.single("image"),brandController.editBrand);
+router.post('/edit-brand/:id',adminAuth,upload.single("brandLogo"),brandController.editBrand);
 router.post('/block-brand',adminAuth,brandController.blockBrand);
 router.post('/unblock-brand',adminAuth,brandController.unblockBrand);
 // router.get('/delete-brand',adminAuth,brandController.deleteBrand);
@@ -64,7 +77,7 @@ router.post('/unblock-brand',adminAuth,brandController.unblockBrand);
 
 //Product Management
 router.get('/add-products',adminAuth,productController.loadAddProductPage);
-router.post('/add-products',adminAuth,uploads.array('images',4),productController.addProduct);
+router.post('/add-products',adminAuth,upload.array('images',4),productController.addProduct);
 router.get('/products',adminAuth,productController.loadAllProductsPage);
 router.post('/add-product-offer',adminAuth,productController.addProductOffer);
 router.post('/remove-product-offer',adminAuth,productController.removeProductOffer);
@@ -72,16 +85,16 @@ router.post('/block-unblock-product/:id',adminAuth,productController.blockUnbloc
 router.post('/block-product',adminAuth,productController.blockProduct);
 router.post('/unblock-product',adminAuth,productController.unblockProduct);
 router.get('/edit-product/:id',adminAuth,productController.loadEditProductPage);
-router.post('/edit-product/:id',adminAuth,uploads.array('newImages'),productController.editProduct);
+router.post('/edit-product/:id',adminAuth,upload.array('newImages'),productController.editProduct);
 
 
 
 //Banner Management
 router.get('/banners',adminAuth,bannerController.getBannerPage);
 router.get('/add-banner',adminAuth,bannerController.loadAddBannerPage);
-router.post('/add-banner',adminAuth,uploads.single('image'),bannerController.addBanner);
+router.post('/add-banner',adminAuth,bannerUploads.single('image'),bannerController.addBanner);
 router.get('/edit-banner/:id',adminAuth,bannerController.loadEditBannerPage);
-router.post('/edit-banner/:id',adminAuth,uploads.single('image'),bannerController.editBanner);
+router.post('/edit-banner/:id',adminAuth,bannerUploads.single('image'),bannerController.editBanner);
 router.get('/delete-banner',adminAuth,bannerController.deleteBanner)
 
 
@@ -90,8 +103,8 @@ router.get('/delete-banner',adminAuth,bannerController.deleteBanner)
 router.get('/orders',adminAuth,orderController.listAllOrders)
 router.get('/orders/order-details/:orderId',adminAuth,orderController.getOrderDetails)
 router.post('/orders/order-details/update-item-status',adminAuth,orderController.updateItemStatus)
-router.post('/orders/:orderId/return/:itemId/:action',adminAuth,orderController.manageReturnRequest)
-router.post('/orders/return/update-status',adminAuth,orderController.updateReturnStatus);
+router.patch('/orders/:orderId/return/:itemId/:action',adminAuth,orderController.manageReturnRequest)
+router.patch('/orders/return/update-status',adminAuth,orderController.updateReturnStatus);
 
 
 

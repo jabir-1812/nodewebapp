@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 const Cart=require('../../models/cartSchema');
@@ -208,7 +209,7 @@ const changeCartQuantity = async (req, res) => {
     }, 0);
     const totalPrice=totalAmount;
 
-    res.status(200).json({
+    res.status(Status.OK).json({
       status,
       message: status ? "Quantity updated" : "Adjusted to available stock",
       updatedCartProductQty, // send final quantity
@@ -218,7 +219,7 @@ const changeCartQuantity = async (req, res) => {
 
   } catch (error) {
     console.log("changeCartQuantity() error:", error);
-    res.status(500).json({ status: false, error: "Server error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, error: "Server error" });
   }
 };
 
@@ -233,10 +234,10 @@ const deleteCartItem =async (req,res)=>{
       { $pull: { items: { productId: new mongoose.Types.ObjectId(String(productId)) } } }
     );
 
-    res.status(200).json({ status: true, message: "Item removed" });
+    res.status(Status.OK).json({ status: true, message: "Item removed" });
   } catch (error) {
     console.log('deleteCartItem() error:', error);
-    res.status(500).json({ status: false, error: "Server error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, error: "Server error" });
   }
 }
 

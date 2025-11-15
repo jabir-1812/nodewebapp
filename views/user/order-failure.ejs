@@ -1,0 +1,359 @@
+<%- include("../../views/partials/user/header") %>
+
+<style>
+    /* Main container styling */
+    .payment-failure-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Failure header */
+    .failure-header {
+        text-align: center;
+        padding: 30px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        color: white;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+
+    .failure-header h1 {
+        font-size: 2.5rem;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    /* Info section */
+    .info-section {
+        background: #fff3cd;
+        border-left: 5px solid #ffc107;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+    }
+
+    .info-section p {
+        margin: 10px 0;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .info-section .reassurance {
+        font-weight: 600;
+        font-size: 1.2rem;
+        color: #856404;
+        margin: 15px 0;
+    }
+
+    .info-section i {
+        display: block;
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 5px;
+        font-style: normal;
+        line-height: 1.8;
+        color: #666;
+    }
+
+    /* Order details section */
+    .order-details {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        border: 2px solid #e9ecef;
+    }
+
+    .order-details p {
+        /* font-family: 'Courier New', monospace; */
+        line-height: 2;
+        color: #495057;
+        margin: 0;
+    }
+
+    /* Action buttons section */
+    .action-section {
+        margin-top: 30px;
+    }
+
+    .action-section h3 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 25px;
+        font-size: 1.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    /* Button styles */
+    button, .btn-link {
+        padding: 15px 30px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Primary button - Retry Payment */
+    .btn-retry {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .btn-retry:hover {
+        background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+    }
+
+    /* Secondary button - Checkout */
+    .btn-checkout {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+    }
+
+    .btn-checkout:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    }
+
+    /* Tertiary button - Order Details */
+    .btn-details {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+    }
+
+    .btn-details:hover {
+        background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .payment-failure-container {
+            padding: 15px;
+            margin: 20px auto;
+        }
+
+        .failure-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+        button, .btn-link {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="payment-failure-container">
+    <!-- Failure Header -->
+    <div class="failure-header">
+        <h1>Payment Failed</h1>
+    </div>
+
+    <!-- Information Section -->
+    <div class="info-section">
+        <p>We couldn't complete your payment.</p>
+        <p class="reassurance">✓ No amount has been deducted from your account</p>
+        <i>
+            💡 <strong>Important Information:</strong><br>
+            • We do not charge until a payment is successful.<br>
+            • If money was deducted, it will be auto-refunded within 5 - 7 business days.<br>
+            • UPI payments may show 'Pending'. You can check your UPI app for refund status.
+        </i>
+    </div>
+
+    <!-- Order Details -->
+    <div class="order-details">
+        <p>
+            <strong>Order ID:</strong> <%= order.orderId %><br>
+            <strong>Attempted Amount:</strong> Rs. <%= order.totalAmount %>/-<br>
+            <strong>Reason:</strong> <%= order.failureReason %><br>
+            <strong>RazorPay Order ID:</strong> <%= order.razorPayOrderId %><br>
+            <strong>RazorPay Payment ID:</strong> <%= order.razorPayPaymentId %>
+        </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-section">
+        <h3>What would you like to do next?</h3>
+        <div class="button-group">
+            <button class="btn-retry" onclick="retryPayment('<%= order.orderId %>')">
+                🔄 Retry Payment
+            </button>
+            <a href="/checkout" style="text-decoration: none;">
+                <button class="btn-checkout">
+                    🛒 Go back to checkout
+                </button>
+            </a>
+            <button class="btn-details" onclick="gotoOrderDetailsPage('<%= order.orderId %>')">
+                📋 View order details
+            </button>
+        </div>
+    </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>
+
+<script>
+    async function gotoOrderDetailsPage(orderId='<%= order.orderId %>') {
+        const response=await fetch("/razorpay/order-failure/cancel-order",{
+            method:"PATCH",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({orderId:orderId})
+        })
+
+        const result=await response.json()
+        if(response.ok){
+            if(result.success){
+                window.location.href=`/user-profile/orders/order-details/${orderId}`
+            }
+        }else{
+            Swal.fire({
+                icon:"error",
+                title:result.message,
+            })
+        }
+    }
+</script>
+<!-- retry payment -->
+ <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    async function retryPayment(orderId='<%=order.orderId %>') {
+        try {
+            // Step 1: Create Razorpay order on your server
+            const response=await fetch('/razorpay/order-failure/retry-order',{
+                method:"PATCH",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({orderId:orderId})
+            })
+
+            const razorpayOrder=await response.json()
+
+            if(!razorpayOrder || !razorpayOrder.razorpayOrder){
+                console.log("razorPayyyyyyyy",razorpayOrder)
+                console.log("razorPayyyyyyyy",razorpayOrder.razorpayOrder)
+
+                return Swal.fire({
+                    title:"Failed to create order. Please try again.",
+                    text:razorpayOrder.message, 
+                    icon:"error",
+                    showConfirmButton:true,
+                    timer:10000
+                }).then(()=>{
+                    if(razorpayOrder.redirectToCheckoutPage){
+                        return window.location.href='/checkout';
+                    }
+                    location.reload();
+                })
+            }
+
+            //step 2: Configure Razorpay checkout
+            const options={
+                key:'<%= razorPayKeyId %>',
+                amount:razorpayOrder.razorpayOrder.amount,
+                currency:"INR",
+                name:"TeeSpace",
+                description:"Test Transaction",
+                order_id:razorpayOrder.razorpayOrder.id,
+                handler:async function(response){
+                    try {
+                        // Step 3: Verify payment with your backend
+                        const verifyRes=await fetch('/verify-razorpay-payment',{
+                            method:"POST",
+                            headers:{"Content-Type":"application/json"},
+                            body:JSON.stringify({
+                                ...response,  // contains razorpay_payment_id, razorpay_order_id, razorpay_signature
+                                teeSpaceOrderId:razorpayOrder.teeSpaceOrderId //add your internal order ID
+                            })
+                        })
+
+                        const result =await verifyRes.json();
+                        
+                        // Step 4: Handle response
+                        if (result.success) {
+                        await Swal.fire({
+                            title: "Payment verified successfully!",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        await Swal.fire({
+                            title: "Order placed successfully!",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        // Redirect to order success page
+                        window.location.href = `/order-success/${razorpayOrder.teeSpaceOrderId}`;
+                        } else {
+                            Swal.fire("Verification Failed", result.message || "Something went wrong.", "error")
+                        }
+
+                    } catch (error) {
+                        console.error("Error verifying payment:", err);
+                        Swal.fire("Error", "Payment verification failed. Please contact support.", "error");
+                    }
+                },
+                theme: { color: "#3399cc" }
+            }
+
+            // Step 5: Open Razorpay checkout
+            const rzp1 = new Razorpay(options);
+
+            rzp1.on("payment.failed",function(response){
+                Swal.fire({
+                    title:"Payment Failed!",
+                    text:response.error.description,
+                    icon:"error",
+                    showConfirmButton:true,
+                    timer:15000
+                }).then(async()=>{
+                    await fetch('/razorpay/payment-failure',{
+                        method:"POST",
+                        headers:{
+                            "Content-Type":"application/json"
+                        },
+                        body:JSON.stringify({
+                            razorpay_order_id:response.error.metadata.order_id,
+                            razorpay_payment_id:response.error.metadata.payment_id,
+                            error_reason:response.error.description,
+                            appOrderId:razorpayOrder.teeSpaceOrderId
+                        })
+                    })
+
+                    window.location.href = `/razorpay/order-failure/${razorpayOrder.teeSpaceOrderId}`
+                })
+            })
+            rzp1.open();
+        } catch (error) {
+            console.error("Error creating Razorpay order:", error);
+            Swal.fire("Error", "Unable to start payment. Please try again later.", "error");
+        }
+    }
+
+    
+    
+</script>

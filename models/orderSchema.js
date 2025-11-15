@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const DELIVERY_STATUS=require('../constants/deliveryStatus.enum')
+
 
 const orderSchema = new Schema(
   {
@@ -8,12 +10,19 @@ const orderSchema = new Schema(
     shippingAddress: { type: Object, required: true },
     paymentMethod: { type: String, required: true },
     paymentStatus: { type: String, default: "Pending" }, // Paid, Pending, Failed
+    razorPayOrderId:{type:String},
+    razorPayPaymentId:{type:String},
+    razorPayFailureReason:{type:String},
     refundStatus:{
       type:String,
       enum:["Not Initiated","Partially Refunded","Refunded","Refunded to your wallet"],
-      default:"Not Initiated"
+      default:null
     },
-    orderStatus: { type: String, default: "Pending" }, // Pending, Shipped, Delivered, Cancelled
+    orderStatus: {
+      type: String,
+      enum:Object.values(DELIVERY_STATUS), 
+      default: DELIVERY_STATUS.PENDING 
+    },
     cancelReason:{type:String},
     orderItems: [
       {
@@ -25,7 +34,7 @@ const orderSchema = new Schema(
         price: { type: Number, required: true },
         productName: { type: String },
         productImage: { type: String },
-        itemStatus: { type: String, default: "Pending" },
+        itemStatus: { type: String,enum:Object.values(DELIVERY_STATUS), default: DELIVERY_STATUS.PENDING },
         cancelReason:{type:String},
         deliveredOn:{type:Date},
         //  Return-related fields
@@ -45,6 +54,7 @@ const orderSchema = new Schema(
           ],
           default: null
         },
+        rejectionReason:{type:String},
 
         returnRequestedAt: { type: Date },    // When user initiated
         returnResolvedAt: { type: Date },     // When admin approved/rejected

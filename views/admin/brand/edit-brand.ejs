@@ -255,7 +255,7 @@
         <div class="form-group" id="existingImageContainer" style="<%= brand.brandImage ? '' : 'display:none;' %>">
             <label>Current Brand Logo</label>
             <div class="image-preview">
-                <img src="/uploads/resized-images/<%= brand.brandImage %>" alt="Current brand logo">
+                <img src="<%= brand.brandImage %>" alt="Current brand logo">
                 <button type="button" id="removeExistingImage" class="btn btn-danger btn-sm">
                     <i class="fas fa-trash-alt"></i> Remove Logo
                 </button>

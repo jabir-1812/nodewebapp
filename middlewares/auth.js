@@ -1,3 +1,4 @@
+const Status=require('../constants/statusCodes')
 const User=require('../models/userSchema');
 
 
@@ -8,7 +9,7 @@ const userAuth = async (req, res, next) => {
         if (!req.session.user) {
             // If it's an AJAX request, send JSON instead of redirect
             if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
-                return res.status(401).json({ status: false, success:false, message: 'Login required' });
+                return res.status(Status.UNAUTHORIZED).json({ status: false, success:false, message: 'Login required' });
             }
 
             return res.redirect('/login');
@@ -18,7 +19,7 @@ const userAuth = async (req, res, next) => {
         const user = await User.findById(req.session.user);
         if (!user) {
             if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
-                return res.status(401).json({ status: false, message: 'User not found, Login required' });
+                return res.status(Status.UNAUTHORIZED).json({ status: false, message: 'User not found, Login required' });
             }
             return res.redirect('/login');
         }
@@ -26,7 +27,7 @@ const userAuth = async (req, res, next) => {
         // 3. Check if user is blocked
         if (user.isBlocked) {
             if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
-                return res.status(401).json({ status: false, message: 'User blocked' });
+                return res.status(Status.UNAUTHORIZED).json({ status: false, message: 'User blocked' });
             }
             return res.redirect('/login');
         }
@@ -35,7 +36,7 @@ const userAuth = async (req, res, next) => {
         next();
     } catch (err) {
         console.log("Error in userAuth:", err);
-        res.status(500).send("Internal Server Error");
+        res.status(Status.INTERNAL_ERROR).send("Internal Server Error");
     }
 };
 
@@ -69,7 +70,7 @@ const adminAuth = async (req, res, next) => {
         next();
     } catch (err) {
         console.log("Error in adminAuth:", err);
-        res.status(500).send("Internal Server Error");
+        res.status(Status.INTERNAL_ERROR).send("Internal Server Error");
     }
 };
 

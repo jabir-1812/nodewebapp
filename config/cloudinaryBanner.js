@@ -11,12 +11,12 @@ cloudinary.config({
 });
 
 // storage for product images
-const productStorage = new CloudinaryStorage({
+const bannerStorage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "product_images", // 👈 your new folder
+    folder: "banners", // 👈 your new folder
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
   },
 });
 
-module.exports = { cloudinary, productStorage };
+module.exports = { cloudinary, bannerStorage };

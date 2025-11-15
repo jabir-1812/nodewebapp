@@ -279,6 +279,26 @@
                     <p class="text-secondary mb-0"><%= transaction.description %></p>
                 </div>
             <% }) %>
+
+        <% if (totalPages> 1) { %>
+            <div class="pagination" style="margin-top:20px; text-align:center;">
+                <% if (page> 1) { %>
+                    <a href="/user-profile/wallet?page=<%= page - 1 %>" class="btn btn-light border">Previous</a>
+                <% } %>
+
+                <% for(let i=1; i <=totalPages; i++) { %>
+                    <a href="/user-profile/wallet?page=<%= i %>"
+                        class="<%= page === i ? 'active' : '' %> btn">
+                        <%= i %>
+                    </a>
+                <% } %>
+
+                <% if (page < totalPages) { %>
+                    <a href="/user-profile/wallet?page=<%= page + 1 %>" class="btn btn-light border">Next</a>
+                <% } %>
+            </div>
+        <% } %>
+
         <% }else{ %>
             <p class="no-transactions">No transactions yet</p>
         <% } %>

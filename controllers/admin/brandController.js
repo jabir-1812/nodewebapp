@@ -1,5 +1,8 @@
+const Status=require('../../constants/statusCodes')
 const path=require('path')
 const fs=require('fs')
+const sharp=require("sharp")
+const cloudinary = require('../../config/cloudinary');
 const Brand=require('../../models/brandSchema');
 const Product=require('../../models/productSchema');
 const Offer = require('../../models/offerSchema')
@@ -19,9 +22,21 @@ const loadAllBrands=async (req,res)=>{
         .skip((page-1)*ITEMS_PER_PAGE)
         .limit(ITEMS_PER_PAGE)
 
+        const products=await Product.aggregate([{$group:{_id:"$brand",products:{$sum:1}}}])
+
+        for(const brand of brands){
+            for(const p of products){
+                if(brand._id.toString()===p._id.toString()){
+                    brand.products=p.products;
+                }
+            }
+        }
+
+
         res.render('./admin/brand/3brands',{
             title:"Brands",
             brands,
+            products,
             totalBrands,
             totalPages,
             search,
@@ -36,7 +51,7 @@ const loadAllBrands=async (req,res)=>{
 
 const loadAddBrandPage=async (req,res)=>{
     try {
-        res.render('./admin/brand/add-brand',{
+        res.render('./admin/brand/2add-brand',{
             title:"Add brand",
             error:null,
             formData:{}
@@ -47,68 +62,92 @@ const loadAddBrandPage=async (req,res)=>{
     }
 }
 
+
+
+
 const addBrand=async (req,res)=>{
     try {
-        const {name}=req.body;
-        // const image=req.file.filename;
-        const brand = new Brand({brandName:name,brandImage:req.file.path});
-        await brand.save();
-        
-        res.status(200).json({ message: "Brand added successfully" });
+        const { brandName } = req.body;
 
-    } catch (error) {
-        if(error.name==='ValidationError'){
-            const errorMessages=Object.values(error.errors).map(err=>({msg:err.message}));
-            return res.status(400).json({ message: "Brand name already exists", errors: errorMessages });
-        }else{
-            
-            console.log("addBrand error:",error)
-            res.redirect('/admin/page-error')
+        if (!brandName || !req.file) {
+            return res.status(Status.BAD_REQUEST).json({
+                success: false,
+                message: "Brand name and logo are required"
+            });
         }
+
+        const findBrand=await Brand.findOne({brandName:{$regex:`^${brandName}$`,$options:"i"}})
+        if(findBrand) return res.status(Status.BAD_REQUEST).json({message:"Brand name exists"})
+
+        // 2️⃣ Use SHARP to resize & compress BEFORE uploading
+        let processedBuffer;
+        try {
+            processedBuffer = await sharp(req.file.buffer) // from multer memory storage
+                .resize(500, 500, { fit: "cover" })  // ✅ crop center
+                .toFormat("webp")                    // ✅ convert to webp
+                .webp({ quality: 85 })               // ✅ compression
+                .toBuffer();
+        } catch (err) {
+            console.error("Sharp Error:", err);
+            return res.status(Status.INTERNAL_ERROR).json({
+                success: false,
+                message: "Image processing failed",
+                error: err.message
+            });
+        }
+
+        // ✅ Upload image to Cloudinary using buffer
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                    folder: "brand_logos"   // ✅ your folder name
+                    },
+                    (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
+                    }
+                );
+                stream.end(processedBuffer);
+            });
+        };
+
+        let uploadResult;
+        try {
+            uploadResult = await uploadToCloudinary();
+        } catch (cloudError) {
+            console.error("Cloudinary Upload Error:", cloudError);
+            return res.status(Status.INTERNAL_ERROR).json({
+            success: false,
+            message: "Failed to upload image to Cloudinary",
+            error: cloudError.message
+            });
+        }
+
+        // ✅ Save brand to DB
+        const brand = await Brand.create({
+            brandName,
+            brandImage: uploadResult.secure_url,
+            cloudinaryId: uploadResult.public_id
+        });
+
+        return res.json({
+            success: true,
+            message: "Brand added successfully",
+        });
+
+        
+    } catch (error) {
+        console.error(err);
+        res.status(Status.INTERNAL_ERROR).json({
+            success: false,
+            message: "Server error"
+        });
     }
 }
 
-// const addBrandOffer=async (req,res)=>{
-//     try {
-//         //percentage means offer percentage of new adding offer
-//         const percentage=parseInt(req.body.percentage);
-//         const brandId=req.body.brandId;
-//         const brand=await Brand.findById(brandId);
-
-//         if(!brand){
-//             return res.status(404).json({status:false,message:"Brand not found"});
-//         }
-//         const products=await Product.find({brand:brand._id});
-
-//         if(products.length>0){
-//             for(const product of products){
-//                 if(percentage > product.productOffer && percentage > product.categoryOffer){
-//                     product.salePrice=product.regularPrice*(1-percentage/100)
-//                 }
-//                 product.brandOffer=percentage;
-//                 await product.save()
-                
-//             }
-//         }
-        
-//         await Brand.updateOne({_id:brandId},{$set:{offer:percentage}});
-
-//         // // Apply brand offer ONLY to products with lesser existing offer
-//         // //if a product has less offer % than new offer %, those product will be updated to new offer %.
-//         // //if a product has higher offer than new offer, it stays like that.it won't be updated.
-//         // await Product.updateMany(
-//         //     {brand:brand._id,productOffer:{$lt:percentage}},
-//         //     [
-//         //         {$set:{productOffer:percentage,salePrice:{$multiply:["$regularPrice",(1-percentage/100)]}}}
-//         //     ]
-//         // );
 
 
-//         res.json({status:true});
-//     } catch (error) {
-//         res.status(500).json({status:false,message:"Internal Server Error"})
-//     }
-// }
 
 const addBrandOffer = async(req,res)=>{
     try{
@@ -176,7 +215,7 @@ const addBrandOffer = async(req,res)=>{
         res.json({ status: true, message: "Brand offer added successfully" });
   } catch (error) {
         console.error("Error adding brand offer:", error);
-        res.status(500).json({ status: false, message: "Internal Server Error" });
+        res.status(Status.INTERNAL_ERROR).json({ status: false, message: "Internal Server Error" });
   }
 }
 
@@ -229,7 +268,7 @@ const removeBrandOffer=async(req,res)=>{
     res.json({ status: true, message: "Brand offer removed successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ status: false, message: "Internal Server Error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, message: "Internal Server Error" });
   }
 }
 
@@ -241,10 +280,9 @@ const loadEditBrand=async (req,res)=>{
 
         if(!brand) return res.redirect('/admin/page-error');
 
-        res.render('./admin/brand/edit-brand',{
+        res.render('./admin/brand/3edit-brand',{
             title:"Edit Brand",
-            brand:brand,
-            error:null,
+            brand:brand
         })
     } catch (error) {
         console.log("loadEditBrand error:",error);
@@ -252,61 +290,95 @@ const loadEditBrand=async (req,res)=>{
     }
 }
 
-const editBrand = async (req, res) => {
+
+
+const editBrand=async (req,res)=>{
     try {
         const brandId = req.params.id;
-        const { name, removeExisting } = req.body;
+        const { brandName } = req.body;
+    
         const brand = await Brand.findById(brandId);
-
         if (!brand) {
-            return res.status(404).json({ message: 'Brand not found' });
+          return res.status(404).json({ success: false, message: "Brand not found" });
         }
-
-        // Update brand name
-        brand.brandName = name;
-
-        // Remove all existing images if user clicked "remove"
-        if (removeExisting === 'true' && Array.isArray(brand.brandImage)) {
-            for (const filename of brand.brandImage) {
-                const filePath = path.join(__dirname, '../../public/uploads/brandImages/', filename);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
+    
+        if (brandName?.trim()) {
+          brand.brandName = brandName.trim();
+        }
+    
+        // ✅ New logo uploaded?
+        if (req.file) {
+            // 1️⃣ PROCESS IMAGE WITH SHARP
+            let processedBuffer;
+            try {
+                processedBuffer = await sharp(req.file.buffer)
+                .resize(500, 500, { fit: "cover" })
+                .toFormat("webp")
+                .webp({ quality: 85 })
+                .toBuffer();
+            } catch (err) {
+                return res.status(Status.INTERNAL_ERROR).json({
+                success: false,
+                message: "Failed to process image",
+                error: err.message
+                });
             }
-            brand.brandImage = []; // clear the array
-        }
-
-        // Handle new image upload
-        if (req.file.path) {
-            const uploadedFile = req.file.filename;
-
-            // Optional: remove old images if replacing (but user didn’t click remove)
-            if (removeExisting !== 'true' && Array.isArray(brand.brandImage)) {
-                for (const filename of brand.brandImage) {
-                    const filePath = path.join(__dirname, '../../public/uploads/brandImages/', filename);
-                    if (fs.existsSync(filePath)) {
-                        fs.unlinkSync(filePath);
+        
+            // 2️⃣ UPLOAD NEW IMAGE TO CLOUDINARY FIRST
+            const uploadNewLogo = () => {
+                return new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream(
+                    { folder: "brand_logos", format: "webp" },
+                    (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
                     }
-                }
-                brand.brandImage = []; // clear previous ones
+                ).end(processedBuffer);
+                });
+            };
+        
+            let newImg;
+            try {
+                newImg = await uploadNewLogo();
+            } catch (error) {
+                console.log(error)
+
+                return res.status(Status.INTERNAL_ERROR).json({
+                success: false,
+                message: "Failed to upload new logo to Cloudinary",
+                error: error.message
+                });
             }
-
-            // Add the new image
-            brand.brandImage.push(req.file.path);
+        
+            // 3️⃣ DELETE OLD IMAGE FROM CLOUDINARY (AFTER SUCCESS)
+            try {
+                await cloudinary.uploader.destroy(brand.cloudinaryId);
+            } catch (err) {
+                console.error("Old image delete failed:", err);
+                // Not a critical failure, don't return error
+            }
+        
+            // 4️⃣ UPDATE DATABASE
+            brand.brandImage = newImg.secure_url;
+            brand.cloudinaryId = newImg.public_id;
         }
-
+    
         await brand.save();
-        return res.json({ success: true });
-    } catch (error) {
-        if(error.name==='ValidationError'){
-            const errors=Object.values(error.errors).map(err=>({msg:err.message}));
-            const brand=await Brand.findById(req.params.id);
-            res.status(404).json({message:"Brand name already exists"})
-        }
-        console.error('Edit Brand Error:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
-    }
-};
+    
+        return res.json({
+          success: true,
+          message: "Brand updated successfully",
+          brand
+        });
+    
+      } catch (err) {
+        console.error(err);
+        return res.status(Status.INTERNAL_ERROR).json({
+          success: false,
+          message: "Server error"
+        });
+      }
+}
 
 const blockBrand=async (req,res)=>{
     try {
@@ -314,7 +386,7 @@ const blockBrand=async (req,res)=>{
         await Brand.updateOne({_id:brandId},{$set:{isBlocked:true}});
         res.json({success:true,message:"Brand blocked successfully"});
     } catch (error) {
-        res.status(500).json({success:false,message:"error blocking the brand"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"error blocking the brand"})
         console.log("blockBrand error:",error);
     }
 }
@@ -325,7 +397,7 @@ const unblockBrand=async (req,res)=>{
         await Brand.updateOne({_id:brandId},{$set:{isBlocked:false}});
         res.json({success:true,message:"Brand unblocked successfully"});
     } catch (error) {
-        res.status(500).json({success:false,message:"error unblocking the brand"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"error unblocking the brand"})
         console.log("unblockBrand error:",error);
     }
 }
@@ -334,13 +406,13 @@ const deleteBrand=async (req,res)=>{
     try {
         const {id}=req.query;
         if(!id){
-            return res.status(400).redirect('/admin/page-error')
+            return res.status(Status.BAD_REQUEST).redirect('/admin/page-error')
         }
         await Brand.deleteOne({_id:id});
         res.redirect('/admin/brands')
     } catch (error) {
         console.error("Error deleting brand:",error)
-        res.status(500).redirect("/admin/page-error")
+        res.status(Status.INTERNAL_ERROR).redirect("/admin/page-error")
     }
 }
 module.exports={

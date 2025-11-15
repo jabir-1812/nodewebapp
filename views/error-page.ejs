@@ -1,0 +1,112 @@
+<style>
+    /* Reset and base styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+
+    .row {
+        margin-bottom: 20px;
+    }
+
+    .col {
+        width: 100%;
+    }
+
+    /* Warning icon styling */
+    .row:first-child .col {
+        font-size: 80px;
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+            transform: translateY(0);
+        }
+
+        40% {
+            transform: translateY(-20px);
+        }
+
+        60% {
+            transform: translateY(-10px);
+        }
+    }
+
+    h1 {
+        color: #333;
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    p {
+        color: #666;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 600px) {
+        .container {
+            padding: 30px 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        .row:first-child .col {
+            font-size: 60px;
+        }
+    }
+</style>
+<div class="container">
+    <div class="row">
+        <div class="col">⚠️</div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h1>Internal Server Error</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <p>Oops! Something went wrong.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <p>
+                The server encountered an internal error or misconfiguration and was unable to complete your request
+            </p>
+        </div>
+    </div>
+</div>

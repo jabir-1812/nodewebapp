@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const PDFDocument = require("pdfkit");
 const ExcelJS = require('exceljs')
 const Order=require('../../models/orderSchema')
@@ -22,8 +23,15 @@ const getSalesReportPage=async (req,res)=>{
 async function getReportData(type, start, end) {
   const match = { orderStatus: "Delivered" };
 
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  // set endDate to 23:59:59.999
+  endDate.setHours(23, 59, 59, 999);
+
+
   if (start && end) {
-    match.deliveredOn = { $gte: new Date(start), $lte: new Date(end) };
+    match.deliveredOn = { $gte: startDate, $lte: endDate };
   }
 
   let groupStage = {};
@@ -214,7 +222,7 @@ const getSalesReportPDF = async (req,res)=>{
         doc.end();
     } catch (error) {
         console.log("getSalesReportPDF() error===========>",error);
-        res.status(500).json({message:"PDF generation failed"})
+        res.status(Status.INTERNAL_ERROR).json({message:"PDF generation failed"})
     }
 }
 

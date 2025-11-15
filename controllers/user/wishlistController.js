@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const User=require('../../models/userSchema')
 const Wishlist=require('../../models/wishlistSchema')
 const Cart=require('../../models/cartSchema')
@@ -78,17 +79,17 @@ const addToWishlist = async (req, res) => {
     );
 
     if (alreadyExists) {
-      return res.status(400).json({ success: false, message: "Already in wishlist" });
+      return res.status(Status.BAD_REQUEST).json({ success: false, message: "Already in wishlist" });
     }
 
     // Add new product
     wishlist.items.push({ productId });
     await wishlist.save();
 
-    res.status(200).json({ success: true, message: "Added to Wishlist" });
+    res.status(Status.OK).json({ success: true, message: "Added to Wishlist" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Error adding to wishlist" });
+    res.status(Status.INTERNAL_ERROR).json({ success: false, message: "Error adding to wishlist" });
   }
 };
 
@@ -108,7 +109,7 @@ const removeFromWishlist=async (req,res)=>{
         return res.json({ success: true, message: "Removed from wishlist" });
     } catch (error) {
         console.log("removeFromWishlist() error:",error);
-        res.status(500).json({success:false,message:"Internal Server error"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"Internal Server error"})
     }
 }
 

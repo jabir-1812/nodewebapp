@@ -196,8 +196,8 @@
                 event.preventDefault();
                 return;
             }
-            if (parseFloat(price) <= parseFloat(saleprice)) {
-                displayErrorMessage('regularPrice-error', 'Regular price must be greater than sale price.');
+            if (parseFloat(price) < parseFloat(saleprice)) {
+                displayErrorMessage('regularPrice-error', 'Regular price must be greater than or equal to sale price.');
                 event.preventDefault();
                 return;
             }

@@ -217,6 +217,7 @@
       <tr>
         <th>Brand</th>
         <th>Logo</th>
+        <th>Products</th>
         <th>Offer%</th>
         <th>Offer actions</th>
         <th>Status</th>
@@ -229,8 +230,9 @@
           <tr>
             <td><%= brand.brandName %></td>
             <td>
-              <img src="/uploads/resized-images/<%= brand.brandImage[0] %>" alt="<%= brand.brandName %>" />
+              <img src="<%= brand.brandImage %>" alt="<%= brand.brandName %>" />
             </td>
+            <td><%= brand.products %></td>
             <td><%= brand.offer %> %</td>
             <td>
               <% if(brand.offer===0){ %>

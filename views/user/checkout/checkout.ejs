@@ -410,7 +410,7 @@ input[name="paymentMethod"] {
 <%-include ('../../../views/partials/user/header') %>
     
 
-    <div class="container">
+    <div class="container" id="checkoutPageContents">
         <div class="row">
 
             <div class="col-8">
@@ -942,7 +942,358 @@ input[name="paymentMethod"] {
 
 
 <!-- order placement script -->
- <script>
-    
- </script>
+ <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    async function placeOrder(){
+        const totalPrice=parseFloat(document.getElementById('totalPrice').dataset.totalPrice);
+
+        if(totalPrice===0){
+            Swal.fire({
+                title:"No products in the cart",
+                icon:"warning",
+                timer: 3000
+            })
+            return;
+        }
+
+        const selectedAddress = document.querySelector("input[name='addressId']:checked");
+        const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+        const appliedCouponElements = document.querySelectorAll('.applied-coupon');
+
+        const appliedCoupons = Array.from(appliedCouponElements).map(el => ({
+            couponCode: el.dataset.couponCode,
+            couponId: el.dataset.couponId
+        }));
+
+
+        if (!selectedAddress) {
+            Swal.fire({
+                title:"Please select a delivery address",
+                icon:'warning',
+                timer: 3000
+            })
+            return;
+        }
+
+        if (!selectedPayment) {
+            Swal.fire({
+                title:"Please select a payment method",
+                icon:'warning',
+                timer: 3000
+            })
+            return;
+        }
+
+        // Submit final form
+        const formData={
+            addressId:selectedAddress.value,
+            appliedCoupons:appliedCoupons
+        }
+        // console.log("appliedCoupons======",formData.appliedCoupons)
+
+        //cash on delivery
+        if(selectedPayment.value==="COD"){
+            try {
+                const response=await fetch('/place-cod-order',{
+                    method:'post',
+                    headers:{
+                        'Content-Type':'application/json'
+                    },
+                    body:JSON.stringify(formData)
+                })
+                const res= await response.json();
+
+                if(res.success){
+                    Swal.fire({
+                        title:"Order Placed Successfully!",
+                        icon:"success",
+                        timer:10000,
+                        showConfirmButton:true
+                    }).then(() => {
+                        window.location.href=`/order-success/${res.orderId}`;
+                    });
+                }else{
+                    Swal.fire({
+                        title: "Order Failed",
+                        text: res.message,
+                        icon: "error",
+                        timer:5000,
+                        showConfirmButton:true
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            } catch (error) {
+                console.log("Something went wrong:",error);
+                Swal.fire({
+                    title: "Error",
+                    text: "Something went wrong. Please try again.",
+                    icon: "error",
+                    timer:5000,
+                    showConfirmButton:true
+                })
+            }
+        }
+
+
+        //online payment
+        // if(selectedPayment.value==="onlinePayment"){
+        //     try {
+        //     // Step 1: Create Razorpay order on your server
+        //     const response = await fetch('/create-razorpay-order', {
+        //         method: "POST",
+        //         headers: { "Content-Type": "application/json" },
+        //         body: JSON.stringify(formData)
+        //     });
+
+        //     const razorpayOrder = await response.json();
+
+        //     if (!razorpayOrder || !razorpayOrder.order) {
+        //         return Swal.fire({
+        //             title:"Failed to create order. Please try again.",
+        //             text:razorpayOrder.message, 
+        //             icon:"error",
+        //             showConfirmButton:true,
+        //             timer:10000
+        //         }).then(()=>{
+        //             location.reload();
+        //         })
+        //     }
+
+        //     // Step 2: Configure Razorpay checkout
+        //     const options = {
+        //         key: '<%= razorPayKeyId %>',
+        //         amount: razorpayOrder.order.amount,
+        //         currency: "INR",
+        //         name: "TeeSpace",
+        //         description: "Test Transaction",
+        //         order_id: razorpayOrder.order.id,
+        //         handler: async function (response) {
+        //             try {
+        //                 // Step 3: Verify payment with your backend
+        //                 const verifyRes = await fetch("/verify-razorpay-payment", {
+        //                 method: "POST",
+        //                 headers: { "Content-Type": "application/json" },
+        //                 body: JSON.stringify({
+        //                     ...response, // contains razorpay_payment_id, razorpay_order_id, razorpay_signature
+        //                     teeSpaceOrderId: razorpayOrder.teeSpaceOrderId // add your internal order ID
+        //                 })
+        //                 });
+
+        //                 const result = await verifyRes.json();
+
+        //                 // Step 4: Handle response
+        //                 if (result.success) {
+        //                 await Swal.fire({
+        //                     title: "Payment verified successfully!",
+        //                     icon: "success",
+        //                     timer: 2000,
+        //                     showConfirmButton: false
+        //                 });
+
+        //                 await Swal.fire({
+        //                     title: "Order placed successfully!",
+        //                     icon: "success",
+        //                     timer: 2000,
+        //                     showConfirmButton: false
+        //                 });
+
+        //                 // Redirect to order success page
+        //                 window.location.href = `/order-success/${razorpayOrder.teeSpaceOrderId}`;
+        //                 } else {
+        //                     Swal.fire("Verification Failed", result.message || "Something went wrong.", "error")
+        //                 }
+
+        //             } catch (err) {
+        //                 console.error("Error verifying payment:", err);
+        //                 Swal.fire("Error", "Payment verification failed. Please contact support.", "error");
+        //             }
+        //         },
+        //         theme: { color: "#3399cc" }
+        //     };
+
+        //     // Step 5: Open Razorpay checkout
+        //     const rzp1 = new Razorpay(options);
+
+        //     rzp1.on("payment.failed",function(response){
+        //         Swal.fire({
+        //             title:"Payment Failed!",
+        //             text:response.error.description,
+        //             icon:"error",
+        //             showConfirmButton:true,
+        //             timer:15000
+        //         }).then(()=>{
+        //             // window.location.href="/order-failure"
+        //             const checkoutPageContents= document.getElementById('checkoutPageContents')
+        //             checkoutPageContents.innerHTML="Retry payment"
+        //         })
+        //     })
+
+        //     rzp1.open();
+
+        //     } catch (error) {
+        //     console.error("Error creating Razorpay order:", error);
+        //     Swal.fire("Error", "Unable to start payment. Please try again later.", "error");
+        //     }
+
+        // }
+        if(selectedPayment.value==="onlinePayment"){
+            try {
+            // Step 1: Create Razorpay order on your server
+            const response = await fetch('/create-razorpay-order', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+
+            const razorpayOrder = await response.json();
+
+            if (!razorpayOrder || !razorpayOrder.order) {
+                return Swal.fire({
+                    title:"Failed to create order. Please try again.",
+                    text:razorpayOrder.message, 
+                    icon:"error",
+                    showConfirmButton:true,
+                    timer:10000
+                }).then(()=>{
+                    location.reload();
+                })
+            }
+
+            // Step 2: Configure Razorpay checkout
+            const options = {
+                key: '<%= razorPayKeyId %>',
+                amount: razorpayOrder.order.amount,
+                currency: "INR",
+                name: "TeeSpace",
+                description: "Test Transaction",
+                order_id: razorpayOrder.order.id,
+                handler: async function (response) {
+                    try {
+                        // Step 3: Verify payment with your backend
+                        const verifyRes = await fetch("/verify-razorpay-payment", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                ...response, // contains razorpay_payment_id, razorpay_order_id, razorpay_signature
+                                teeSpaceOrderId: razorpayOrder.teeSpaceOrderId // add your internal order ID
+                            })
+                        });
+
+                        const result = await verifyRes.json();
+
+                        // Step 4: Handle response
+                        if (result.success) {
+                        await Swal.fire({
+                            title: "Payment verified successfully!",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        await Swal.fire({
+                            title: "Order placed successfully!",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        // Redirect to order success page
+                        window.location.href = `/order-success/${razorpayOrder.teeSpaceOrderId}`;
+                        } else {
+                            Swal.fire("Verification Failed", result.message || "Something went wrong.", "error")
+                        }
+
+                    } catch (err) {
+                        console.error("Error verifying payment:", err);
+                        Swal.fire("Error", "Payment verification failed. Please contact support.", "error");
+                    }
+                },
+                theme: { color: "#3399cc" }
+            };
+
+            // Step 5: Open Razorpay checkout
+            const rzp1 = new Razorpay(options);
+
+            rzp1.on("payment.failed",function(response){
+                Swal.fire({
+                    title:"Payment Failed!",
+                    text:response.error.description,
+                    icon:"error",
+                    showConfirmButton:true,
+                    timer:15000
+                }).then(async()=>{
+                    await fetch('/razorpay/payment-failure',{
+                        method:"POST",
+                        headers:{
+                            "Content-Type":"application/json"
+                        },
+                        body:JSON.stringify({
+                            razorpay_order_id:response.error.metadata.order_id,
+                            razorpay_payment_id:response.error.metadata.payment_id,
+                            error_reason:response.error.description,
+                            appOrderId:razorpayOrder.teeSpaceOrderId
+                        })
+                    })
+
+                    window.location.href = `/razorpay/order-failure/${razorpayOrder.teeSpaceOrderId}`
+                })
+            })
+
+            rzp1.open();
+
+            } catch (error) {
+                console.error("Error creating Razorpay order:", error);
+                Swal.fire("Error", "Unable to start payment. Please try again later.", "error");
+            }
+
+        }
+
+
+        //wallet payment
+        if(selectedPayment.value==="walletPayment"){
+            const response=await fetch('/place-wallet-paid-order',{
+                method:"POST",
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify(formData)
+            })
+
+            const result=await response.json()
+            
+            if(result.success){
+                Swal.fire({
+                    title:"Order placed successfully",
+                    text:"Paid by Wallet Money",
+                    icon:"success",
+                    showConfirmButton:true,
+                    timer:5000
+                }).then(()=>{
+                    window.location.href=`/order-success/${result.orderId}`
+                })
+            }else{
+               if(result.message && result.reload){
+                    Swal.fire({
+                        title:result.message,
+                        icon:"error",
+                        timer:5000,
+                        showConfirmButton:true
+                    }).then(()=>{
+                        location.reload();
+                    })
+                }
+                if(result.message && !result.reload){
+                    Swal.fire({
+                        title:result.message,
+                        icon:"error",
+                        timer:5000,
+                        showConfirmButton:true
+                    })
+                }
+            }
+        }
+
+    }
+</script>
 

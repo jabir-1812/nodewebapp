@@ -45,6 +45,7 @@ async (req,accessToken,refreshToken,profile,done)=>{    //profile=>user info fro
 
             if(referrdByUser){
                 await giveReferralCoupon(referrdByUser._id);
+                console.log(`Referral reward given to:${referringUser.email}`);
             }
 
             return done(null,user);         //returning the user info to passport

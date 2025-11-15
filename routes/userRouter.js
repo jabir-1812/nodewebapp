@@ -12,20 +12,14 @@ const orderController=require('../controllers/user/orderController');
 const walletController=require('../controllers/user/walletController')
 const { userAuth} = require('../middlewares/auth');
 const User=require('../models/userSchema')
-const {profileStorage}=require('../config/cloudinaryUserProfile')
 const giveReferralCoupon=require('../utils/giveReferralCoupon')
 
 const multer=require('multer');
-// const storage=multer.diskStorage({
-//     destination:(req,file,cb)=>{
-//         cb(null,path.join(__dirname,'../public/uploads/user profile pictures'));        
-//     },
-//     filename:(req,file,cb)=>{
-//         cb(null,Date.now()+ '-' + file.originalname)
-//     }
-// }) 
 
-const upload=multer({storage:profileStorage})
+
+const upload=require('../middlewares/multer')
+
+// const upload=multer({storage:profileStorage})
 const logger=require('../config/logger')
 
 
@@ -70,13 +64,13 @@ async (req,res)=>{
             ref=parsedState.ref;
         }
 
-        if(ref){
-            const referringUser=await User.findOne({referralToken:ref});
-            if(referringUser){
-                await giveReferralCoupon(referringUser._id);
-                console.log(`Referral reward given to:${referringUser.email}`);
-            }
-        }
+        // if(ref){
+        //     const referringUser=await User.findOne({referralToken:ref});
+        //     if(referringUser){
+        //         await giveReferralCoupon(referringUser._id);
+        //         console.log(`Referral reward given to:${referringUser.email}`);
+        //     }
+        // }
 
         res.redirect('/')
     } catch (error) {
@@ -192,7 +186,10 @@ router.delete('/checkout/remove-coupon',userAuth,checkoutController.removeCoupon
 //order
 router.post('/create-razorpay-order',userAuth,orderController.createRazorPayOrder);
 router.post('/verify-razorpay-payment',userAuth,orderController.verifyRazorpayPayment)
-// router.post('/place-online-paid-order',userAuth,orderController.placeOnlinePaidOrder)
+router.post('/razorpay/payment-failure',userAuth,orderController.razorpayPaymentFailure);
+router.get('/razorpay/order-failure/:orderId',userAuth,orderController.showOrderFailurePage)
+router.patch('/razorpay/order-failure/cancel-order',userAuth,orderController.cancelFailedOrder)
+router.patch('/razorpay/order-failure/retry-order',userAuth,orderController.retryPayment)
 router.post('/place-cod-order',userAuth,orderController.place_cod_order);
 router.post('/place-wallet-paid-order',userAuth,orderController.placeWalletPaidOrder)
 router.get('/orders',userAuth,orderController.showOrders);

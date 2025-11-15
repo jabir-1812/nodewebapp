@@ -1,6 +1,13 @@
 const Coupon = require('../models/couponSchema');
 
 async function giveReferralCoupon(userId) {
+  // // Check if already rewarded
+  //   const exists = await Coupon.findOne({ referrer: referrerId });
+
+  //   if (exists) {
+  //       console.log("Referral reward already given. Skipping.");
+  //       return;
+  //   }
   const couponCode = 'REF' + Math.floor(100000 + Math.random() * 900000);
 
   const now=new Date();
@@ -24,3 +31,4 @@ async function giveReferralCoupon(userId) {
 }
 
 module.exports = giveReferralCoupon;
+

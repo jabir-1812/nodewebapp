@@ -117,14 +117,21 @@
             <% }) %>
         <% } %>
 
-        <!-- Pagination -->
-        <% if (totalPages > 1) { %>
+        <% if (totalPages> 1) { %>
             <div class="pagination" style="margin-top:20px; text-align:center;">
-                <% for (let i = 1; i <= totalPages; i++) { %>
-                    <a href="?page=<%= i %>&search=<%= searchQuery %>" 
-                       class="btn <%= i === currentPage ? 'btn-primary' : '' %>">
+                <% if (currentPage> 1) { %>
+                    <a href="?page=<%= currentPage - 1 %>&search=<%= searchQuery %>" class="btn btn-light border">Previous</a>
+                <% } %>
+
+                <% for(let i=1; i <=totalPages; i++) { %>
+                    <a href="?page=<%= i %>&search=<%= searchQuery %>"
+                        class="<%= currentPage === i ? 'active' : '' %> btn">
                         <%= i %>
                     </a>
+                <% } %>
+
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage + 1 %>&search=<%= searchQuery %>" class="btn btn-light border">Next</a>
                 <% } %>
             </div>
         <% } %>

@@ -1,97 +1,11 @@
+const Status=require('../../constants/statusCodes')
 const path=require('path');
 const fs=require('fs')
 const Brand = require("../../models/brandSchema");
 const Category=require('../../models/categorySchema');
 const Product = require("../../models/productSchema");
-const { cloudinary } = require("../../config/cloudinaryProduct");
+const cloudinary = require("../../config/cloudinary");
 const sharp = require('sharp');
-
-// const loadAddProductPage = async (req,res)=>{
-//     try {
-//         const category=await Category.find({isDeleted:false});
-//         const brand=await Brand.find({isBlocked:false})
-
-//         res.render('./admin/products/add-product',{
-//             title:"Add Product",
-//             brand:brand,
-//             category:category
-//         })
-//     } catch (error) {
-//         console.log('error loading the add-product page:',error);
-//         res.redirect('/admin/page-error');
-//     }
-// }
-
-
-
-
-// const addProduct=async (req,res)=>{
-//     try {
-//         const product=req.body;
-//         const {productName}=req.body;
-//         const isProductExists=await Product.findOne({
-//             productName:productName
-//         })
-
-//         if(!isProductExists){
-//             const images=[];
-//             if(!req.files || req.files.length<3){
-//                 console.log("uploaded images are less than 3.required atleast 3")
-//                 throw new Error("required atleast 3 images to add a product")
-//             }
-//             // if(req.files && req.files.length>=3){
-//             //     for(let i=0;i<req.files.length;i++){
-//             //         const originalImagePath=req.files[i].path;
-//             //         console.log("original path:",originalImagePath);
-//             //         const resizedImagePath=path.join('public','uploads','product-images',req.files[i].filename);
-//             //         await sharp(originalImagePath).resize({width:440,height:440}).toFile(resizedImagePath);
-//             //         images.push(req.files[i].filename);//pushing filename after resizing.not the file
-//             //         //because the image with that filename stored in the /product-images.
-//             //         //we render the product images from the /product-images folder, for that we need the actual filenames.
-//             //         console.log("images[]:",images);
-//             //     }
-//             // }
-//             const imageUrls=req.files.map(file=>file.path)
-
-//             const category=await Category.findOne({name:product.category});
-
-//             if(!category){
-//                 console.log("error adding product:invalid category name")
-//                 return res.status(400).json('Invalid category name')
-//             }
-
-//             const brand=await Brand.findOne({brandName:product.brand})
-//             if(!brand){
-//                 console.log("Error adding product:invalid brand name")
-//                 return res.status(400).json("Invalid brand name");
-//             }
-
-//             const newProduct=new Product({
-//                 productName:product.productName,
-//                 description:product.productDescription,
-//                 brand:brand._id,
-//                 category:category._id,
-//                 regularPrice:product.regularPrice,
-//                 salePrice:product.salePrice,
-//                 createdOn:new Date(),
-//                 quantity:product.quantity,
-//                 size:product.size,
-//                 color:product.color,
-//                 productImage:imageUrls,
-//                 status:"Available",
-//             })
-//             await newProduct.save();
-//             console.log("new product saved");
-//             res.redirect('/admin/add-products')
-//         }else{
-//             console.log("error adding/saving product")
-//             return  res.status(400).json("Product name already exist");
-//         }
-//     } catch (error) {
-//         console.log("error adding/saving product:",error)
-//         res.redirect('/admin/page-error')
-//     }
-// }
 
 
 
@@ -116,6 +30,33 @@ const loadAddProductPage = async (req,res)=>{
 
 
 
+
+async function uploadImages(buffer, folder){
+  return new Promise(async (resolve, reject) => {
+    let processed;
+
+    try {
+      processed = await sharp(buffer)
+        .resize(800, 800, { fit: "cover" })
+        .toFormat("webp")
+        .webp({ quality: 85 })
+        .toBuffer();
+    } catch (err) {
+      return reject({ step: "sharp", error: err });
+    }
+
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, format: "webp" },
+      (error, result) => {
+        if (error) return reject({ step: "cloudinary", error });
+        resolve(result);
+      }
+    );
+
+    stream.end(processed);
+  });
+};
+
 const addProduct=async (req,res)=>{
     try {
         const product=req.body;
@@ -124,69 +65,81 @@ const addProduct=async (req,res)=>{
             productName:productName
         })
 
-        if(!isProductExists){
-            const images=[];
-            if(!req.files || req.files.length<3){
-                console.log("uploaded images are less than 3.required atleast 3")
-                throw new Error("required atleast 3 images to add a product")
-            }
-            // if(req.files && req.files.length>=3){
-            //     for(let i=0;i<req.files.length;i++){
-            //         const originalImagePath=req.files[i].path;
-            //         console.log("original path:",originalImagePath);
-            //         const resizedImagePath=path.join('public','uploads','product-images',req.files[i].filename);
-            //         await sharp(originalImagePath).resize({width:440,height:440}).toFile(resizedImagePath);
-            //         images.push(req.files[i].filename);//pushing filename after resizing.not the file
-            //         //because the image with that filename stored in the /product-images.
-            //         //we render the product images from the /product-images folder, for that we need the actual filenames.
-            //         console.log("images[]:",images);
-            //     }
-            // }
-            const productImages=req.files.map(file=>({
-                url:file.path,
-                public_id:file.filename
-            }));
-
-
-            const category=await Category.findOne({name:product.category});
-
-            if(!category){
-                console.log("error adding product:invalid category name")
-                return res.status(400).json('Invalid category name')
-            }
-
-            const brand=await Brand.findOne({brandName:product.brand})
-            if(!brand){
-                console.log("Error adding product:invalid brand name")
-                return res.status(400).json("Invalid brand name");
-            }
-
-            const newProduct=new Product({
-                productName:product.productName,
-                description:product.productDescription,
-                brand:brand._id,
-                category:category._id,
-                regularPrice:product.regularPrice,
-                salePrice:product.salePrice,
-                createdOn:new Date(),
-                quantity:product.quantity,
-                size:product.size,
-                color:product.color,
-                productImage:productImages,
-                status:"Available",
-            })
-            await newProduct.save();
-            console.log("new product saved");
-            res.redirect('/admin/add-products')
-        }else{
-            console.log("error adding/saving product")
-            return  res.status(400).json("Product name already exist");
+        if(isProductExists){
+            return  res.status(Status.BAD_REQUEST).json({message:"Product name already exists"});
         }
+
+        const images=[];
+        if(!req.files || req.files.length<3){
+            console.log("uploaded images are less than 3.required atleast 3")
+            throw new Error("required atleast 3 images to add a product")
+        }
+
+
+        let uploadedImages;
+        try {
+            uploadedImages=await Promise.all(
+                req.files.map((file)=>uploadImages(file.buffer,"product_images"))
+            );
+        } catch (error) {
+            console.error("Upload failed:", err);
+
+            return res.status(Status.INTERNAL_ERROR).json({
+                success: false,
+                message: "Failed to upload one or more images",
+                error: err.error?.message || err.message
+            });
+        }
+        const productImages=uploadedImages.map((img)=>{
+            return {
+                url:img.secure_url,
+                id:img.public_id
+            }
+        })
+
+
+        const category=await Category.findOne({name:product.category});
+
+        if(!category){
+            console.log("error adding product:invalid category name")
+            return res.status(Status.BAD_REQUEST).json({message:'Invalid category name'})
+        }
+
+        const brand=await Brand.findOne({brandName:product.brand})
+        if(!brand){
+            console.log("Error adding product:invalid brand name")
+            return res.status(Status.BAD_REQUEST).json({message:"Invalid brand name"});
+        }
+
+        const newProduct=new Product({
+            productName:product.productName,
+            description:product.productDescription,
+            brand:brand._id,
+            category:category._id,
+            regularPrice:product.regularPrice,
+            salePrice:product.salePrice,
+            createdOn:new Date(),
+            quantity:product.quantity,
+            size:product.size,
+            color:product.color,
+            productImage:productImages,
+            status:"Available",
+        })
+        await newProduct.save();
+        return res.json({success:true, message:"New product added successfully"})
+
     } catch (error) {
         console.log("error adding/saving product:",error)
-        res.redirect('/admin/page-error')
+        res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -275,7 +228,7 @@ const addProductOffer=async (req,res)=>{
             res.json({status:true,message:"",categoryOffer:product.categoryOffer,brandOffer:product.brandOffer,salePrice:product.salePrice})
         }
     } catch (error) {
-        res.status(500).json({status:false,message:"Internal Server Error"})
+        res.status(Status.INTERNAL_ERROR).json({status:false,message:"Internal Server Error"})
     }
 }
 
@@ -305,7 +258,7 @@ const removeProductOffer = async (req, res) => {
 
     res.json({ status: true, salePrice: product.salePrice });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Internal Server Error" });
+    res.status(Status.INTERNAL_ERROR).json({ status: false, message: "Internal Server Error" });
   }
 };
 
@@ -336,7 +289,7 @@ const unblockProduct = async (req,res)=>{
         await Product.updateOne({_id:productId},{$set:{isBlocked:false,status:"Available"}});
         res.json({success:true,message:"Product unblocked successfully"});
     } catch (error) {
-        res.status(500).json({success:false,message:"Error unblocking the product"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"Error unblocking the product"})
         console.log("unblockBrand error:",error)
     }
 }
@@ -348,90 +301,12 @@ const blockProduct = async (req,res)=>{
         await Product.updateOne({_id:productId},{$set:{isBlocked:true,status:"Unavailable"}});
         res.json({success:true,message:"Product blocked successfully"});
     } catch (error) {
-        res.status(500).json({success:false,message:"Error blocking the product"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"Error blocking the product"})
         console.log("blockBrand error:",error)
     }
 }
 
-// const loadEditProductPage = async (req,res)=>{
-//     try {
-//         const id=req.params.id;
-//         const product = await Product.findOne({_id:id});
-//         const category = await Category.find({})
-//         const brand = await Brand.find({})
 
-//         res.render('./admin/products/2edit-product',{
-//             title:"Edit Product",
-//             product:product,
-//             category:category,
-//             brand:brand
-//         })
-        
-//     } catch (error) {
-//         console.log("error rendering the edit-product page:",error)
-//         res.redirect('/admin/page-error')
-//     }
-// }
-
-// const editProduct=async (req,res)=>{
-//     try {
-//         console.log("editProduct has started");
-//         const productId=req.params.id;
-//         const product=await Product.findById(productId);
-//         if(!product) return res.status(404).json({message:"Product not found"})
-
-//         const existingImages=JSON.parse(req.body.existingImages || [])
-
-//         //remove deleted images from file system
-//         const removedImages=product.productImage.filter(img=> !existingImages.includes(img));
-//         removedImages.forEach(img=>{
-//             const imgPath=path.join('public','uploads','product-images',img);
-//             if(fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-//         })
-
-//         //Process new uploaded images
-//         const newFilenames=[];
-//         for(let file of req.files){
-//             //const filename=`${Date.now()-${file.originalname}`};
-//             const originalImagePath=file.path;
-//             const outputPath=path.join('public','uploads','product-images',file.originalname);
-
-//             await sharp(originalImagePath)
-//             .resize({width:440,height:440})
-//             .toFile(outputPath);
-
-//             newFilenames.push(file.originalname);
-//         }
-
-//         const updatedImages=[...existingImages, ...newFilenames];
-//         if(updatedImages.length<3){
-//             return res.status(404).json({success:false,message:"At least 3 images are required"})
-//         }
-
-//         //Update product
-//         product.productName=req.body.productName;
-//         product.description=req.body.productDescription;
-//         const brand=await Brand.findOne({brandName:req.body.brand})
-//         if(!brand) throw new Error("Brand not found")
-//         product.brand=brand._id;
-//         const category=await Category.findOne({name:req.body.category})
-//         if(!category) throw new Error("category not found")
-//         product.category=category._id;
-//         product.regularPrice=req.body.regularPrice;
-//         product.salePrice=req.body.salePrice;
-//         product.quantity=req.body.quantity;
-//         product.color=req.body.color;
-//         product.productImage=updatedImages;
-//         await product.save();
-
-//         res.status(200).json({success:false,message:"Product updated"})
-//         console.log("product updated successfully")
-
-//     } catch (error) {
-//         console.log("error in editProduct:",error);
-//         res.redirect('/amdin/page-error');
-//     }
-// }
 
 
 
@@ -457,72 +332,154 @@ const loadEditProductPage = async (req,res)=>{
     }
 }
 
-const editProduct=async (req,res)=>{
+
+
+
+
+
+const editProduct = async (req, res) => {
     try {
-        console.log("editProduct has started");
-        const productId=req.params.id;
-        const product=await Product.findById(productId);
-        if(!product) return res.status(404).json({message:"Product not found"})
+        const productId = req.params.id;
+        const product = await Product.findById(productId);
 
-        const removedImages=JSON.parse(req.body.removedImages || "[]")
-
-       // ✅ 2. Helper function to delete from Cloudinary
-        async function deleteFromCloud(publicId) {
-            try {
-                await cloudinary.uploader.destroy(publicId);
-                console.log("Deleted from Cloudinary:", publicId);
-            } catch (err) {
-                console.error("Cloudinary delete error:", err);
-            }
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found" });
         }
 
-       // ✅ 3. Remove deleted images (both from DB and Cloudinary)
-        for (let url of removedImages) {
-            // Find image in DB
-            const img = product.productImage.find((img) => img.url === url);
-            if (img && img.public_id) {
-                await deleteFromCloud(img.public_id);
-                product.productImage = product.productImage.filter((i) => i.url !== url);
-            }
+        const brand=await Brand.findOne({brandName:req.body.brand})
+        if(!brand){
+            return res.status(404).json({ success: false, message: "Brand not found" });
         }
 
+        const category=await Category.findOne({name:req.body.category})
+        if(!category){
+            return res.status(404).json({ success: false, message: "Category not found" });
+        }
 
-        // ✅ 4. Upload new images to Cloudinary
+        /** ✅ STEP 1: Parse removedImages from frontend */
+        const removedImages = JSON.parse(req.body.removedImages || "[]"); 
+        // Example: ["https://..../img1.webp", "https://..../img3.webp"]
+
+        /** ✅ STEP 2: Determine which old images should be deleted */
+        const imagesToDelete = product.productImage.filter(img =>
+            removedImages.includes(img.url)
+        );
+
+        /** ✅ STEP 3: Keep old images that were NOT removed */
+        let updatedImages = product.productImage.filter(
+            img => !removedImages.includes(img.url)
+        );
+
+        /** ✅ STEP 4: Upload NEW images first (safe!) */
+        let newUploads = [];
+
         if (req.files && req.files.length > 0) {
-            for (let file of req.files) {
-                // NOTE: You don’t need a manual uploadToCloud() when using multer-storage-cloudinary
-                // Multer + CloudinaryStorage already upload automatically and add `.path` and `.filename`
-                product.productImage.push({
-                url: file.path,
-                public_id: file.filename,
+            try {
+                newUploads = await Promise.all(
+                    req.files.map(async (file) => {
+
+                        // ✅ SHARP processing
+                        let processedBuffer;
+                        try {
+                            processedBuffer = await sharp(file.buffer)
+                                .resize(800, 800, { fit: "cover" })
+                                .webp({ quality: 85 })
+                                .toBuffer();
+                        } catch (sharpErr) {
+                            return Promise.reject({
+                                type: "sharp",
+                                message: sharpErr.message
+                            });
+                        }
+
+                        // ✅ CLOUDINARY upload
+                        return new Promise((resolve, reject) => {
+                            cloudinary.uploader.upload_stream(
+                                { folder: "product_images", format: "webp" },
+                                (error, result) => {
+                                    if (error) {
+                                        return reject({
+                                            type: "cloudinary",
+                                            message: error.message
+                                        });
+                                    }
+
+                                    resolve({
+                                        url: result.secure_url,
+                                        id: result.public_id
+                                    });
+                                }
+                            ).end(processedBuffer);
+                        });
+                    })
+                );
+            } catch (err) {
+                console.error("Upload error:", err);
+
+                if (err.type === "sharp") {
+                    return res.status(Status.BAD_REQUEST).json({
+                        success: false,
+                        message: "Image processing failed",
+                        error: err.message
+                    });
+                }
+
+                if (err.type === "cloudinary") {
+                    return res.status(Status.INTERNAL_ERROR).json({
+                        success: false,
+                        message: "Failed to upload image to Cloudinary",
+                        error: err.message
+                    });
+                }
+
+                return res.status(Status.INTERNAL_ERROR).json({
+                    success: false,
+                    message: "Unexpected image upload error",
                 });
             }
         }
 
-        //Update product
-        product.productName=req.body.productName;
-        product.description=req.body.productDescription;
-        const brand=await Brand.findOne({brandName:req.body.brand})
-        if(!brand) throw new Error("Brand not found")
-        product.brand=brand._id;
-        const category=await Category.findOne({name:req.body.category})
-        if(!category) throw new Error("category not found")
-        product.category=category._id;
-        product.regularPrice=req.body.regularPrice;
-        product.salePrice=req.body.salePrice;
-        product.quantity=req.body.quantity;
-        product.color=req.body.color;
+        /** ✅ STEP 5: AFTER upload succeeded → delete removed Cloudinary images */
+        try {
+            await Promise.all(
+                imagesToDelete.map(img =>
+                    cloudinary.uploader.destroy(img.id)
+                )
+            );
+        } catch (deleteErr) {
+            console.error("Cloudinary deletion error:", deleteErr.message);
+            // ✅ Do not break update – only log error
+        }
+
+        /** ✅ STEP 6: Build final image list */
+        updatedImages = [...updatedImages, ...newUploads];
+
+        /** ✅ STEP 7: Update product fields */
+        product.productName = req.body.productName || product.productName;
+        product.description = req.body.productDescription || product.description;
+        product.regularPrice = req.body.regularPrice || product.regularPrice;
+        product.salePrice = req.body.salePrice || product.salePrice;
+        product.quantity = req.body.quantity || product.quantity
+        product.color = req.body.color || product.color
+        product.productImage = updatedImages;
+        product.category = category._id || product.category;
+        product.brand = brand._id || product.brand;
 
         await product.save();
 
-        res.status(200).json({success:true,message:"Product updated"})
-        console.log("✅ product updated successfully")
+        return res.json({
+            success: true,
+            message: "Product updated successfully",
+            product
+        });
 
-    } catch (error) {
-        console.log("❌ error in editProduct:",error);
-        res.redirect('/amdin/page-error');
+    } catch (err) {
+        console.error("Server error:", err);
+        return res.status(Status.INTERNAL_ERROR).json({ success: false, message: "Server error" });
     }
-}
+};
+
+
 
 
 

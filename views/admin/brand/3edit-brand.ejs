@@ -1,0 +1,191 @@
+<%-include ('../../../views/partials/admin/header')%>
+<style>
+    .main-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 2rem;
+    min-height: calc(100vh - 120px);
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+ 
+</style>
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<div class="main-content">
+    <div class="container">
+        <form id="editBrandForm">
+            
+            <div class="row">
+                <div class="col">
+                    <label for="brandName">Brand Name:</label>
+                    <input type="text" id="brandName" name="brandName" value="<%= brand.brandName %>" class="form-control" required>
+                    <div class="error-message" id="brandName-error"></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 d-flex flex-column justify-content-center">
+                    <div>Current Brand Logo</div>
+                    <div>
+                        <img id="currentLogo" src="<%= brand.brandImage %>" alt="brand" width="200">
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-warning mt-2" id="changeBtn">Change Logo</button>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none;" class="form-control">
+                    <div id="preview"></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col d-flex justify-content-center">
+                    <button id="submitBtn" type="submit" class="btn btn-dark w-50">Update</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+let cropper = null;
+let newLogoFile = null;  // <- The cropped file
+
+const changeBtn = document.getElementById("changeBtn");
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const currentLogo = document.getElementById("currentLogo");
+
+// --------------------------
+// CLICK "CHANGE" BUTTON
+// --------------------------
+changeBtn.onclick = () => {
+    fileInput.click();
+};
+
+// --------------------------
+// FILE INPUT CHANGE
+// --------------------------
+fileInput.addEventListener("change", () => {
+    preview.innerHTML = "";
+    currentLogo.style.display = "none";
+
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+        const img = document.createElement("img");
+        img.src = reader.result;
+        img.style.maxWidth = "100%";
+
+        preview.appendChild(img);
+
+        cropper = new Cropper(img, {
+            aspectRatio: 1,
+            viewMode: 1,
+        });
+
+        const cropBtn = document.createElement("button");
+        cropBtn.textContent = "Crop";
+        cropBtn.type = "button";
+        cropBtn.className = "btn btn-dark me-2 mt-2";
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.type = "button";
+        cancelBtn.className = "btn btn-outline-dark mt-2";
+
+        cancelBtn.onclick = () => {
+            preview.innerHTML = "";
+            currentLogo.style.display = "block";
+            fileInput.value = "";
+            cropper.destroy();
+            cropper = null;
+        };
+
+        cropBtn.onclick = () => {
+            const canvas = cropper.getCroppedCanvas({
+                width: 500,
+                height: 500,
+            });
+
+            canvas.toBlob((blob) => {
+                newLogoFile = new File([blob], file.name, { type: "image/webp" });
+
+                preview.innerHTML = "";
+                const croppedImg = document.createElement("img");
+                croppedImg.src = URL.createObjectURL(blob);
+                croppedImg.width = 200;
+
+                preview.appendChild(croppedImg);
+            });
+        };
+
+        preview.appendChild(cropBtn);
+        preview.appendChild(cancelBtn);
+    };
+
+    reader.readAsDataURL(file);
+});
+
+// --------------------------
+// SUBMIT FORM (AJAX)
+// --------------------------
+document.getElementById("editBrandForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const brandName = document.getElementById("brandName").value.trim();
+
+    if (!brandName) {
+        document.getElementById("brandName-error").textContent = "Brand name is required";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("brandName", brandName);
+
+    if (newLogoFile) {
+        formData.append("brandLogo", newLogoFile);
+    }
+
+    const response = await fetch("/admin/edit-brand/<%= brand._id %>", {
+        method: "POST", // or PUT based on your backend
+        body: formData
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+        Swal.fire({
+            title:"Brand updated successfully",
+            icon:"success",
+            timer:5000,
+            showConfirmButton:true
+        }).then(()=>{
+            window.location.href="/admin/brands"
+        })
+    }else{
+        console.log("error message",result.error)
+        Swal.fire({
+            icon:"error",
+            title:result.message,
+            text:result.error,
+            showConfirmButton:true,
+            timer:10000
+        }).then(()=>{
+            return;
+        })
+    }
+});
+</script>

@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         const res = await fetch(`/admin/orders/return/update-status`, {
-          method: "POST",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId, itemId, status })
         });
@@ -219,16 +219,76 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (confirm.isConfirmed) {
-      const res = await fetch(`/admin/orders/${orderId}/return/${itemId}/${action}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
+        console.log("confirm======",confirm)
+       if (action === "reject") {
+
+            // 1️⃣ SweetAlert - Ask for rejecting reason
+            const { value: reason } = await Swal.fire({
+                title: "Reject Return Request",
+                input: "select",
+                inputOptions: {
+                "Product Damaged by Customer": "Product Damaged by Customer",
+                "Invalid Reason": "Invalid Reason",
+                "Not Eligible for Return": "Not Eligible for Return",
+                "Late Request": "Late Request",
+                "Other": "Other (Write your own reason)"
+                },
+                inputPlaceholder: "Select a reason",
+                showCancelButton: true,
+            });
+
+            if (!reason) return;
+
+            let finalReason = reason;
+
+            // If user selects "Other", show textarea popup
+            if (reason === "Other") {
+            const { value: otherText } = await Swal.fire({
+                title: "Specify the Reason",
+                input: "textarea",
+                inputPlaceholder: "Enter custom rejection reason...",
+                showCancelButton: true,
+            });
+
+            if (!otherText) return;
+            finalReason = otherText;
+            }
+            // ✅ Now send reject request + reason to backend
+            const res = await fetch(`/admin/orders/${orderId}/return/${itemId}/reject`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason: finalReason })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+            Swal.fire("Rejected", "Return request has been rejected.", "success");
+
+            const cell = document.querySelector(`[data-cell-id="${itemId}"]`);
+            if (cell) {
+                cell.innerHTML = `<span class="badge bg-danger">Rejected</span><br>
+                <small class="text-muted">Reason: ${finalReason}</small>`;
+            }
+            } else {
+            Swal.fire("Error", data.message || "Something went wrong", "error");
+            }
+
+            return; // Stop here, don't continue to the approve logic
+        }
+
+        //if action==="approve", this code will run
+      const res = await fetch(`/admin/orders/${orderId}/return/${itemId}/approve`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:JSON.stringify({reason:""})
       });
 
       const data = await res.json();
 
       if (data.success) {
         Swal.fire({
-          title: `Return ${action}d`,
+          title: `Return approved`,
           icon: "success",
           timer: 1500,
           showConfirmButton: false
@@ -239,32 +299,25 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cell) {
           cell.innerHTML = ""; // clear old content
 
-          if (action === "approve") {
-            // Insert dropdown + update button
-            const select = document.createElement("select");
-            select.className = "form-select return-status-select";
-            select.dataset.orderId = orderId;
-            select.dataset.itemId = itemId;
-            ["Approved","Pickup Scheduled", "Picked Up","In Transist","Received", "Refunded"].forEach(opt => {
-              const option = document.createElement("option");
-              option.value = opt;
-              option.textContent = opt;
-              select.appendChild(option);
-            });
+        // Insert dropdown + update button
+        const select = document.createElement("select");
+        select.className = "form-select return-status-select";
+        select.dataset.orderId = orderId;
+        select.dataset.itemId = itemId;
+        ["Approved","Pickup Scheduled", "Picked Up","In Transist","Received", "Refunded"].forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.textContent = opt;
+            select.appendChild(option);
+        });
 
-            const btn = document.createElement("button");
-            btn.className = "btn btn-sm btn-primary update-return-status-btn mt-2";
-            btn.textContent = "Update";
+        const btn = document.createElement("button");
+        btn.className = "btn btn-sm btn-primary update-return-status-btn mt-2";
+        btn.textContent = "Update";
 
-            cell.appendChild(select);
-            cell.appendChild(btn);
-          } else {
-            // Show rejected badge
-            const badge = document.createElement("span");
-            badge.className = "badge bg-danger";
-            badge.textContent = "Rejected";
-            cell.appendChild(badge);
-          }
+        cell.appendChild(select);
+        cell.appendChild(btn);
+        
         }
       } else {
         Swal.fire("Error", "Something went wrong", "error");

@@ -1,3 +1,4 @@
+const Status=require('../../constants/statusCodes')
 const Coupon=require('../../models/couponSchema')
 const Category=require('../../models/categorySchema')
 
@@ -56,11 +57,11 @@ const addNewCoupon=async(req,res)=>{
             startDate,expiryDate,maxUses,description,applicableCategoryIds,excludedCategoryIds
         } = req.body;
 
-        if(!couponCode) return res.status(400).json({success:false,message:"Coupon code is required"})
+        if(!couponCode) return res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon code is required"})
         
         //  Check uniqueness
         const existing = await Coupon.findOne({ couponCode: couponCode.toUpperCase() });
-        if (existing) return res.status(400).json({ success:false,message: "Coupon code already exists" });
+        if (existing) return res.status(Status.BAD_REQUEST).json({ success:false,message: "Coupon code already exists" });
 
         // Prepare coupon data
         const couponData = {
@@ -86,14 +87,14 @@ const addNewCoupon=async(req,res)=>{
         const newCoupon = new Coupon(couponData);
         await newCoupon.save();
 
-        res.status(200).json({
+        res.status(Status.OK).json({
         success: true,
         message: "Coupon created successfully",
         coupon: newCoupon,
         });
     } catch (error) {
         console.log("addNewCoupon() error======>",error)
-        res.status(500).json({success:false,message:"Something went wrong"})
+        res.status(Status.INTERNAL_ERROR).json({success:false,message:"Something went wrong"})
     }
 }
 
@@ -180,7 +181,7 @@ const editCoupon = async (req, res) => {
       .json({ success: true, message: "Coupon updated successfully" });
   } catch (error) {
     console.log("editCoupon() error =====>", error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
+    res.status(Status.INTERNAL_ERROR).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -192,14 +193,14 @@ const deleteCoupon=async (req,res)=>{
         console.log("coupon Id =====>",couponId)
         const coupon=await Coupon.findById(couponId)
         if(!coupon){
-            return res.status(400).json({success:false,message:"Coupon not found"})
+            return res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon not found"})
         }
 
         await Coupon.deleteOne({_id:couponId})
         res.json({success:true,message:"Coupon deleted successfully"})
     } catch (error) {
         console.log("deleteCoupon() error======>",error)
-        res.status(500).json({message:"Something went wrong"})
+        res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
     }
 }
 
@@ -211,13 +212,13 @@ const deActivateCoupon = async (req,res)=>{
         console.log("coupon Id=====>",couponId)
         const coupon= await Coupon.findById(couponId)
         console.log("coupon======>",coupon)
-        if(!coupon) return res.status(400).json({success:false,message:"Coupon not fouond"})
+        if(!coupon) return res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon not fouond"})
         
         await Coupon.updateOne({_id:couponId},{$set:{isActive:false}})
         res.json({success:true,message:"Coupon de-activated successfully"})
     } catch (error) {
         console.log("deActivateCoupon error======>",error)
-        res.status(500).json({message:"Something went wrong"})
+        res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
     }
 }
 
@@ -225,13 +226,13 @@ const activateCoupon = async (req,res)=>{
     try {
         const {couponId}=req.params;
         const coupon= await Coupon.findById(couponId)
-        if(!coupon) return res.status(400).json({success:false,message:"Coupon not fouond"})
+        if(!coupon) return res.status(Status.BAD_REQUEST).json({success:false,message:"Coupon not fouond"})
         
         await Coupon.updateOne({_id:couponId},{$set:{isActive:true}})
         res.json({success:true,message:"Coupon de-activated successfully"})
     } catch (error) {
         console.log("deActivateCoupon error======>",error)
-        res.status(500).json({message:"Something went wrong"})
+        res.status(Status.INTERNAL_ERROR).json({message:"Something went wrong"})
     }
 }
 
