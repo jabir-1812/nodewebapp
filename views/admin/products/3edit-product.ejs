@@ -140,6 +140,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    const INITIAL_IMAGE_COUNT = document.querySelectorAll("#existingImages .image-box").length;
 
     const existingImages = document.getElementById("existingImages");
     const removedImagesInput = document.getElementById("removedImages");
@@ -324,6 +325,21 @@ document.addEventListener("DOMContentLoaded", function() {
             displayErrorMessage('color-error', 'Please enter a color.');
             return;
         }
+
+        // 🛑 IMAGE COUNT VALIDATION (MIN 3 REQUIRED)
+        const remainingImages =
+            INITIAL_IMAGE_COUNT - removedImages.length + croppedImages.length;
+
+        if (remainingImages < 3) {
+            Swal.fire({
+                icon: "error",
+                title: "At least 3 images are required",
+                text: "You removed too many images. Please upload new images.",
+            });
+            submitBtn.innerText = "Update Product";
+            return; // ⛔ stop form submission
+        }
+
 
         const formData = new FormData(form);
         croppedImages.forEach((file) => {
