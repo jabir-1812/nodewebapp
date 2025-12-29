@@ -247,7 +247,6 @@ const loadCheckoutPage = async (req, res) => {
                         }else{
                           //if discount type is "fixed"
                             discount=(itemTotalPrice/cartTotalPrice)*appliedCoupon.discountValue;
-                            // discount=appliedCoupon.discountValue
                         }
 
                         //cap max discount
@@ -255,6 +254,9 @@ const loadCheckoutPage = async (req, res) => {
                           appliedCoupon.maxDiscountAmount &&
                            discount>appliedCoupon.maxDiscountAmount){
                           discount=appliedCoupon.maxDiscountAmount;
+                        }
+                        if(discount > itemTotalPrice){
+                            discount = itemTotalPrice
                         }
                         itemTotalCouponDiscount+=discount;
                         const appliedCpnObj=appliedCouponsObj.find((c)=>{
@@ -277,6 +279,10 @@ const loadCheckoutPage = async (req, res) => {
                           appliedCoupon.maxDiscountAmount &&
                            discount>appliedCoupon.maxDiscountAmount){
                           discount=appliedCoupon.maxDiscountAmount;
+                        }
+
+                        if(discount > itemTotalPrice){
+                            discount = itemTotalPrice
                         }
 
                         itemTotalCouponDiscount+=discount;
@@ -851,6 +857,10 @@ const applyCoupon= async(req,res)=>{
         if(isEligible){
             const base = coupon.isCategoryBased ? eligibleAmount : totalPrice;//base=total price or eligible amount 
             itemCouponDiscount=(itemTotalPrice/base) * couponDiscount;
+            if(itemCouponDiscount > itemTotalPrice){
+                itemCouponDiscount=itemTotalPrice
+                couponDiscount=itemTotalPrice
+            }
         }
 
         perProductDiscounts.push({
