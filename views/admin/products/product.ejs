@@ -120,54 +120,71 @@
 
     <script>
         async function addOffer(productId) {
-            const {value:percentage}=await Swal.fire({
-                title:"Offer in percentage",
-                input:"number",
-                inputLabel:"Percentage",
-                inputPlaceholder:"%",
-                showCancelButton:true
+            const { value: percentage } = await Swal.fire({
+                title: "Offer in percentage",
+                input: "number",
+                inputLabel: "Percentage",
+                inputPlaceholder: "%",
+                showCancelButton: true,
+                inputAttributes: {
+                    min: 1,
+                    max: 100
+                }
             });
 
-            if(percentage){
-                try {
-                    const response=await fetch('/admin/add-product-offer',{
-                        method:'POST',
-                        headers:{
-                            'content-type':'application/json'
-                        },
-                        body:JSON.stringify({
-                            percentage:percentage,
-                            productId:productId
-                        })
+            // If user clicked cancel or input is empty
+            if (!percentage) return;
+
+            // 🔴 Validation: percentage should not exceed 100
+            if (percentage > 100) {
+                Swal.fire({
+                    title: "Invalid Percentage",
+                    text: "Percentage cannot be greater than 100.",
+                    icon: "error"
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/add-product-offer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        percentage: percentage,
+                        productId: productId
                     })
+                });
 
-                    const responseJson=await response.json();
-                    if(response.ok && responseJson.status===true){
-                        Swal.fire({
-                            title:"Offer Added",
-                            html:`The offer has been added.<br><strong>${responseJson.message}</strong>`,
-                            icon:"success",
-                            timer:10000,
-                            showConfirmButton:true
-                        }).then(()=>{
-                            location.reload();
-                        })
-                    }else{
-                        Swal.fire("Failed",responseJson.message || "Adding offer failed","error");
-                    }
-                } catch (error) {
+                const responseJson = await response.json();
+
+                if (response.ok && responseJson.status === true) {
                     Swal.fire({
-                        title:"Error",
-                        text:"An error occured while adding the offer",
-                        icon:"error",
-                        timer:5000,
-                        showConfirmButton:true
+                        title: "Offer Added",
+                        html: `The offer has been added.<br><strong>${responseJson.message}</strong>`,
+                        icon: "success",
+                        timer: 10000,
+                        showConfirmButton: true
+                    }).then(() => {
+                        location.reload();
                     });
-
-                    console.log('Error Adding offer:',error)
+                } else {
+                    Swal.fire("Failed", responseJson.message || "Adding offer failed", "error");
                 }
+            } catch (error) {
+                Swal.fire({
+                    title: "Error",
+                    text: "An error occurred while adding the offer",
+                    icon: "error",
+                    timer: 5000,
+                    showConfirmButton: true
+                });
+
+                console.error('Error Adding offer:', error);
             }
         }
+
 
 
 
